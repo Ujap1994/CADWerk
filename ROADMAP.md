@@ -73,7 +73,7 @@ how that time is spread over the calendar.
 | Native file format | ✅ done ([ADR 0003](docs/adr/0003-native-file-format.md)) |
 | Test infrastructure and CI on Windows, macOS, Linux | ✅ done |
 | Benchmark harness, scale ladder, CI comparison | ✅ done (baselines are taken from the first CI runs) |
-| Release pipeline for all packages | 🟡 configured; first complete packaging run pending |
+| Release pipeline for all packages | ✅ done: 24 packages (Windows x64/arm64, macOS universal/arm64/x64, Linux x64/arm64 in 7 formats), each smoke-tested with `--self-test` before upload |
 | Documentation with automated screenshots | ✅ done |
 | License policy and license check | ✅ done ([ADR 0008](docs/adr/0008-dependency-licenses.md)) |
 | Custom OCCT build (C++ facade, threads, no eval) and comparison with native OCCT | ⏳ next, required for Gate 1 |

@@ -24,6 +24,8 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 - Automated unit, integration and end-to-end tests; kernel, solver and rendering benchmarks; CI on
   Windows, macOS and Linux; release workflow for all desktop packages.
 - User guide with screenshots, architecture decision records and benchmark results.
+- `--self-test` command-line option that checks an installation (3D graphics, geometry kernel, modeling
+  accuracy, STEP export); the release pipeline runs it on every package.
 
 ### Added – planning
 - Project vision, README with disclaimer and planned feature overview.
