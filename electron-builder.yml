@@ -45,11 +45,9 @@ dmg:
 
 win:
   icon: build/icon.png
-  target:
-    - target: nsis
-      arch: [x64, arm64]
-    - target: portable
-      arch: [x64, arm64]
+  # Architectures come from the command line (--x64 / --arm64), one build per architecture;
+  # listing both here would also produce a combined double-size installer.
+  target: [nsis, portable]
 
 nsis:
   oneClick: false
