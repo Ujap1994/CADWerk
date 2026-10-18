@@ -9,17 +9,23 @@ on:
         description: Create a GitHub release from this run
         type: boolean
         default: false
+      skip_tests:
+        description: Skip the test suite (only for iterating on packaging; tags always run tests)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   test:
+    if: ${{ !inputs.skip_tests }}
     uses: ./.github/workflows/ci.yml
 
   package:
     name: Package (${{ matrix.name }})
     needs: test
+    if: ${{ !cancelled() && (needs.test.result == 'success' || (needs.test.result == 'skipped' && inputs.skip_tests && !inputs.publish)) }}
     strategy:
       fail-fast: false
       matrix:
@@ -35,9 +41,12 @@ jobs:
             os: ubuntu-24.04
             command: npx electron-builder --linux --x64 --publish never
           # The arm64 snap is built with snapcraft (no prebuilt template); a 22.04 host matches the core22 base.
+          # snapcraft in host mode needs root (it runs apt), so only the snap is built with sudo.
           - name: linux-arm64
             os: ubuntu-22.04-arm
-            command: npx electron-builder --linux --arm64 --publish never
+            command: >-
+              npx electron-builder --linux AppImage deb rpm pacman tar.gz flatpak --arm64 --publish never &&
+              sudo -E env "PATH=$PATH" npx electron-builder --linux snap --arm64 --publish never
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -97,7 +106,7 @@ jobs:
   publish:
     name: Publish GitHub release
     needs: package
-    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+    if: ${{ !cancelled() && needs.package.result == 'success' && (startsWith(github.ref, 'refs/tags/v') || inputs.publish) }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7

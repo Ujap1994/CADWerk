@@ -21,10 +21,11 @@ if (!executable) {
 }
 console.log(`Smoke-testing ${executable}`);
 
-const result = spawnSync('npx', ['playwright', 'test', '--project=e2e', '-g', 'starts with one window|creates a box'], {
+// Run the Playwright CLI with Node directly: no shell, so "|" in the filter stays a regex on every platform.
+const cli = path.join(root, 'node_modules', '@playwright', 'test', 'cli.js');
+const result = spawnSync(process.execPath, [cli, 'test', '--project=e2e', '-g', 'starts with one window|creates a box'], {
   cwd: root,
   stdio: 'inherit',
-  shell: process.platform === 'win32',
   env: { ...process.env, PARAWERK_E2E_EXECUTABLE: executable },
 });
 process.exit(result.status ?? 1);
