@@ -52,6 +52,21 @@ export function measure(fn: (iteration: number) => void, { iterations = 10, warm
   return summarize(samples);
 }
 
+/**
+ * A fixed CPU workload measured in every run. Comparisons divide by its change, so a
+ * slower (shared) CI machine does not look like a regression of ParaWerk itself.
+ */
+export function calibration(): CaseResult {
+  let sink = 0;
+  const result = measure(() => {
+    let x = 0;
+    for (let i = 0; i < 3_000_000; i++) x = (x + Math.sqrt(i) * 1.0000001) % 1e9;
+    sink += x;
+  }, { iterations: 15, warmup: 3 });
+  if (sink < 0) console.log(sink);
+  return result;
+}
+
 function gitCommit(): string {
   try {
     return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();

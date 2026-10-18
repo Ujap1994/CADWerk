@@ -3,7 +3,7 @@
  * Run: npm run bench:solver   Results: bench/results/solver-<platform>-<arch>.json
  */
 import { GcsWrapper, init_planegcs_module } from '@salusoft89/planegcs';
-import { measure, meta, printReport, summarize, writeReport, type BenchReport, type CaseResult } from '../lib.ts';
+import { calibration, measure, meta, printReport, summarize, writeReport, type BenchReport, type CaseResult } from '../lib.ts';
 
 type Primitive = Record<string, unknown> & { id: string; type: string };
 
@@ -40,6 +40,7 @@ function sketch(rectangles: number, seed: number): { primitives: Primitive[]; co
 }
 
 const cases: Record<string, CaseResult> = {};
+cases['calibration'] = calibration();
 const initStart = performance.now();
 const module = await init_planegcs_module();
 cases['solver.init'] = summarize([performance.now() - initStart]);

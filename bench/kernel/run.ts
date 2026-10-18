@@ -8,9 +8,10 @@ import { massProperties } from '../../src/kernel/properties.ts';
 import type { RebuildRequest } from '../../src/kernel/protocol.ts';
 import type { Feature } from '../../src/shared/model/feature.ts';
 import type { TopoDS_Shape } from '../../src/kernel/occt.ts';
-import { measure, meta, printReport, summarize, writeReport, type BenchReport, type CaseResult } from '../lib.ts';
+import { calibration, measure, meta, printReport, summarize, writeReport, type BenchReport, type CaseResult } from '../lib.ts';
 
 const cases: Record<string, CaseResult> = {};
+cases['calibration'] = calibration();
 
 const initStart = performance.now();
 const kernel = await Kernel.create();

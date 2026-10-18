@@ -12,6 +12,8 @@ import { benchRoot, type BenchReport } from './lib.ts';
 const threshold = Number(process.env.BENCH_THRESHOLD ?? '1.3');
 /** Cases faster than this are dominated by noise and not compared. */
 const MIN_MS = 2;
+/** CI machines have no real GPU, so render results are reported but never fail the build. */
+const ADVISORY_SUITES = new Set(['render']);
 
 const resultsDir = path.join(benchRoot, 'results');
 const files = existsSync(resultsDir) ? readdirSync(resultsDir).filter((file) => file.endsWith('.json')) : [];
@@ -25,16 +27,23 @@ for (const file of files) {
   }
   const current = JSON.parse(readFileSync(path.join(resultsDir, file), 'utf8')) as BenchReport;
   const baseline = JSON.parse(readFileSync(baselineFile, 'utf8')) as BenchReport;
+  const advisory = ADVISORY_SUITES.has(current.suite);
+  // Best-of-N times are far less noisy than medians on shared machines.
+  const time = (result: { minMs: number; medianMs: number }) => (result.minMs > 0 ? result.minMs : result.medianMs);
+  const currentCalibration = current.cases.calibration;
+  const baselineCalibration = baseline.cases.calibration;
+  const machineFactor = currentCalibration && baselineCalibration ? time(currentCalibration) / time(baselineCalibration) : 1;
   const rows = [];
   for (const [name, result] of Object.entries(current.cases)) {
     const reference = baseline.cases[name];
-    if (!reference || reference.medianMs < MIN_MS) continue;
-    const ratio = result.medianMs / reference.medianMs;
-    const status = ratio > threshold ? 'REGRESSION' : ratio < 1 / threshold ? 'faster' : 'ok';
+    if (name === 'calibration' || !reference || time(reference) < MIN_MS) continue;
+    const ratio = time(result) / time(reference) / machineFactor;
+    const slower = ratio > threshold;
+    const status = slower ? (advisory ? 'slower (advisory)' : 'REGRESSION') : ratio < 1 / threshold ? 'faster' : 'ok';
     if (status === 'REGRESSION') regressions++;
-    rows.push({ case: name, 'baseline ms': reference.medianMs, 'current ms': result.medianMs, ratio: Math.round(ratio * 100) / 100, status });
+    rows.push({ case: name, 'baseline ms': time(reference), 'current ms': time(result), ratio: Math.round(ratio * 100) / 100, status });
   }
-  console.log(`\n${file} (threshold ×${threshold})`);
+  console.log(`\n${file} (threshold ×${threshold}, machine factor ×${Math.round(machineFactor * 100) / 100}${advisory ? ', advisory' : ''})`);
   console.table(rows);
 }
 
