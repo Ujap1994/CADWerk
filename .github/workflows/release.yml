@@ -27,14 +27,16 @@ jobs:
           - name: macos
             os: macos-latest
             command: npx electron-builder --mac --publish never
+          # One run per architecture, so no combined (double-size) installer is produced.
           - name: windows
             os: windows-latest
-            command: npx electron-builder --win --publish never
+            command: npx electron-builder --win --x64 --publish never && npx electron-builder --win --arm64 --publish never
           - name: linux-x64
             os: ubuntu-24.04
             command: npx electron-builder --linux --x64 --publish never
+          # The arm64 snap is built with snapcraft (no prebuilt template); a 22.04 host matches the core22 base.
           - name: linux-arm64
-            os: ubuntu-24.04-arm
+            os: ubuntu-22.04-arm
             command: npx electron-builder --linux --arm64 --publish never
     runs-on: ${{ matrix.os }}
     steps:
@@ -51,7 +53,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm libarchive-tools squashfs-tools flatpak flatpak-builder
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          sudo snap install snapcraft --classic
+          # snapcraft 8 renamed the "snap" command that electron-builder calls for core22 builds.
+          sudo snap install snapcraft --classic --channel=7.x/stable
       - run: npm run build
       - name: Build packages
         run: ${{ matrix.command }}
