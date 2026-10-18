@@ -1,0 +1,81 @@
+{
+  "suite": "render",
+  "meta": {
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cores": 4,
+    "memoryGb": 16,
+    "node": "v24.21.0",
+    "commit": "2bc1820",
+    "date": "2026-10-18T17:00:29.751Z",
+    "ci": true
+  },
+  "cases": {
+    "orbit.10.instanced": {
+      "medianMs": 36.16,
+      "p95Ms": 37.31,
+      "minMs": 0.8,
+      "iterations": 90,
+      "info": {
+        "fps": 28,
+        "triangles": 44336,
+        "drawCalls": 45,
+        "loadMs": 37,
+        "cpuMs": 0.8
+      }
+    },
+    "orbit.100.instanced": {
+      "medianMs": 181.7,
+      "p95Ms": 184.24,
+      "minMs": 0.69,
+      "iterations": 90,
+      "info": {
+        "fps": 6,
+        "triangles": 248188,
+        "drawCalls": 47,
+        "loadMs": 14,
+        "cpuMs": 0.69
+      }
+    },
+    "orbit.1000.instanced": {
+      "medianMs": 1494.19,
+      "p95Ms": 1529.12,
+      "minMs": 0.7,
+      "iterations": 90,
+      "info": {
+        "fps": 1,
+        "triangles": 2258212,
+        "drawCalls": 47,
+        "loadMs": 16,
+        "cpuMs": 0.7
+      }
+    },
+    "orbit.100.individual": {
+      "medianMs": 176.2,
+      "p95Ms": 182.61,
+      "minMs": 1.04,
+      "iterations": 90,
+      "info": {
+        "fps": 6,
+        "triangles": 248188,
+        "drawCalls": 141,
+        "loadMs": 29,
+        "cpuMs": 1.04
+      }
+    },
+    "orbit.1000.individual": {
+      "medianMs": 1399.61,
+      "p95Ms": 1420.41,
+      "minMs": 3.21,
+      "iterations": 90,
+      "info": {
+        "fps": 1,
+        "triangles": 2258212,
+        "drawCalls": 1041,
+        "loadMs": 22,
+        "cpuMs": 3.21
+      }
+    }
+  }
+}

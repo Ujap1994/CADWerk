@@ -14,8 +14,13 @@ npm run bench:compare  # compare bench/results with bench/baselines
 ```
 
 Results are written to `bench/results/<suite>-<platform>-<arch>.json`. In CI the suites run on Windows,
-macOS and Linux for every push; large slowdowns against the stored baselines fail the build. CI runners
-have no GPU, so render numbers from CI are only compared relative to each other.
+macOS and Linux for every push and are compared with the baselines in `bench/baselines` (taken from CI
+runs of the main branch); a slowdown of more than ×1.75 fails the build. The Linux and Windows runners
+render in software, so their render numbers only serve as relative regression checks; the macOS runner
+has a virtual GPU.
+
+To refresh the baselines after an intended change, download the `benchmarks-*` artifacts of a main-branch
+CI run and copy the JSON files into `bench/baselines`.
 
 ## Reference results – Phase 0 (Apple M3, 16 GB, macOS)
 
@@ -59,6 +64,16 @@ have no GPU, so render numbers from CI are only compared relative to each other.
 | 5,000 components, individual meshes | 10,667,348 | 5,041 | 30 |
 
 Draw calls include the view cube and the axis indicator (about 41).
+
+## CI runners – Phase 0 baselines
+
+| Case | Linux (AMD EPYC 7763) | Windows (Intel Xeon 8573C) | macOS (Apple M1, virtual) |
+|---|---|---|---|
+| Fillet of 12 box edges | 22.8 ms | 23.4 ms | 24.7 ms |
+| 100-hole plate, edit last feature | 307 ms | 313 ms | 345 ms |
+| Tessellation of the 100-hole plate | 270 ms | 274 ms | 334 ms |
+| Solver, 503 constraints | 51 ms | 50 ms | 41 ms |
+| 1,000 instanced components | software rendering | software rendering | 142 fps |
 
 ## What the numbers tell us
 

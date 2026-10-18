@@ -1,0 +1,52 @@
+{
+  "suite": "solver",
+  "meta": {
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "AMD EPYC 7763 64-Core Processor",
+    "cores": 4,
+    "memoryGb": 16,
+    "node": "v24.21.0",
+    "commit": "2bc1820",
+    "date": "2026-10-18T16:53:17.139Z",
+    "ci": true
+  },
+  "cases": {
+    "solver.init": {
+      "medianMs": 12.38,
+      "p95Ms": 12.38,
+      "minMs": 12.38,
+      "iterations": 1
+    },
+    "solve.55constraints": {
+      "medianMs": 2.493,
+      "p95Ms": 8.443,
+      "minMs": 1.476,
+      "iterations": 15,
+      "info": {
+        "constraints": 55,
+        "status": 0
+      }
+    },
+    "solve.251constraints": {
+      "medianMs": 11.037,
+      "p95Ms": 16.379,
+      "minMs": 8.464,
+      "iterations": 15,
+      "info": {
+        "constraints": 251,
+        "status": 0
+      }
+    },
+    "solve.503constraints": {
+      "medianMs": 51.32,
+      "p95Ms": 55.219,
+      "minMs": 50.687,
+      "iterations": 15,
+      "info": {
+        "constraints": 503,
+        "status": 0
+      }
+    }
+  }
+}

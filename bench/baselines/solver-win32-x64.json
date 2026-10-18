@@ -1,0 +1,52 @@
+{
+  "suite": "solver",
+  "meta": {
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cores": 4,
+    "memoryGb": 16,
+    "node": "v24.21.0",
+    "commit": "2bc1820",
+    "date": "2026-10-18T16:53:44.494Z",
+    "ci": true
+  },
+  "cases": {
+    "solver.init": {
+      "medianMs": 10.981,
+      "p95Ms": 10.981,
+      "minMs": 10.981,
+      "iterations": 1
+    },
+    "solve.55constraints": {
+      "medianMs": 2.14,
+      "p95Ms": 4.642,
+      "minMs": 1.279,
+      "iterations": 15,
+      "info": {
+        "constraints": 55,
+        "status": 0
+      }
+    },
+    "solve.251constraints": {
+      "medianMs": 10.773,
+      "p95Ms": 24.134,
+      "minMs": 7.864,
+      "iterations": 15,
+      "info": {
+        "constraints": 251,
+        "status": 0
+      }
+    },
+    "solve.503constraints": {
+      "medianMs": 50.265,
+      "p95Ms": 51.861,
+      "minMs": 48.937,
+      "iterations": 15,
+      "info": {
+        "constraints": 503,
+        "status": 0
+      }
+    }
+  }
+}
