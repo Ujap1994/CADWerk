@@ -62,22 +62,25 @@ how that time is spread over the calendar.
 1. **Not a clone, a focused tool.** Full parity with commercial CAD suites, which represent thousands of
    person-years of work, is explicitly not a goal. CADWerk covers the everyday mechanical workflow
    (sketch → part → assembly with standard parts → drawing → export) and does it well.
-2. **Use a proven geometry kernel.** Writing a B-Rep kernel is a multi-decade effort. CADWerk builds on
+2. **Own implementation, own look.** CADWerk adopts proven *functionality* from established
+   feature-based CAD systems, never their code, assets or visual design. All source code, tests, UI
+   layout, icons and styling are written for CADWerk. Visually it is an independent product.
+3. **Use a proven geometry kernel.** Writing a B-Rep kernel is a multi-decade effort. CADWerk builds on
    Open CASCADE Technology (OCCT) and invests its own effort in the parametric layer, the solvers, the UI
    and performance.
-3. **Performance is a feature from day one.** Benchmarks exist before features do. Every phase raises the
+4. **Performance is a feature from day one.** Benchmarks exist before features do. Every phase raises the
    scale ladder (see [section 6](#6-performance-and-scale-testing)).
-4. **Measured, not assumed.** Performance budgets are verified on real hardware. CI catches regressions
+5. **Measured, not assumed.** Performance budgets are verified on real hardware. CI catches regressions
    and local GPU runs supply the absolute numbers.
-5. **Tests first.** Unit, integration and end-to-end tests on Windows, macOS and Linux from the first commit.
+6. **Tests first.** Unit, integration and end-to-end tests on Windows, macOS and Linux from the first commit.
    Every geometry bug becomes a regression test.
-6. **The UI thread never blocks.** All kernel, solver, tessellation and export work runs in workers and
+7. **The UI thread never blocks.** All kernel, solver, tessellation and export work runs in workers and
    offers progress and cancel.
-7. **Secure by default.** Electron context isolation, sandboxed renderer, no Node integration in the
+8. **Secure by default.** Electron context isolation, sandboxed renderer, no Node integration in the
    renderer, strict content security policy, typed IPC.
-8. **Bilingual.** English and German from the first screen, switchable at runtime, defaulting to the system
+9. **Bilingual.** English and German from the first screen, switchable at runtime, defaulting to the system
    language.
-9. **Documentation ships with features.** A feature is done only when its user guide and screenshots exist.
+10. **Documentation ships with features.** A feature is done only when its user guide and screenshots exist.
 
 ## 3. How the estimates work
 
@@ -116,7 +119,7 @@ flowchart LR
     M3["Menus, dialogs, updates"]
   end
   subgraph Renderer["Renderer (sandboxed, context isolation)"]
-    R1["UI shell<br/>ribbon, feature tree, property panels"]
+    R1["UI shell<br/>command bar, feature tree, property panels"]
     R2["3D viewport<br/>three.js, GPU picking, instancing, LOD"]
     R3["2D drawing canvas"]
     R4["Document model<br/>feature graph, undo/redo"]
@@ -163,7 +166,7 @@ traditional person-months (PM) and as calendar weeks in Scenario B.
 
 **Scope**
 - Electron application skeleton in TypeScript with secure defaults, single instance and clean shutdown
-- UI shell prototype: ribbon, feature tree panel, property panel, status bar, view toolbar; English and German
+- UI shell prototype in CADWerk's own design language (design tokens, light and dark themes, own icon set): command bar, feature tree, property panel, status bar, view controls; English and German
 - 3D viewport: orbit, pan and zoom with configurable mouse mapping, view cube, standard views,
   shaded-with-edges display, pre-selection and selection highlighting
 - **Kernel spike:** OCCT compiled to WebAssembly in a worker; primitives, booleans, fillets,
@@ -202,7 +205,7 @@ traditional person-months (PM) and as calendar weeks in Scenario B.
   move / rotate / scale / copy, project and convert edges
 - Relations: coincident, horizontal, vertical, parallel, perpendicular, tangent, concentric, equal,
   midpoint, symmetric, collinear, fix
-- Smart dimension: linear, angular, radius, diameter; driving and driven dimensions
+- Dimension tool (one tool, type inferred from the selection): linear, angular, radius, diameter; driving and driven dimensions
 - Inference lines, snapping and automatic relations while drawing
 - Status colors for under-, fully and over-defined geometry; diagnosis of conflicting relations
 - Dragging under-defined geometry with live solving
@@ -229,7 +232,7 @@ CAD system; over-defined sketches explain which relations conflict.
 - Revolve and revolved cut
 - Fillet (constant radius, face fillet, full round) and chamfer (distance-distance, distance-angle)
 - Shell
-- Hole wizard: ISO metric through, tapped, counterbore and countersink holes with cosmetic threads
+- Hole feature: ISO metric through, tapped, counterbore and countersink holes with cosmetic threads
 - Linear and circular patterns, mirror
 - Persistent naming implementation and its regression suite
 - Undo and redo for every operation
@@ -316,7 +319,7 @@ assembled, moved and checked for interference.
 - Strength class and material as properties; simplified (default) and detailed thread display
 - Library browser with search, filters and previews
 - Drag and drop into assemblies with automatic mates into holes and suggested lengths from the stack height
-- Smart fasteners: screw + washer + nut stacks for hole wizard holes in one step
+- Fastener stacks: screw + washer + nut for hole features in one step
 - Correct designations in the BOM, for example `ISO 4762 - M8 x 30 - 8.8`
 - User-defined part catalogs
 - Data verification: two independent sources per table, automated consistency checks (for example head

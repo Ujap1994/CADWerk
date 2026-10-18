@@ -26,7 +26,7 @@
 - [What is CADWerk?](#what-is-cadwerk)
 - [Disclaimer](#disclaimer)
 - [Planned features](#planned-features)
-- [How it is meant to feel](#how-it-is-meant-to-feel)
+- [Design approach](#design-approach)
 - [Technology](#technology)
 - [Quality and performance from day one](#quality-and-performance-from-day-one)
 - [Roadmap](#roadmap)
@@ -50,8 +50,10 @@ makers, students and small workshops that covers the everyday mechanical design 
 
 ## Disclaimer
 
-> [!IMPORTANT]
-> Please read this section carefully.
+> [!CAUTION]
+> **CADWerk is under active development.** It is not finished, not stable and not suitable for productive
+> or commercial use. Features can be missing, behave incorrectly or change at any time, and files created
+> with development versions may not open in later versions. Use it at your own risk.
 
 - **Early development.** CADWerk is an independent project in an early stage of development. Features
   may be incomplete, change without notice or contain errors. Do not use it for productive work yet,
@@ -82,14 +84,14 @@ makers, students and small workshops that covers the everyday mechanical design 
 - Lines, arcs, circles, rectangles, slots, polygons, ellipses, splines, points and construction geometry
 - Trim, extend, offset, mirror, sketch fillet and chamfer, sketch patterns, project and convert edges
 - Geometric relations (coincident, horizontal, vertical, parallel, perpendicular, tangent, concentric,
-  equal, symmetric, midpoint, fix) and smart dimensions
+  equal, symmetric, midpoint, fix) and dimensions (one tool, type inferred from the selection)
 - Live constraint solving with clear status colors for under-, fully and over-defined sketches
 - Snapping and inference lines while drawing, automatic relations, global variables and equations
 
 ### Part modeling
 - Feature tree with rollback bar, suppress, reorder and edit-in-place
 - Extrude and cut (blind, through all, up to surface, mid-plane, thin), revolve, sweep, loft
-- Fillet, chamfer, shell, draft, rib, hole wizard with ISO metric threads, linear, circular and mirror patterns
+- Fillet, chamfer, shell, draft, rib, hole feature with ISO metric threads, linear, circular and mirror patterns
 - Reference planes, axes, points and coordinate systems; multi-body parts
 - Configurations and design tables, materials, mass properties, measuring and section views
 
@@ -127,15 +129,20 @@ makers, students and small workshops that covers the everyday mechanical design 
 | SVG, PNG | – | ✓ | Documentation |
 | glTF / GLB, OBJ | – | ✓ | Visualization |
 
-## How it is meant to feel
+## Design approach
 
-CADWerk aims for the efficient, mouse-driven workflow that experienced mechanical designers expect:
+**Proven functionality, independent implementation.** CADWerk offers the capabilities that experienced
+mechanical designers rely on in feature-based CAD, but it is not a copy of any product. All source code,
+tests, user interface, icons and visual design are CADWerk's own work. No code, assets or UI designs from
+other products are used.
 
-- A **command ribbon** with context tabs (Sketch, Features, Assembly, Drawing, Evaluate)
-- A **feature tree** that tells the story of the part and lets you roll back, suppress and reorder
-- **Property panels** with live preview and an OK / Cancel confirmation corner
-- A **heads-up view toolbar**, view cube, standard views and section views
-- **Mouse gestures**, customizable shortcuts and a searchable command box
+What you can expect:
+
+- An **independent, modern visual design** with light and dark themes and its own icon set
+- A **feature tree** that records how a part was built and lets you roll back, suppress and reorder
+- **Contextual property panels** with live preview while you create or edit a feature
+- An **efficient, mouse-driven workflow**: view cube, standard and section views, mouse gestures,
+  customizable shortcuts and a searchable command palette
 - A UI in **English and German**, switchable at runtime (default: system language)
 
 ## Technology
