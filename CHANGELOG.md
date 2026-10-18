@@ -7,6 +7,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 
 ## [Unreleased]
 
+## [0.1.0-alpha.0] - 2026-10-19
+
+First technical preview (Phase 0). Not ready for productive use; see the disclaimer in the README.
+
 ### Added – Phase 0 preview
 - Electron desktop application with secure defaults (sandboxed renderer, context isolation, strict
   content security policy, custom `app://` protocol), single instance and clean shutdown.
@@ -39,3 +43,6 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 
 ### Removed
 - DWG from the planned formats, because it is a closed, proprietary format. DXF covers 2D exchange.
+
+[Unreleased]: https://github.com/Ujap1994/ParaWerk/compare/v0.1.0-alpha.0...HEAD
+[0.1.0-alpha.0]: https://github.com/Ujap1994/ParaWerk/releases/tag/v0.1.0-alpha.0
