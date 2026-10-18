@@ -105,7 +105,7 @@
   "panel": {
     "ok": "OK",
     "cancel": "Abbrechen",
-    "creating": "Neue(r) {{feature}}",
+    "creating": "{{feature}} erstellen",
     "editing": "{{feature}} bearbeiten",
     "parameters": "Parameter",
     "operation": "Operation",

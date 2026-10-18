@@ -24,6 +24,7 @@ export default defineConfig({
     optimizeDeps: { exclude: ['replicad-opencascadejs', '@salusoft89/planegcs'] },
     build: {
       target: 'esnext',
+      minify: true,
       assetsInlineLimit: 0,
       chunkSizeWarningLimit: 4096,
     },

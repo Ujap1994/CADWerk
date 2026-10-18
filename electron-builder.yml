@@ -1,0 +1,107 @@
+appId: io.github.ujap1994.parawerk
+productName: ParaWerk
+copyright: Copyright © 2026 ParaWerk contributors
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+directories:
+  output: release/${version}
+  buildResources: build
+
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+
+extraResources:
+  - from: build/icons/512x512.png
+    to: icon.png
+  - from: build/licenses
+    to: licenses
+
+asar: true
+electronLanguages: [en, en-US, en-GB, de]
+
+fileAssociations:
+  - ext: pwpart
+    name: ParaWerk Part
+    description: ParaWerk part
+    mimeType: application/x-parawerk-part
+    role: Editor
+    icon: build/icon.png
+
+mac:
+  category: public.app-category.graphics-design
+  icon: build/icon.png
+  # Unsigned until an Apple Developer ID is configured (see ROADMAP.md, open decisions).
+  identity: null
+  target:
+    - target: dmg
+      arch: [universal, arm64, x64]
+    - target: zip
+      arch: [universal, arm64, x64]
+
+dmg:
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
+
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch: [x64, arm64]
+    - target: portable
+      arch: [x64, arm64]
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  artifactName: ${productName}-${version}-win-${arch}-setup.${ext}
+
+portable:
+  artifactName: ${productName}-${version}-win-${arch}-portable.${ext}
+
+linux:
+  icon: build/icons
+  category: Graphics
+  synopsis: Parametric 2D/3D CAD
+  description: Parametric CAD for parts, assemblies, standard parts and drawings.
+  maintainer: ParaWerk contributors <162882733+UJap94@users.noreply.github.com>
+  vendor: ParaWerk
+  desktop:
+    entry:
+      Categories: Graphics;Engineering;3DGraphics;
+      Keywords: CAD;3D;parametric;STEP;STL;
+  target:
+    - AppImage
+    - deb
+    - rpm
+    - pacman
+    - tar.gz
+    - snap
+    - flatpak
+
+deb:
+  depends: [libgtk-3-0, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0]
+
+snap:
+  grade: devel
+  confinement: strict
+  base: core22
+  summary: Parametric 2D/3D CAD
+  plugs: [default, removable-media]
+
+flatpak:
+  runtime: org.freedesktop.Platform
+  runtimeVersion: '24.08'
+  sdk: org.freedesktop.Sdk
+  base: org.electronjs.Electron2.BaseApp
+  baseVersion: '24.08'
+  finishArgs:
+    - --share=ipc
+    - --socket=x11
+    - --socket=wayland
+    - --device=dri
+    - --filesystem=home
+
+publish: null

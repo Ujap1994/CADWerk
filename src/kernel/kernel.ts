@@ -100,7 +100,7 @@ export class Kernel implements Disposable {
     if (request.format === 'step') return exportStep(this.oc, shape);
 
     const diagonal = diagonalOf(boundingBox(this.oc, shape));
-    const mesh = extractMesh(this.oc, shape, exportQuality(diagonal), 'export');
+    const mesh = extractMesh(this.oc, shape, exportQuality(diagonal), 'export', { withEdges: false });
     // Drop the fine triangulation again so the 3D view keeps its lighter display mesh.
     this.oc.BRepTools.Clean(shape, true);
     return writeBinaryStl(mesh.positions, mesh.indices);

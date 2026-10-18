@@ -193,3 +193,15 @@ describe('memory', () => {
     expect(growth(150, (i) => [box, fillet(i)])).toBeLessThanOrEqual(budget);
   });
 });
+
+describe('display edges', () => {
+  it('hides the seam edge of a cylinder but keeps edge indices stable', () => {
+    const cylinder: CylinderFeature = { id: 'c', type: 'cylinder', operation: 'add', radius: 10, height: 20, axis: 'z', position: [0, 0, 0] };
+    const { state } = finalState([cylinder]);
+    // A cylinder has 3 edges: two circles and one seam.
+    expect(state.edgeCount).toBe(3);
+    const ranges = state.mesh!.edgeRanges;
+    const counts = Array.from({ length: ranges.length / 2 }, (_, i) => ranges[i * 2 + 1]);
+    expect(counts.filter((count) => count === 0)).toHaveLength(1);
+  });
+});

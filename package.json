@@ -20,7 +20,7 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "build": "node scripts/check-licenses.mjs --write && electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "lint": "eslint .",

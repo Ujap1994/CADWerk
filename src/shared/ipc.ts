@@ -12,6 +12,7 @@ export const IpcChannel = {
   openExternal: 'app:open-external',
   menuCommand: 'menu:command',
   openPath: 'file:open-path',
+  rendererReady: 'app:renderer-ready',
 } as const;
 
 export type MenuCommand =
@@ -102,4 +103,6 @@ export interface ParaWerkApi {
   onMenuCommand(listener: (command: MenuCommand) => void): () => void;
   /** Subscribes to files opened from the OS (double-click, command line). */
   onOpenPath(listener: (file: { path: string; data: Uint8Array }) => void): () => void;
+  /** Tells the main process that the UI is ready to receive files and commands. */
+  rendererReady(): void;
 }

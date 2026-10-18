@@ -10,15 +10,16 @@
 </p>
 
 <p align="center">
-  <img alt="Status: planning" src="https://img.shields.io/badge/status-planning%20%2F%20pre--alpha-orange">
+  <img alt="Status: pre-alpha" src="https://img.shields.io/badge/status-pre--alpha%20(Phase%200)-orange">
+  <a href="https://github.com/Ujap1994/ParaWerk/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Ujap1994/ParaWerk/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-blue">
   <img alt="UI languages" src="https://img.shields.io/badge/UI-English%20%7C%20Deutsch-informational">
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-green"></a>
 </p>
 
 > [!WARNING]
-> **ParaWerk is in the planning stage. There is no usable release yet.**
-> Please read the [disclaimer](#disclaimer) before you use anything from this repository.
+> **ParaWerk is under active development (Phase 0: foundation and technical spikes).** It is a technical
+> preview, not a usable CAD system yet. Please read the [disclaimer](#disclaimer) first.
 
 ---
 
@@ -26,13 +27,15 @@
 
 - [What is ParaWerk?](#what-is-parawerk)
 - [Disclaimer](#disclaimer)
+- [Available now](#available-now)
 - [Planned features](#planned-features)
 - [Design approach](#design-approach)
 - [Technology](#technology)
 - [Quality and performance from day one](#quality-and-performance-from-day-one)
 - [Roadmap](#roadmap)
-- [Planned packages](#planned-packages)
-- [Documentation and screenshots](#documentation-and-screenshots)
+- [Packages](#packages)
+- [Build from source](#build-from-source)
+- [Documentation](#documentation)
 - [License](#license)
 
 ## What is ParaWerk?
@@ -74,12 +77,37 @@ makers, students and small workshops that covers the everyday mechanical design 
   AutoCAD is a registered trademark of Autodesk, Inc. All other product names and trademarks belong to
   their respective owners. ParaWerk is **not affiliated with, endorsed by or sponsored by** any of these
   companies. Product names are mentioned for descriptive purposes only.
-- **Third-party software.** ParaWerk will build on open-source components (for example Open CASCADE
-  Technology). Their licenses and notices will be listed in the application and in this repository.
+- **Third-party software.** ParaWerk builds on open-source components such as Open CASCADE Technology.
+  Their licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and shipped with the
+  application.
+
+## Available now
+
+The Phase 0 preview proves the technology stack end to end:
+
+![ParaWerk main window](docs/images/screenshots/main-window.png)
+
+- **Geometry kernel:** Open CASCADE Technology in a background worker; box and cylinder (add or remove
+  material), fillet and chamfer; incremental rebuild that only recomputes from the first changed feature;
+  exact volume and surface area.
+- **3D view:** shaded model with edges, view cube, standard views, orthographic and perspective
+  projection, rotation around the point under the cursor, zoom towards the cursor, mouse and trackpad
+  presets, hover and selection highlighting of faces and edges.
+- **Feature tree and property panels:** live preview while editing, rollback of later features,
+  suppress, delete, undo and redo; clear error messages when a feature cannot be built.
+- **Files:** native `.pwpart` files, STEP and binary STL export.
+- **Interface:** English and German (switchable at runtime, system language by default), light and dark
+  theme, own icon set and visual design.
+
+| Fillet with live preview | Dark theme, German interface |
+|---|---|
+| ![Fillet preview](docs/images/screenshots/fillet-preview.png) | ![Dark theme](docs/images/screenshots/dark-theme-german.png) |
+
+See the [user guide](docs/user-guide/README.md) for details.
 
 ## Planned features
 
-> Everything below is **planned**. Each item will move to "available", with screenshots, once it ships.
+> Everything below is **planned**. Each item moves to "Available now", with screenshots, once it ships.
 
 ### 2D sketcher
 - Lines, arcs, circles, rectangles, slots, polygons, ellipses, splines, points and construction geometry
@@ -154,24 +182,28 @@ What you can expect:
 |---|---|
 | Application shell | Electron with secure defaults (context isolation, sandbox, no Node integration in the renderer), single instance |
 | Language | TypeScript (strict) |
-| Geometry kernel | [Open CASCADE Technology](https://dev.opencascade.org/) (B-Rep modeling, booleans, fillets, STEP/IGES), compiled to WebAssembly and running in worker threads |
-| Sketch solver | Geometric constraint solver compiled to WebAssembly (candidate: PlaneGCS) |
+| Geometry kernel | [Open CASCADE Technology](https://dev.opencascade.org/) (B-Rep modeling, booleans, fillets, STEP/IGES), compiled to WebAssembly and running in a worker |
+| Sketch solver | Geometric constraint solver; PlaneGCS evaluated in Phase 0, sparse solver planned ([ADR 0005](docs/adr/0005-sketch-solver.md)) |
 | Assembly solver | Rigid-body mate solver with degree-of-freedom analysis |
 | 3D viewport | three.js (WebGL 2, WebGPU later) with GPU picking, instancing and level of detail |
 | Testing | Vitest, Playwright for Electron, geometry golden tests, visual regression, benchmark suite |
 | Packaging | electron-builder and GitHub Actions |
 
-The architecture and all technology choices are explained in [ROADMAP.md](ROADMAP.md#architecture-overview).
+The architecture is explained in [ROADMAP.md](ROADMAP.md#architecture-overview); each major decision has an
+[architecture decision record](docs/adr/README.md).
 
 ## Quality and performance from day one
 
-- **Automated tests from the first commit:** unit, integration and end-to-end UI tests, run in CI on
-  Windows, macOS and Linux.
-- **Performance tests from the first commit:** every phase adds larger sketches, more complex parts and
-  bigger assemblies to a **scale ladder**, from 10 components at the start to tens of thousands of instanced
-  components before v1.0. Regressions fail the build.
-- **Measured, not assumed:** performance budgets (frame rate, rebuild time, load time, memory) are tracked
-  on real hardware and published with each release.
+- **Automated tests from the first commit:** unit, integration (against the real geometry kernel, with
+  analytically known volumes) and end-to-end UI tests with Playwright, run in CI on Windows, macOS and
+  Linux.
+- **Performance tests from the first commit:** kernel, solver and rendering benchmarks run in CI for
+  every push. The **scale ladder** grows with every phase, up to tens of thousands of components before
+  v1.0. Current reference numbers (Apple M3): fillet of 12 edges in 32 ms; 1,000 instanced components
+  (2.3 million triangles) at 118 fps, 10,000 components at 32 fps. All results:
+  [docs/benchmarks](docs/benchmarks/README.md).
+- **Stability:** memory-leak tests for the kernel, automatic recovery when the geometry kernel crashes,
+  and a validated, versioned file format.
 
 ## Roadmap
 
@@ -194,9 +226,10 @@ The architecture and all technology choices are explained in [ROADMAP.md](ROADMA
 
 The detailed plan, with effort estimates, performance targets, risks and decision gates, is in **[ROADMAP.md](ROADMAP.md)**.
 
-## Planned packages
+## Packages
 
-Every release will be built and published automatically by GitHub Actions:
+Every release is built and published automatically by GitHub Actions
+([releases](https://github.com/Ujap1994/ParaWerk/releases)):
 
 | Platform | Packages | Architectures |
 |---|---|---|
@@ -204,11 +237,31 @@ Every release will be built and published automatically by GitHub Actions:
 | macOS | `.dmg`, `.zip` | Universal, Apple Silicon (arm64), Intel (x64) |
 | Linux | AppImage, `.deb`, `.rpm`, pacman, Snap, Flatpak, `.tar.gz` | x64, arm64 |
 
-## Documentation and screenshots
+Preview builds are not code-signed yet; see the [getting started guide](docs/user-guide/getting-started.md).
 
-Each feature gets a detailed user guide with screenshots. Screenshots are produced automatically by the
-end-to-end test suite, so they always match the current version. The documentation grows with each
-release; see [CHANGELOG.md](CHANGELOG.md) for what has changed.
+## Build from source
+
+Requirements: Node.js 24 and npm.
+
+```bash
+git clone https://github.com/Ujap1994/ParaWerk.git
+cd ParaWerk
+npm ci
+npm run dev            # start with hot reload
+npm test               # unit and integration tests
+npm run build && npm run test:e2e   # end-to-end tests of the UI
+npm run bench:kernel   # geometry kernel benchmarks (also bench:solver, bench:render)
+npm run package        # build installers for the current platform into release/
+```
+
+## Documentation
+
+- [User guide](docs/user-guide/README.md) with screenshots of every feature (generated automatically by
+  `npm run docs:screenshots`, so they always match the current version)
+- [Roadmap](ROADMAP.md) with effort estimates, phases, risks and decision gates
+- [Architecture decision records](docs/adr/README.md)
+- [Benchmarks](docs/benchmarks/README.md)
+- [Changelog](CHANGELOG.md) and [third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## License
 

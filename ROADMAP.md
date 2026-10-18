@@ -10,7 +10,8 @@ and decision gates. It is reviewed and updated at the end of every phase.
 ## Contents
 
 1. [Summary](#1-summary)
-2. [Guiding principles](#2-guiding-principles)
+2. [Progress](#progress)
+3. [Guiding principles](#2-guiding-principles)
 3. [How the estimates work](#3-how-the-estimates-work)
 4. [Architecture overview](#architecture-overview)
 5. [Phases](#5-phases)
@@ -56,6 +57,36 @@ direction, review, hands-on testing and decisions. See [section 3](#3-how-the-es
 
 In every scenario the owner invests roughly **1,000–1,700 hours** in total up to v1.0. The pace only changes
 how that time is spread over the calendar.
+
+## Progress
+
+### Phase 0 – status on 2026-10-18
+
+| Item | Status |
+|---|---|
+| Electron application, secure defaults, single instance, clean shutdown | ✅ done |
+| UI shell (command bar, feature tree, property panel, status bar), English and German, light and dark theme | ✅ done |
+| 3D view: navigation, view cube, standard views, projections, picking and highlighting | ✅ done |
+| Kernel spike: OCCT WebAssembly worker, features, incremental rebuild, tessellation, STEP/STL, benchmarks | ✅ done ([ADR 0001](docs/adr/0001-geometry-kernel.md)) |
+| Solver spike: PlaneGCS evaluated, limits measured | ✅ done ([ADR 0005](docs/adr/0005-sketch-solver.md)) |
+| Persistent naming design | ✅ done ([ADR 0002](docs/adr/0002-persistent-naming.md)) |
+| Native file format | ✅ done ([ADR 0003](docs/adr/0003-native-file-format.md)) |
+| Test infrastructure and CI on Windows, macOS, Linux | ✅ done |
+| Benchmark harness, scale ladder, CI comparison | ✅ done (baselines are taken from the first CI runs) |
+| Release pipeline for all packages | 🟡 configured; first complete packaging run pending |
+| Documentation with automated screenshots | ✅ done |
+| License policy and license check | ✅ done ([ADR 0008](docs/adr/0008-dependency-licenses.md)) |
+| Custom OCCT build (C++ facade, threads, no eval) and comparison with native OCCT | ⏳ next, required for Gate 1 |
+
+**Findings so far that change the plan:**
+
+- The prebuilt OCCT WebAssembly build leaked memory in booleans (fixed with a workaround and covered by
+  tests) and re-triangulates whole bodies on every change. A custom kernel build moves to the top of the
+  list before Gate 1.
+- PlaneGCS solves one dense system and runs out of memory at about 1,000 connected constraints. Phase 1
+  starts with sketch decomposition and plans a sparse solver.
+- GPU instancing keeps 10,000 components at about 30 fps on an Apple M3; level of detail is needed for the
+  50,000-instance target (Phase 8, as planned).
 
 ## 2. Guiding principles
 
@@ -488,7 +519,7 @@ All suites run in CI on Windows, macOS and Linux. Every reported bug gets a fail
 |---|---|---|---|---|
 | 1 | Fragile parametrics (topological naming) | High | High | Design record in Phase 0, history-based naming with geometric fallback, reference repair UI, regression suite of edit scenarios |
 | 2 | Kernel failures in fillets and booleans | High | Medium | Clear rebuild errors, tolerance strategies, pinned OCCT version, every failure becomes a test case |
-| 3 | WebAssembly speed or memory limits | High | Medium | Benchmarks at Gate 1, kernel behind an interface, native add-on or 64-bit WebAssembly as fallback, caching |
+| 3 | WebAssembly speed or memory limits | High | Medium (measured: tessellation of large faces is the bottleneck) | Benchmarks at Gate 1, kernel behind an interface, custom OCCT build with threads, native add-on or 64-bit WebAssembly as fallback, caching |
 | 4 | Sketch and mate solving feels less smooth than in established tools | Medium | Medium | Early spikes, degree-of-freedom analysis, owner testing in every iteration |
 | 5 | Quality of automatic dimensioning | Medium | High | Realistic expectations, strong manual tools |
 | 6 | Errors in standard-part data | High | Medium | Two sources per table, automated consistency checks, spot checks against catalogs, disclaimer |
