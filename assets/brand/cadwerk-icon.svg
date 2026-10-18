@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="title">
+  <title id="title">CADWerk</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2A63C9"/>
+      <stop offset="1" stop-color="#0B1D45"/>
+    </linearGradient>
+    <linearGradient id="faceTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7FAFF"/>
+      <stop offset="1" stop-color="#DCE7FA"/>
+    </linearGradient>
+    <linearGradient id="faceLeft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B4CCF5"/>
+      <stop offset="1" stop-color="#8EAEE8"/>
+    </linearGradient>
+    <linearGradient id="faceRight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6A98EC"/>
+      <stop offset="1" stop-color="#3A68C8"/>
+    </linearGradient>
+    <linearGradient id="holeWall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5E8DE4"/>
+      <stop offset="1" stop-color="#3A66C2"/>
+    </linearGradient>
+    <clipPath id="tile">
+      <rect x="16" y="16" width="480" height="480" rx="108"/>
+    </clipPath>
+    <clipPath id="hole">
+      <ellipse cx="242" cy="206" rx="44" ry="25.5"/>
+    </clipPath>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="2"/>
+    </pattern>
+  </defs>
+
+  <!-- Tile with a subtle drafting grid -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" fill="url(#grid)" clip-path="url(#tile)"/>
+
+  <!-- Isometric part -->
+  <g stroke="#0B1D45" stroke-width="6" stroke-linejoin="round">
+    <path d="M120.8 206 L242 276 L242 416 L120.8 346 Z" fill="url(#faceLeft)"/>
+    <path d="M242 276 L363.2 206 L363.2 346 L242 416 Z" fill="url(#faceRight)"/>
+    <path d="M242 136 L363.2 206 L242 276 L120.8 206 Z" fill="url(#faceTop)"/>
+  </g>
+
+  <!-- Drilled hole in the top face -->
+  <g clip-path="url(#hole)">
+    <ellipse cx="242" cy="206" rx="44" ry="25.5" fill="url(#holeWall)"/>
+    <ellipse cx="242" cy="229" rx="44" ry="25.5" fill="#0E2556"/>
+  </g>
+  <ellipse cx="242" cy="206" rx="44" ry="25.5" fill="none" stroke="#0B1D45" stroke-width="5"/>
+
+  <!-- Dimension along the top edge -->
+  <g stroke="#FF9F1C" stroke-linecap="round" fill="none">
+    <path d="M250.7 131 L290.5 108" stroke-width="5"/>
+    <path d="M371.9 201 L411.7 178" stroke-width="5"/>
+    <path d="M299.1 123 L385.7 173" stroke-width="7"/>
+  </g>
+  <g fill="#FF9F1C">
+    <path d="M281.8 113 L295.1 129.9 L303.1 116.1 Z"/>
+    <path d="M403 183 L381.7 179.9 L389.7 166.1 Z"/>
+  </g>
+</svg>

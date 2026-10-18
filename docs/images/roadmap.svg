@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 632" width="1200" height="632" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-labelledby="title">
+  <title id="title">CADWerk indicative roadmap (Scenario B)</title>
+  <defs>
+    <pattern id="stripesPerf" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#FFF1E0"/>
+      <rect width="5" height="10" fill="#FFD8A8"/>
+    </pattern>
+    <pattern id="stripesQa" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#EEF2F6"/>
+      <rect width="5" height="10" fill="#D5DDE6"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8C959F" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#8C959F" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="1199" height="631" rx="14" fill="#FFFFFF" stroke="#D0D7DE"/>
+
+  <text x="28" y="44" font-size="22" font-weight="700" fill="#1F2328">CADWerk — indicative roadmap</text>
+  <text x="28" y="68" font-size="13" fill="#59636E">Scenario B: AI-assisted development with ~15–20 h/week of owner time · months from project start · estimates, not commitments</text>
+
+  <!-- Row backgrounds -->
+  <g fill="#F6F8FA">
+    <rect x="20" y="112" width="1160" height="34"/>
+    <rect x="20" y="180" width="1160" height="34"/>
+    <rect x="20" y="248" width="1160" height="34"/>
+    <rect x="20" y="316" width="1160" height="34"/>
+    <rect x="20" y="384" width="1160" height="34"/>
+    <rect x="20" y="452" width="1160" height="34"/>
+  </g>
+
+  <!-- Month grid -->
+  <g stroke="#D8DEE4" stroke-width="1">
+    <path d="M330 106V520M412 106V520M494 106V520M576 106V520M658 106V520M740 106V520M822 106V520M904 106V520M986 106V520M1068 106V520M1150 106V520"/>
+  </g>
+  <g font-size="12" fill="#59636E" text-anchor="middle">
+    <text x="330" y="100">M0</text>
+    <text x="412" y="100">M2</text>
+    <text x="494" y="100">M4</text>
+    <text x="576" y="100">M6</text>
+    <text x="658" y="100">M8</text>
+    <text x="740" y="100">M10</text>
+    <text x="822" y="100">M12</text>
+    <text x="904" y="100">M14</text>
+    <text x="986" y="100">M16</text>
+    <text x="1068" y="100">M18</text>
+    <text x="1150" y="100">M20</text>
+  </g>
+
+  <!-- Milestone lines (behind bars) -->
+  <g stroke="#FB8500" stroke-width="1.5" stroke-dasharray="5 4">
+    <path d="M381.25 106V532M596.5 106V532M781 106V532M945 106V532M1068 106V532"/>
+  </g>
+
+  <!-- Row labels -->
+  <g font-size="14" fill="#1F2328">
+    <text x="32" y="134">0 · Foundation &amp; technical spikes</text>
+    <text x="32" y="168">1 · 2D sketcher &amp; constraint solver</text>
+    <text x="32" y="202">2 · Part modeling core</text>
+    <text x="32" y="236">3 · Advanced features, configurations</text>
+    <text x="32" y="270">4 · Assemblies &amp; mate solver</text>
+    <text x="32" y="304">5 · Standard parts library (ISO/DIN)</text>
+    <text x="32" y="338">6 · Drawings (ISO/DIN)</text>
+    <text x="32" y="372">7 · Data exchange (import/export)</text>
+    <text x="32" y="406">8 · Scale, hardening &amp; v1.0</text>
+    <text x="32" y="440" fill="#9A4A00">Performance &amp; scale tests</text>
+    <text x="32" y="474" fill="#424A53">Tests, CI, docs &amp; releases</text>
+    <text x="32" y="508" fill="#6E7781">Post-1.0: FEM, sheet metal, …</text>
+  </g>
+
+  <!-- Phase bars -->
+  <g>
+    <rect x="330" y="119" width="51.25" height="20" rx="5" fill="#57606A"/>
+    <rect x="371" y="153" width="82" height="20" rx="5" fill="#0969DA"/>
+    <rect x="442.75" y="187" width="153.75" height="20" rx="5" fill="#0969DA"/>
+    <rect x="586.25" y="221" width="92.25" height="20" rx="5" fill="#0969DA"/>
+    <rect x="668.25" y="255" width="112.75" height="20" rx="5" fill="#1A7F37"/>
+    <rect x="740" y="289" width="82" height="20" rx="5" fill="#1A7F37"/>
+    <rect x="801.5" y="323" width="143.5" height="20" rx="5" fill="#8250DF"/>
+    <rect x="904" y="357" width="61.5" height="20" rx="5" fill="#BC4C00"/>
+    <rect x="945" y="391" width="123" height="20" rx="5" fill="#CF222E"/>
+    <rect x="330" y="425" width="738" height="20" rx="5" fill="url(#stripesPerf)" stroke="#FB8500"/>
+    <rect x="330" y="459" width="738" height="20" rx="5" fill="url(#stripesQa)" stroke="#8C959F"/>
+    <rect x="1068" y="493" width="82" height="20" rx="5" fill="url(#fade)" stroke="#8C959F" stroke-dasharray="4 3"/>
+  </g>
+
+  <!-- Durations -->
+  <g font-size="12" fill="#59636E">
+    <text x="389" y="134">4–6 wk</text>
+    <text x="461" y="168">7–9 wk</text>
+    <text x="604" y="202">12–16 wk</text>
+    <text x="686" y="236">7–9 wk</text>
+    <text x="789" y="270">10–13 wk</text>
+    <text x="830" y="304">5–7 wk</text>
+    <text x="953" y="338">12–16 wk</text>
+    <text x="973" y="372">3–5 wk</text>
+    <text x="1076" y="406">10–14 wk</text>
+  </g>
+  <g font-size="12" font-weight="600">
+    <text x="342" y="439" fill="#9A4A00">from day one · scale ladder grows with every phase</text>
+    <text x="342" y="473" fill="#424A53">unit · integration · E2E on Windows, macOS, Linux · automated screenshots</text>
+  </g>
+
+  <!-- Milestones -->
+  <g fill="#FB8500" stroke="#FFFFFF" stroke-width="2">
+    <path d="M381.25 531 L390.25 540 L381.25 549 L372.25 540 Z"/>
+    <path d="M596.5 531 L605.5 540 L596.5 549 L587.5 540 Z"/>
+    <path d="M781 531 L790 540 L781 549 L772 540 Z"/>
+    <path d="M945 531 L954 540 L945 549 L936 540 Z"/>
+    <path d="M1068 531 L1077 540 L1068 549 L1059 540 Z"/>
+  </g>
+  <g text-anchor="middle">
+    <g font-size="13" font-weight="700" fill="#1F2328">
+      <text x="381.25" y="568">v0.1</text>
+      <text x="596.5" y="568">v0.3</text>
+      <text x="781" y="568">v0.5</text>
+      <text x="945" y="568">v0.8</text>
+      <text x="1068" y="568">v1.0</text>
+    </g>
+    <g font-size="12" fill="#59636E">
+      <text x="381.25" y="584">tech gate</text>
+      <text x="596.5" y="584">first real parts</text>
+      <text x="781" y="584">assemblies</text>
+      <text x="945" y="584">drawings</text>
+      <text x="1068" y="584">scale-tested</text>
+    </g>
+  </g>
+
+  <text x="28" y="616" font-size="12" fill="#59636E">Scenario A (hobby pace, ~5–8 h/week): durations ≈ ×2–2.5 · Scenario C (full-time): ≈ ×0.65 · v1.0 window in Scenario B: month 15–20 · details in ROADMAP.md</text>
+</svg>
