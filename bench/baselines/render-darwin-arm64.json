@@ -7,74 +7,74 @@
     "cores": 3,
     "memoryGb": 7,
     "node": "v24.21.0",
-    "commit": "2bc1820",
-    "date": "2026-10-18T16:53:37.084Z",
+    "commit": "794566e",
+    "date": "2026-10-18T17:19:34.003Z",
     "ci": true
   },
   "cases": {
     "orbit.10.instanced": {
-      "medianMs": 3.21,
-      "p95Ms": 6.38,
-      "minMs": 0.43,
+      "medianMs": 2.72,
+      "p95Ms": 4.51,
+      "minMs": 0.42,
       "iterations": 90,
       "info": {
-        "fps": 312,
+        "fps": 368,
         "triangles": 44336,
         "drawCalls": 45,
-        "loadMs": 29,
-        "cpuMs": 0.43
+        "loadMs": 32,
+        "cpuMs": 0.42
       }
     },
     "orbit.100.instanced": {
-      "medianMs": 3.29,
-      "p95Ms": 9.79,
-      "minMs": 0.35,
+      "medianMs": 3.9,
+      "p95Ms": 5.93,
+      "minMs": 0.43,
       "iterations": 90,
       "info": {
-        "fps": 303,
+        "fps": 256,
         "triangles": 248188,
         "drawCalls": 47,
-        "loadMs": 10,
-        "cpuMs": 0.35
+        "loadMs": 23,
+        "cpuMs": 0.43
       }
     },
     "orbit.1000.instanced": {
-      "medianMs": 7.06,
-      "p95Ms": 8.89,
-      "minMs": 0.4,
+      "medianMs": 7.2,
+      "p95Ms": 10.47,
+      "minMs": 0.33,
       "iterations": 90,
       "info": {
-        "fps": 142,
+        "fps": 139,
         "triangles": 2258212,
         "drawCalls": 47,
-        "loadMs": 7,
-        "cpuMs": 0.4
+        "loadMs": 15,
+        "cpuMs": 0.33
       }
     },
     "orbit.100.individual": {
-      "medianMs": 5.62,
-      "p95Ms": 15.96,
-      "minMs": 0.56,
+      "medianMs": 3.35,
+      "p95Ms": 8.33,
+      "minMs": 0.46,
       "iterations": 90,
       "info": {
-        "fps": 178,
+        "fps": 299,
         "triangles": 248188,
         "drawCalls": 141,
-        "loadMs": 10,
-        "cpuMs": 0.56
+        "loadMs": 5,
+        "cpuMs": 0.46
       }
     },
     "orbit.1000.individual": {
-      "medianMs": 11.93,
-      "p95Ms": 51.09,
-      "minMs": 2.24,
+      "medianMs": 17.67,
+      "p95Ms": 117.92,
+      "minMs": 4.02,
       "iterations": 90,
       "info": {
-        "fps": 84,
+        "fps": 57,
         "triangles": 2258212,
         "drawCalls": 1041,
-        "loadMs": 19,
-        "cpuMs": 2.24
+        "loadMs": 15,
+        "cpuMs": 4.02
       }
     }
   }

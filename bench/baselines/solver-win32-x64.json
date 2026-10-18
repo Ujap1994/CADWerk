@@ -3,25 +3,31 @@
   "meta": {
     "platform": "win32",
     "arch": "x64",
-    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cpu": "AMD EPYC 9V74 80-Core Processor                ",
     "cores": 4,
     "memoryGb": 16,
     "node": "v24.21.0",
-    "commit": "2bc1820",
-    "date": "2026-10-18T16:53:44.494Z",
+    "commit": "794566e",
+    "date": "2026-10-18T17:19:48.901Z",
     "ci": true
   },
   "cases": {
+    "calibration": {
+      "medianMs": 53.771,
+      "p95Ms": 53.882,
+      "minMs": 53.637,
+      "iterations": 15
+    },
     "solver.init": {
-      "medianMs": 10.981,
-      "p95Ms": 10.981,
-      "minMs": 10.981,
+      "medianMs": 11.301,
+      "p95Ms": 11.301,
+      "minMs": 11.301,
       "iterations": 1
     },
     "solve.55constraints": {
-      "medianMs": 2.14,
-      "p95Ms": 4.642,
-      "minMs": 1.279,
+      "medianMs": 1.641,
+      "p95Ms": 11.135,
+      "minMs": 0.942,
       "iterations": 15,
       "info": {
         "constraints": 55,
@@ -29,9 +35,9 @@
       }
     },
     "solve.251constraints": {
-      "medianMs": 10.773,
-      "p95Ms": 24.134,
-      "minMs": 7.864,
+      "medianMs": 11.409,
+      "p95Ms": 17.135,
+      "minMs": 9.037,
       "iterations": 15,
       "info": {
         "constraints": 251,
@@ -39,9 +45,9 @@
       }
     },
     "solve.503constraints": {
-      "medianMs": 50.265,
-      "p95Ms": 51.861,
-      "minMs": 48.937,
+      "medianMs": 54.758,
+      "p95Ms": 57.382,
+      "minMs": 53.842,
       "iterations": 15,
       "info": {
         "constraints": 503,

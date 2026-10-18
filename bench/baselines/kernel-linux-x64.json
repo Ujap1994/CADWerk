@@ -7,93 +7,99 @@
     "cores": 4,
     "memoryGb": 16,
     "node": "v24.21.0",
-    "commit": "2bc1820",
-    "date": "2026-10-18T16:53:15.784Z",
+    "commit": "794566e",
+    "date": "2026-10-18T17:19:13.921Z",
     "ci": true
   },
   "cases": {
+    "calibration": {
+      "medianMs": 46.562,
+      "p95Ms": 46.797,
+      "minMs": 46.495,
+      "iterations": 15
+    },
     "kernel.init": {
-      "medianMs": 233.061,
-      "p95Ms": 233.061,
-      "minMs": 233.061,
+      "medianMs": 212.858,
+      "p95Ms": 212.858,
+      "minMs": 212.858,
       "iterations": 1
     },
     "kernel.warmUp": {
-      "medianMs": 149.119,
-      "p95Ms": 149.119,
-      "minMs": 149.119,
+      "medianMs": 144.209,
+      "p95Ms": 144.209,
+      "minMs": 144.209,
       "iterations": 1
     },
     "box.rebuild": {
-      "medianMs": 1.682,
-      "p95Ms": 2.814,
-      "minMs": 1.256,
+      "medianMs": 1.765,
+      "p95Ms": 2.7,
+      "minMs": 1.248,
       "iterations": 30
     },
     "fillet.12edges.rebuild": {
-      "medianMs": 22.845,
-      "p95Ms": 29.072,
-      "minMs": 18.706,
+      "medianMs": 24.003,
+      "p95Ms": 29.42,
+      "minMs": 18.159,
       "iterations": 20
     },
     "plate.10holes.fullRebuild": {
-      "medianMs": 78.952,
-      "p95Ms": 119.272,
-      "minMs": 76.795,
+      "medianMs": 84.01,
+      "p95Ms": 118.805,
+      "minMs": 73.856,
       "iterations": 5,
       "info": {
         "features": 11
       }
     },
     "plate.50holes.fullRebuild": {
-      "medianMs": 629.566,
-      "p95Ms": 654.363,
-      "minMs": 625.16,
+      "medianMs": 641.431,
+      "p95Ms": 666.139,
+      "minMs": 627.262,
       "iterations": 5,
       "info": {
         "features": 51
       }
     },
     "plate.100holes.fullRebuild": {
-      "medianMs": 1972.088,
-      "p95Ms": 2012.003,
-      "minMs": 1964.834,
+      "medianMs": 2039.882,
+      "p95Ms": 2070.122,
+      "minMs": 2010.061,
       "iterations": 3,
       "info": {
         "features": 101
       }
     },
     "plate.100holes.editLast": {
-      "medianMs": 306.836,
-      "p95Ms": 309.24,
-      "minMs": 302.41,
+      "medianMs": 313.464,
+      "p95Ms": 343.928,
+      "minMs": 306.139,
       "iterations": 10
     },
     "plate.100holes.mesh": {
-      "medianMs": 270.155,
-      "p95Ms": 272.142,
-      "minMs": 266.84,
+      "medianMs": 289.29,
+      "p95Ms": 295.045,
+      "minMs": 274.111,
       "iterations": 10,
       "info": {
         "triangles": 17212
       }
     },
     "plate.100holes.massProperties": {
-      "medianMs": 43.85,
-      "p95Ms": 44.31,
-      "minMs": 43.7,
+      "medianMs": 42.017,
+      "p95Ms": 43.011,
+      "minMs": 41.563,
       "iterations": 10
     },
     "plate.100holes.exportStep": {
-      "medianMs": 49.194,
-      "p95Ms": 73.676,
-      "minMs": 38.902,
+      "medianMs": 46.184,
+      "p95Ms": 59.166,
+      "minMs": 41.553,
       "iterations": 5
     },
     "plate.100holes.exportStl": {
-      "medianMs": 686.33,
-      "p95Ms": 692.623,
-      "minMs": 683.427,
+      "medianMs": 836.889,
+      "p95Ms": 857.423,
+      "minMs": 829.519,
       "iterations": 5
     },
     "memory.wasmHeapMb": {

@@ -7,21 +7,27 @@
     "cores": 3,
     "memoryGb": 7,
     "node": "v24.21.0",
-    "commit": "2bc1820",
-    "date": "2026-10-18T16:53:19.507Z",
+    "commit": "794566e",
+    "date": "2026-10-18T17:19:16.468Z",
     "ci": true
   },
   "cases": {
+    "calibration": {
+      "medianMs": 15.814,
+      "p95Ms": 17.902,
+      "minMs": 15.236,
+      "iterations": 15
+    },
     "solver.init": {
-      "medianMs": 7.63,
-      "p95Ms": 7.63,
-      "minMs": 7.63,
+      "medianMs": 7.789,
+      "p95Ms": 7.789,
+      "minMs": 7.789,
       "iterations": 1
     },
     "solve.55constraints": {
-      "medianMs": 1.254,
-      "p95Ms": 5.126,
-      "minMs": 0.675,
+      "medianMs": 0.969,
+      "p95Ms": 4.613,
+      "minMs": 0.662,
       "iterations": 15,
       "info": {
         "constraints": 55,
@@ -29,9 +35,9 @@
       }
     },
     "solve.251constraints": {
-      "medianMs": 8.404,
-      "p95Ms": 11.009,
-      "minMs": 6.643,
+      "medianMs": 8.28,
+      "p95Ms": 12.42,
+      "minMs": 6.157,
       "iterations": 15,
       "info": {
         "constraints": 251,
@@ -39,9 +45,9 @@
       }
     },
     "solve.503constraints": {
-      "medianMs": 40.967,
-      "p95Ms": 58.958,
-      "minMs": 37.759,
+      "medianMs": 40.315,
+      "p95Ms": 50.671,
+      "minMs": 36.287,
       "iterations": 15,
       "info": {
         "constraints": 503,
