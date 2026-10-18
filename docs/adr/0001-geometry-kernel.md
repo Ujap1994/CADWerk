@@ -16,7 +16,7 @@ with ParaWerk's GPL-3.0-or-later license.
 
 - **OCCT 8.0.1 compiled to WebAssembly** with Emscripten (`scripts/build-occt.sh`), static libraries,
   native WebAssembly exceptions.
-- **Own C++ facade** (`native/kernel/src/kernel.cpp`, built by `scripts/build-kernel.sh`):
+- **Own C++ facade** (`native/kernel/src` (`core.cpp`: OCCT logic, `bindings.cpp`: WebAssembly bindings), built by `scripts/build-kernel.sh`):
   - shapes live only in C++ and are referenced from JavaScript by integer ids, so no binding object can
     leak;
   - every call returns plain data (numbers, objects, copies of typed arrays) and turns OCCT exceptions

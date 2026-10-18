@@ -18,7 +18,7 @@ INCLUDE="$(find "$OCCT/include" -maxdepth 2 -name 'Standard.hxx' -exec dirname {
 LIBS=$(find "$OCCT/lib" -name 'libTK*.a' ! -name 'libTKOpenGl*' | sort)
 mkdir -p "$OUT"
 
-em++ "$REPO/native/kernel/src/kernel.cpp" -o "$OUT/parawerk-kernel.js" \
+em++ "$REPO/native/kernel/src/core.cpp" "$REPO/native/kernel/src/bindings.cpp" -o "$OUT/parawerk-kernel.js" \
   -std=c++17 -O3 -fwasm-exceptions \
   -I"$INCLUDE" -DPARAWERK_OCCT_VERSION="\"$OCCT_VERSION\"" \
   -Wl,--start-group $LIBS -Wl,--end-group \
@@ -37,7 +37,7 @@ const fs = require("fs"); const crypto = require("crypto");
 const [out, occt, emsdk] = process.argv.slice(1);
 const hash = (f) => crypto.createHash("sha256").update(fs.readFileSync(`${out}/${f}`)).digest("hex");
 fs.writeFileSync(`${out}/manifest.json`, JSON.stringify({
-  occt, emscripten: emsdk, source: "native/kernel/src/kernel.cpp",
+  occt, emscripten: emsdk, source: ["native/kernel/src/core.cpp", "native/kernel/src/bindings.cpp"],
   built: new Date().toISOString(),
   files: { "parawerk-kernel.js": hash("parawerk-kernel.js"), "parawerk-kernel.wasm": hash("parawerk-kernel.wasm") },
 }, null, 2) + "\n");

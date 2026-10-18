@@ -1,6 +1,6 @@
 # ParaWerk kernel (prebuilt)
 
-WebAssembly build of ParaWerk's geometry kernel: the C++ facade in `native/kernel/src/kernel.cpp`
+WebAssembly build of ParaWerk's geometry kernel: the C++ facade in `native/kernel/src` (`core.cpp`: OCCT logic, `bindings.cpp`: WebAssembly bindings)
 compiled with Emscripten against Open CASCADE Technology (OCCT).
 
 | File | Content |

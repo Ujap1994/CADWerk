@@ -18,7 +18,7 @@ interface EmbindModule {
   counts(_0: number): any;
   boundingBox(_0: number): any;
   massProperties(_0: number): any;
-  mesh(_0: number, _1: number, _2: number, _3: boolean): any;
+  mesh(_0: number, _1: number, _2: number): any;
   exportMesh(_0: number, _1: number, _2: number): any;
   exportStep(_0: number): any;
   importStep(_0: any): any;

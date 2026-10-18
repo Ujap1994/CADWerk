@@ -142,7 +142,7 @@ export class ParaWerkBackend implements GeometryBackend {
   }
 
   mesh(handle: ShapeHandle, quality: MeshQuality, key: string): MeshPayload {
-    const raw = check(this.kernel.mesh(this.id(handle), quality.linear, quality.angular, true) as RawMesh | Failure);
+    const raw = check(this.kernel.mesh(this.id(handle), quality.linear, quality.angular) as RawMesh | Failure);
     const faceInfo: FaceInfo[] = Array.from(raw.faceKinds, (kind, i) => {
       const info: FaceInfo = { kind: SURFACE_KINDS[kind] ?? 'other', area: raw.faceAreas[i] ?? 0 };
       const radius = raw.faceRadii[i];
