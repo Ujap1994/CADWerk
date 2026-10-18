@@ -222,5 +222,25 @@
     "wrong-format": "Das ist keine ParaWerk-Teiledatei.",
     "newer-version": "Die Datei wurde mit einer neueren ParaWerk-Version gespeichert. Bitte aktualisiere ParaWerk.",
     "invalid-content": "Der Dateiinhalt ist ungültig ({{detail}})."
+  },
+  "geometry": {
+    "surfaces": {
+      "plane": "Ebene",
+      "cylinder": "Zylinder",
+      "cone": "Kegel",
+      "sphere": "Kugel",
+      "torus": "Torus",
+      "bspline": "Freiformfläche",
+      "revolution": "Rotationsfläche",
+      "extrusion": "Extrusionsfläche",
+      "other": "Fläche"
+    },
+    "curves": {
+      "line": "Linie",
+      "circle": "Kreis",
+      "ellipse": "Ellipse",
+      "bspline": "Spline",
+      "other": "Kurve"
+    }
   }
 }

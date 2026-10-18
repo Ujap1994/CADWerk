@@ -36,7 +36,8 @@ for (const file of files) {
   const rows = [];
   for (const [name, result] of Object.entries(current.cases)) {
     const reference = baseline.cases[name];
-    if (name === 'calibration' || !reference || time(reference) < MIN_MS) continue;
+    // Single measurements (start-up times) are too noisy on shared machines to gate on.
+    if (name === 'calibration' || !reference || time(reference) < MIN_MS || result.iterations < 3 || reference.iterations < 3) continue;
     const ratio = time(result) / time(reference) / machineFactor;
     const slower = ratio > threshold;
     const status = slower ? (advisory ? 'slower (advisory)' : 'REGRESSION') : ratio < 1 / threshold ? 'faster' : 'ok';

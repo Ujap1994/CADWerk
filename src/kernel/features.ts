@@ -75,13 +75,14 @@ function applyEdgeFeature(oc: OC, arena: Arena, body: TopoDS_Shape | null, featu
   const progress = arena.track(new oc.Message_ProgressRange());
   let result: TopoDS_Shape;
   if (feature.type === 'fillet') {
-    const maker = arena.track(new oc.BRepFilletAPI_MakeFillet(body, oc.ChFi3d_FilletShape.ChFi3d_Rational));
+    // Reset() releases internal fillet data that delete() alone keeps in the current build (ADR 0001).
+    const maker = arena.trackWithCleanup(new oc.BRepFilletAPI_MakeFillet(body, oc.ChFi3d_FilletShape.ChFi3d_Rational), (m) => m.Reset());
     for (const edge of selected) maker.Add(feature.radius, edge);
     maker.Build(progress);
     if (!maker.IsDone()) throw new FeatureError('operation-failed', 'fillet could not be computed (radius too large?)');
     result = arena.track(maker.Shape());
   } else {
-    const maker = arena.track(new oc.BRepFilletAPI_MakeChamfer(body));
+    const maker = arena.trackWithCleanup(new oc.BRepFilletAPI_MakeChamfer(body), (m) => m.Reset());
     for (const edge of selected) maker.Add(feature.distance, edge);
     maker.Build(progress);
     if (!maker.IsDone()) throw new FeatureError('operation-failed', 'chamfer could not be computed (distance too large?)');

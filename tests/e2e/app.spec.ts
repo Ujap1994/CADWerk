@@ -112,6 +112,26 @@ test('creates a box, rounds edges picked in the 3D view and exports STEP and STL
   await expect(page.locator('[data-testid="toast-success"]').last()).toBeVisible();
 });
 
+test('picks whole B-Rep faces and shows their exact geometry', async () => {
+  launched = await launchApp({ width: 1440, height: 900 });
+  const { page } = launched;
+  await createBox(page);
+  await page.click('[data-command="cylinder"]');
+  await page.locator('[data-testid="cylinder-radius"]').fill('15');
+  await page.locator('[data-testid="cylinder-height"]').fill('30');
+  await page.locator('[data-testid="position-z"]').fill('40');
+  await page.click('[data-testid="panel-ok"]');
+  await idle(page);
+
+  // Hover twice over different faces: the BVH is built on the first pick and must not reorder triangles.
+  await clickWorldPoint(page, [30, 0, 40]);
+  await expect(page.locator('[data-testid="pick-info"]')).toContainText(/Plane · 5,293\.1 mm²/);
+  await clickWorldPoint(page, [15 * Math.cos(-0.8), 15 * Math.sin(-0.8), 55]);
+  await expect(page.locator('[data-testid="pick-info"]')).toContainText(/Cylinder Ø 30 mm · 2,827\.4 mm²/);
+  await clickWorldPoint(page, [0, 0, 70]);
+  await expect(page.locator('[data-testid="pick-info"]')).toContainText(/Plane · 706\.9 mm²/);
+});
+
 test('saves and reopens a part file', async () => {
   launched = await launchApp();
   const { page, outputDir } = launched;

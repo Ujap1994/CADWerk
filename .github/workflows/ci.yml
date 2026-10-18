@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      benchmarks:
+        description: Run the benchmark jobs
+        type: boolean
+        default: true
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -66,6 +71,8 @@ jobs:
 
   benchmarks:
     name: Benchmarks (${{ matrix.os }})
+    # Releases reuse this workflow without benchmarks; they run for every push to main.
+    if: ${{ inputs.benchmarks != false }}
     strategy:
       fail-fast: false
       matrix:

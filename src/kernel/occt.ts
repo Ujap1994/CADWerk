@@ -40,6 +40,12 @@ export class Arena implements Disposable {
     return item;
   }
 
+  /** Tracks an object and runs `cleanup` (for example `Reset()`) before deleting it. */
+  trackWithCleanup<T extends Deletable>(item: T, cleanup: (item: T) => void): T {
+    this.items.push({ item, cleanup: () => cleanup(item) });
+    return item;
+  }
+
   /** Removes an object from the arena so it outlives it; the caller takes ownership. */
   keep<T extends Deletable>(item: T): T {
     for (let i = this.items.length - 1; i >= 0; i--) {

@@ -222,5 +222,25 @@
     "wrong-format": "This is not a ParaWerk part file.",
     "newer-version": "The file was saved by a newer version of ParaWerk. Please update ParaWerk.",
     "invalid-content": "The file content is invalid ({{detail}})."
+  },
+  "geometry": {
+    "surfaces": {
+      "plane": "Plane",
+      "cylinder": "Cylinder",
+      "cone": "Cone",
+      "sphere": "Sphere",
+      "torus": "Torus",
+      "bspline": "Freeform surface",
+      "revolution": "Surface of revolution",
+      "extrusion": "Extruded surface",
+      "other": "Surface"
+    },
+    "curves": {
+      "line": "Line",
+      "circle": "Circle",
+      "ellipse": "Ellipse",
+      "bspline": "Spline",
+      "other": "Curve"
+    }
   }
 }

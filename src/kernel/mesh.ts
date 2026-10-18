@@ -1,6 +1,7 @@
 import { Arena, type OC, type TopoDS_Shape } from './occt.ts';
 import type { MeshPayload } from './protocol.ts';
 import { uniqueSubShapes } from './topology.ts';
+import { describeTopology } from './topology-info.ts';
 
 export interface MeshQuality {
   /** Maximum chordal deviation in mm. */
@@ -15,7 +16,8 @@ function clamp(value: number, min: number, max: number): number {
 
 /** Tessellation for the 3D view, relative to the part size so small and large parts look equally smooth. */
 export function displayQuality(diagonal: number): MeshQuality {
-  return { linear: clamp(diagonal * 5e-4, 0.002, 2), angular: 0.3 };
+  // 0.2 rad (about 11°) keeps curved faces and their outlines smooth without visible facets.
+  return { linear: clamp(diagonal * 5e-4, 0.002, 2), angular: 0.2 };
 }
 
 /** Finer tessellation for STL export. */
@@ -61,7 +63,7 @@ export function extractMesh(oc: OC, shape: TopoDS_Shape, quality: MeshQuality, k
   }
 
   if (!withEdges) {
-    return { key, positions, normals, indices, faceRanges, edgePositions: new Float32Array(0), edgeRanges: new Uint32Array(0) };
+    return { key, positions, normals, indices, faceRanges, edgePositions: new Float32Array(0), edgeRanges: new Uint32Array(0), faceInfo: [], edgeInfo: [] };
   }
 
   const edges = oc.ReplicadEdgeMeshExtractor.extract(shape, quality.linear, quality.angular);
@@ -77,8 +79,9 @@ export function extractMesh(oc: OC, shape: TopoDS_Shape, quality: MeshQuality, k
 
   const hidden = hiddenEdges(oc, shape);
   if (hidden.size > 0) ({ edgePositions, edgeRanges } = withoutEdges(edgePositions, edgeRanges, hidden));
+  const { faces: faceInfo, edges: edgeInfo } = describeTopology(oc, shape);
 
-  return { key, positions, normals, indices, faceRanges, edgePositions, edgeRanges };
+  return { key, positions, normals, indices, faceRanges, edgePositions, edgeRanges, faceInfo, edgeInfo };
 }
 
 /**

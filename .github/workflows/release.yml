@@ -21,6 +21,8 @@ jobs:
   test:
     if: ${{ !inputs.skip_tests }}
     uses: ./.github/workflows/ci.yml
+    with:
+      benchmarks: false
 
   package:
     name: Package (${{ matrix.name }})

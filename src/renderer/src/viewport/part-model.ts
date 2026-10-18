@@ -54,10 +54,15 @@ export class PartModel {
     this.group.add(this.mesh, this.edges);
   }
 
-  /** Builds the picking acceleration structure on first use, so loading stays fast. */
+  /**
+   * Builds the picking acceleration structure on first use, so loading stays fast.
+   *
+   * `indirect` keeps the index buffer untouched: by default three-mesh-bvh reorders the
+   * triangles in place, which would break the triangle → B-Rep face mapping (faceRanges).
+   */
   ensureBvh(): void {
     if (this.bvhReady) return;
-    this.mesh.geometry.computeBoundsTree();
+    this.mesh.geometry.computeBoundsTree({ indirect: true });
     this.bvhReady = true;
   }
 

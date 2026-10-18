@@ -1,5 +1,26 @@
 import type { Feature, Vec3 } from '../shared/model/feature.ts';
 
+export type SurfaceKind = 'plane' | 'cylinder' | 'cone' | 'sphere' | 'torus' | 'bspline' | 'revolution' | 'extrusion' | 'other';
+export type CurveKind = 'line' | 'circle' | 'ellipse' | 'bspline' | 'other';
+
+/** Exact geometry of a B-Rep face (from the kernel, not from the triangles). */
+export interface FaceInfo {
+  kind: SurfaceKind;
+  /** mm² */
+  area: number;
+  /** Cylinders and spheres. */
+  radius?: number;
+}
+
+/** Exact geometry of a B-Rep edge. */
+export interface EdgeInfo {
+  kind: CurveKind;
+  /** mm */
+  length: number;
+  /** Circles and arcs. */
+  radius?: number;
+}
+
 /** Triangulated body ready for rendering. All buffers are transferable. */
 export interface MeshPayload {
   key: string;
@@ -12,6 +33,9 @@ export interface MeshPayload {
   edgePositions: Float32Array;
   /** [start, count] per B-Rep edge, in points of `edgePositions`. Edge i is topological edge index i. */
   edgeRanges: Uint32Array;
+  /** Exact geometry per face and edge (same indices as the ranges); empty for export meshes. */
+  faceInfo: FaceInfo[];
+  edgeInfo: EdgeInfo[];
 }
 
 export type FeatureErrorCode =

@@ -28,6 +28,8 @@ First technical preview (Phase 0). Not ready for productive use; see the disclai
 - Automated unit, integration and end-to-end tests; kernel, solver and rendering benchmarks; CI on
   Windows, macOS and Linux; release workflow for all desktop packages.
 - User guide with screenshots, architecture decision records and benchmark results.
+- The status bar shows the exact type and size of the face or edge under the cursor or selected
+  (for example "Face 7 · Cylinder Ø 44 mm · 4,838.1 mm²"), computed from the B-Rep, not from the mesh.
 - `--self-test` command-line option that checks an installation (3D graphics, geometry kernel, modeling
   accuracy, STEP export); the release pipeline runs it on every package.
 
