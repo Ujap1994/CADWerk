@@ -38,7 +38,8 @@ export async function launchApp(options: LaunchOptions = {}): Promise<LaunchedAp
     } as Record<string, string>,
   });
   const page = await app.firstWindow();
-  await page.waitForFunction(() => '__parawerk' in window, undefined, { timeout: 60_000 });
+  // Interval polling instead of requestAnimationFrame, which does not run while a window is hidden.
+  await page.waitForFunction(() => '__parawerk' in window, undefined, { timeout: 60_000, polling: 250 });
   if (options.width && options.height) {
     await app.evaluate(({ BrowserWindow }, size) => {
       const window = BrowserWindow.getAllWindows()[0];
@@ -54,7 +55,7 @@ export async function waitForKernel(page: Page): Promise<void> {
   await page.waitForFunction(() => {
     const status = document.querySelector('[data-testid="kernel-status"]')?.getAttribute('data-status');
     return status === 'ready';
-  }, undefined, { timeout: 90_000 });
+  }, undefined, { timeout: 90_000, polling: 250 });
 }
 
 /** Waits until the kernel has finished all queued rebuilds. */

@@ -70,6 +70,12 @@ export function createMainWindow(options: MainWindowOptions): MainWindow {
   let documentState: DocumentState = { title: APP_NAME, dirty: false };
 
   window.once('ready-to-show', () => window.show());
+  // Never leave an invisible app behind if the first paint is delayed (e.g. an occluded window on Windows).
+  const showFallback = setTimeout(() => {
+    if (!window.isDestroyed() && !window.isVisible()) window.show();
+  }, 3000);
+  window.once('show', () => clearTimeout(showFallback));
+  window.once('closed', () => clearTimeout(showFallback));
 
   window.on('close', (event) => {
     if (!options.testMode) stateFile.write({ bounds: window.getNormalBounds(), maximized: window.isMaximized() });
