@@ -22,6 +22,7 @@ export interface IpcContext {
   main: MainWindow;
   settings: SettingsStore;
   testMode: boolean;
+  selfTest: boolean;
   isTrustedUrl(url: string): boolean;
   systemLocale: string;
   onSettingsChanged(settings: Settings): void;
@@ -47,6 +48,7 @@ export function registerIpc(context: IpcContext): void {
       electron: process.versions.electron,
       chrome: process.versions.chrome,
       testMode,
+      selfTest: context.selfTest,
     };
   });
 
@@ -112,7 +114,7 @@ export function registerIpc(context: IpcContext): void {
 
   ipcMain.handle(IpcChannel.confirm, async (event, request: ConfirmRequest) => {
     trusted(event);
-    if (testMode) return process.env.PARAWERK_E2E_CONFIRM !== 'no';
+    if (testMode || context.selfTest) return process.env.PARAWERK_E2E_CONFIRM !== 'no';
     const result = await dialog.showMessageBox(main.window, {
       type: 'question',
       buttons: [request.confirmLabel, request.cancelLabel],

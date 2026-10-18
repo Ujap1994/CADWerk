@@ -6,6 +6,7 @@ import * as commands from './commands.ts';
 import { initI18n, t } from './i18n.ts';
 import { startKernel } from './state/rebuild.ts';
 import { getState, setState, store } from './state/store.ts';
+import { runSelfTest } from './self-test.ts';
 import { installTestHooks } from './test-hooks.ts';
 import { App } from './ui/App.tsx';
 import './styles.css';
@@ -57,6 +58,7 @@ async function bootstrap(): Promise<void> {
     </StrictMode>,
   );
   api.rendererReady();
+  if (appInfo.selfTest) api.reportSelfTest(await runSelfTest());
 }
 
 void bootstrap();

@@ -14,6 +14,7 @@
 4. [Modeling features](features.md): box, cylinder, fillet, chamfer, editing and undo
 5. [Files, import and export](files.md): `.pwpart` files, STEP and STL
 6. [Settings](settings.md): language, theme, navigation and projection
+7. [Troubleshooting](troubleshooting.md): self-test, logs and known limitations
 
 ## What the preview can do
 

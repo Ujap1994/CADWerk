@@ -1,9 +1,11 @@
 import { app, ipcMain, Menu, nativeImage, session, shell } from 'electron';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { APP_ID, APP_NAME, APP_ORIGIN, PART_FILE_EXTENSION } from '../shared/app-info.ts';
 import { resolveLanguage } from '../shared/i18n.ts';
-import { IpcChannel, type MenuCommand } from '../shared/ipc.ts';
+import { IpcChannel, type MenuCommand, type SelfTestResult } from '../shared/ipc.ts';
 import type { Settings } from '../shared/settings.ts';
 import { isAllowedExternalUrl, registerIpc } from './ipc.ts';
 import { buildMenu } from './menu.ts';
@@ -12,10 +14,15 @@ import { SettingsStore } from './settings-store.ts';
 import { createMainWindow, type MainWindow } from './window.ts';
 
 const testMode = process.env.PARAWERK_E2E === '1';
+/** `ParaWerk --self-test` checks an installation without user interaction and exits with 0 or 1. */
+const selfTest = process.argv.includes('--self-test');
+const SELF_TEST_TIMEOUT_MS = 180_000;
 const benchMode = process.env.PARAWERK_BENCH === '1';
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL;
 
 if (process.env.PARAWERK_USER_DATA) app.setPath('userData', process.env.PARAWERK_USER_DATA);
+// The self-test uses a throw-away profile so it never touches the user's settings.
+if (selfTest) app.setPath('userData', mkdtempSync(path.join(tmpdir(), 'parawerk-self-test-')));
 app.setName(APP_NAME);
 if (process.platform === 'win32') app.setAppUserModelId(APP_ID);
 
@@ -40,6 +47,13 @@ function partFileFromArgs(argv: readonly string[]): string | undefined {
 function iconPath(): string | undefined {
   if (process.platform === 'darwin') return undefined;
   return app.isPackaged ? path.join(process.resourcesPath, 'icon.png') : path.join(app.getAppPath(), 'build/icons/512x512.png');
+}
+
+function finishSelfTest(result: SelfTestResult): void {
+  const text = JSON.stringify(result, null, 2);
+  console.log(text);
+  if (process.env.PARAWERK_SELF_TEST_OUTPUT) writeFileSync(process.env.PARAWERK_SELF_TEST_OUTPUT, text);
+  app.exit(result.ok ? 0 : 1);
 }
 
 if (!app.requestSingleInstanceLock()) {
@@ -112,7 +126,7 @@ if (!app.requestSingleInstanceLock()) {
       preload: path.join(__dirname, '../preload/index.js'),
       icon,
       theme: settings.get().theme,
-      testMode,
+      testMode: testMode || selfTest,
       language,
     });
     const window = main.window;
@@ -125,7 +139,16 @@ if (!app.requestSingleInstanceLock()) {
     };
     applyMenu(settings.get());
 
-    registerIpc({ main, settings, testMode, isTrustedUrl, systemLocale, onSettingsChanged: applyMenu });
+    registerIpc({ main, settings, testMode, selfTest, isTrustedUrl, systemLocale, onSettingsChanged: applyMenu });
+
+    if (selfTest) {
+      ipcMain.on(IpcChannel.selfTestResult, (event, result: SelfTestResult) => {
+        if (isTrustedUrl(event.senderFrame?.url ?? '')) finishSelfTest(result);
+      });
+      setTimeout(() => {
+        finishSelfTest({ ok: false, durationMs: SELF_TEST_TIMEOUT_MS, checks: [{ name: 'timeout', ok: false, detail: 'no result from the renderer' }] });
+      }, SELF_TEST_TIMEOUT_MS);
+    }
 
     ipcMain.on(IpcChannel.rendererReady, (event) => {
       if (!isTrustedUrl(event.senderFrame?.url ?? '')) return;

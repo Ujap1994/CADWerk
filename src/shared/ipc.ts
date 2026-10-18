@@ -13,6 +13,7 @@ export const IpcChannel = {
   menuCommand: 'menu:command',
   openPath: 'file:open-path',
   rendererReady: 'app:renderer-ready',
+  selfTestResult: 'app:self-test-result',
 } as const;
 
 export type MenuCommand =
@@ -87,6 +88,20 @@ export interface AppInfo {
   chrome: string;
   /** True when started by the end-to-end test or benchmark harness. */
   testMode: boolean;
+  /** True when started with --self-test (installation check, see docs/user-guide/troubleshooting.md). */
+  selfTest: boolean;
+}
+
+export interface SelfTestCheck {
+  name: string;
+  ok: boolean;
+  detail: string;
+}
+
+export interface SelfTestResult {
+  ok: boolean;
+  durationMs: number;
+  checks: SelfTestCheck[];
 }
 
 /** API exposed to the renderer as `window.parawerk`. */
@@ -105,4 +120,6 @@ export interface ParaWerkApi {
   onOpenPath(listener: (file: { path: string; data: Uint8Array }) => void): () => void;
   /** Tells the main process that the UI is ready to receive files and commands. */
   rendererReady(): void;
+  /** Reports the result of --self-test; the app then quits with a matching exit code. */
+  reportSelfTest(result: SelfTestResult): void;
 }

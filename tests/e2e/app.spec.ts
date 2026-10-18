@@ -74,6 +74,16 @@ test('allows only a single instance', async () => {
   expect(launched.app.windows()).toHaveLength(1);
 });
 
+test('passes the built-in installation self-test', async () => {
+  const electronBinary = require('electron') as string;
+  const child = spawn(electronBinary, [repoRoot, '--self-test'], { stdio: ['ignore', 'pipe', 'ignore'] });
+  let output = '';
+  child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()));
+  const exitCode = await new Promise<number | null>((resolve) => child.on('exit', resolve));
+  expect(exitCode, output).toBe(0);
+  expect(output).toContain('"ok": true');
+});
+
 test('creates a box, rounds edges picked in the 3D view and exports STEP and STL', async () => {
   launched = await launchApp({ width: 1440, height: 900 });
   const { page, outputDir } = launched;

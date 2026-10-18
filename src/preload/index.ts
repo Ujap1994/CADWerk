@@ -25,6 +25,7 @@ const api: ParaWerkApi = {
     return () => ipcRenderer.removeListener(IpcChannel.openPath, handler);
   },
   rendererReady: () => ipcRenderer.send(IpcChannel.rendererReady),
+  reportSelfTest: (result) => ipcRenderer.send(IpcChannel.selfTestResult, result),
 };
 
 contextBridge.exposeInMainWorld('parawerk', api);
