@@ -12,6 +12,6 @@
 - The renderer cannot write arbitrary files: "Save" without a dialog is only allowed for paths the user
   picked in a dialog or opened before.
 - External links open in the browser only for an allowlist of HTTPS hosts.
-- Exception: the geometry kernel worker needs `'unsafe-eval'` (see ADR 0001); it never evaluates
-  document data. A custom kernel build removes the exception.
+- No `'unsafe-eval'` anywhere: ParaWerk's own kernel build uses `-sDYNAMIC_EXECUTION=0`
+  (the prebuilt kernel of Phase 0 needed an exception for its worker, see ADR 0001).
 - Single instance: a second start focuses the existing window and forwards files to open.

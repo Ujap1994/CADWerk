@@ -1,33 +1,8 @@
 import { Arena, type OC, type TopoDS_Shape } from './occt.ts';
 import type { MeshPayload } from './protocol.ts';
+import type { MeshQuality } from './mesh-quality.ts';
 import { uniqueSubShapes } from './topology.ts';
 import { describeTopology } from './topology-info.ts';
-
-export interface MeshQuality {
-  /** Maximum chordal deviation in mm. */
-  linear: number;
-  /** Maximum angle between neighboring facets in radians. */
-  angular: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-/** Tessellation for the 3D view, relative to the part size so small and large parts look equally smooth. */
-export function displayQuality(diagonal: number): MeshQuality {
-  // 0.2 rad (about 11°) keeps curved faces and their outlines smooth without visible facets.
-  return { linear: clamp(diagonal * 5e-4, 0.002, 2), angular: 0.2 };
-}
-
-/** Finer tessellation for STL export. */
-export function exportQuality(diagonal: number): MeshQuality {
-  return { linear: clamp(diagonal * 1e-4, 0.001, 0.1), angular: 0.15 };
-}
-
-export function qualityTag(quality: MeshQuality): string {
-  return `${quality.linear.toPrecision(3)}/${quality.angular}`;
-}
 
 /** Converts [start, count, hash] triples from the extractor into [start, count] pairs. */
 function triplesToRanges(triples: Int32Array): Uint32Array {
@@ -127,10 +102,4 @@ function withoutEdges(positions: Float32Array, ranges: Uint32Array, hidden: Set<
     cursor += count;
   }
   return { edgePositions: new Float32Array(kept), edgeRanges: nextRanges };
-}
-
-export function meshTransferables(mesh: MeshPayload): ArrayBuffer[] {
-  return [mesh.positions, mesh.normals, mesh.indices, mesh.faceRanges, mesh.edgePositions, mesh.edgeRanges].map(
-    (array) => array.buffer as ArrayBuffer,
-  );
 }

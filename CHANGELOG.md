@@ -7,6 +7,16 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 
 ## [Unreleased]
 
+### Changed
+- New geometry kernel: Open CASCADE Technology 8.0.1 compiled to WebAssembly with ParaWerk's own C++
+  facade. Editing large parts is about twice as fast, the kernel uses half the memory, starts faster,
+  and the memory leaks of the previous prebuilt build are gone.
+- Curved faces are tessellated with a fast Delaunay triangulator for the 3D view.
+
+### Security
+- The content security policy no longer allows `'unsafe-eval'` anywhere (the new kernel does not
+  generate code at run time).
+
 ## [0.1.0-alpha.0] - 2026-10-19
 
 First technical preview (Phase 0). Not ready for productive use; see the disclaimer in the README.

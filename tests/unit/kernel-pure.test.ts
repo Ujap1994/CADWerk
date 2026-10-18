@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { featureKeys, hashString } from '../../src/kernel/rebuild.ts';
 import { writeBinaryStl } from '../../src/kernel/stl.ts';
-import { displayQuality, exportQuality } from '../../src/kernel/mesh.ts';
+import { displayQuality, exportQuality } from '../../src/kernel/mesh-quality.ts';
 import { defaultFeature, type BoxFeature } from '../../src/shared/model/feature.ts';
 
 describe('binary STL writer', () => {

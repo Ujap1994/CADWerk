@@ -1,6 +1,6 @@
-import wasmUrl from 'replicad-opencascadejs/wasm?url';
+import wasmUrl from '../../vendor/parawerk-kernel/parawerk-kernel.wasm?url';
+import { ParaWerkBackend } from './backends/parawerk.ts';
 import { Kernel, NothingToExportError } from './kernel.ts';
-import { describeError } from './occt.ts';
 import type { KernelRequestMessage, KernelResponseMessage } from './protocol.ts';
 
 /** The subset of DedicatedWorkerGlobalScope used here (the DOM and WebWorker libs cannot be combined). */
@@ -11,7 +11,7 @@ interface WorkerScope {
 
 const scope = self as unknown as WorkerScope;
 const initStart = performance.now();
-const kernelPromise = Kernel.create(wasmUrl);
+const kernelPromise = ParaWerkBackend.create(wasmUrl).then((backend) => new Kernel(backend));
 
 kernelPromise.then(
   (kernel) => {
@@ -48,7 +48,7 @@ scope.addEventListener('message', (event) => {
           break;
       }
     } catch (error) {
-      const text = error instanceof NothingToExportError ? 'nothing-to-export' : describeError(kernel.oc, error);
+      const text = error instanceof NothingToExportError ? 'nothing-to-export' : kernel.backend.describeError(error);
       scope.postMessage({ kind: 'reply', id: message.id, ok: false, error: text });
     }
   });

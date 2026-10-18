@@ -1,20 +1,22 @@
 /**
  * Geometry kernel benchmarks (Node, OCCT WebAssembly).
  * Run: npm run bench:kernel   Results: bench/results/kernel-<platform>-<arch>.json
+ * KERNEL_BACKEND=replicad benchmarks the prebuilt Phase 0 build instead (suite "kernel-replicad").
  */
-import { Kernel } from '../../src/kernel/kernel.ts';
-import { displayQuality, extractMesh } from '../../src/kernel/mesh.ts';
-import { massProperties } from '../../src/kernel/properties.ts';
+import type { ShapeHandle } from '../../src/kernel/backend.ts';
+import { createKernel } from '../../src/kernel/create.ts';
+import type { BackendName } from '../../src/kernel/kernel.ts';
+import { displayQuality } from '../../src/kernel/mesh-quality.ts';
 import type { RebuildRequest } from '../../src/kernel/protocol.ts';
 import type { Feature } from '../../src/shared/model/feature.ts';
-import type { TopoDS_Shape } from '../../src/kernel/occt.ts';
 import { calibration, measure, meta, printReport, summarize, writeReport, type BenchReport, type CaseResult } from '../lib.ts';
 
 const cases: Record<string, CaseResult> = {};
 cases['calibration'] = calibration();
 
+const backendName = (process.env.KERNEL_BACKEND ?? 'parawerk') as BackendName;
 const initStart = performance.now();
-const kernel = await Kernel.create();
+const kernel = await createKernel(backendName);
 cases['kernel.init'] = summarize([performance.now() - initStart]);
 cases['kernel.warmUp'] = summarize([kernel.warmUp()]);
 
@@ -73,20 +75,20 @@ cases['plate.100holes.editLast'] = measure((i) => {
 }, { iterations: 10 });
 
 kernel.rebuild(request(big));
-const shape = (kernel as unknown as { rebuilder: { shapeAfter(i: number): TopoDS_Shape | null } }).rebuilder.shapeAfter(big.length - 1);
+const shape = (kernel as unknown as { rebuilder: { shapeAfter(i: number): ShapeHandle | null } }).rebuilder.shapeAfter(big.length - 1);
 if (shape) {
   let triangles = 0;
   cases['plate.100holes.mesh'] = measure(() => {
-    const mesh = extractMesh(kernel.oc, shape, displayQuality(560), 'bench');
+    const mesh = kernel.backend.mesh(shape, displayQuality(560), 'bench');
     triangles = mesh.indices.length / 3;
   }, { iterations: 10 });
   cases['plate.100holes.mesh'].info = { triangles };
-  cases['plate.100holes.massProperties'] = measure(() => massProperties(kernel.oc, shape), { iterations: 10 });
+  cases['plate.100holes.massProperties'] = measure(() => kernel.backend.massProperties(shape), { iterations: 10 });
 }
 cases['plate.100holes.exportStep'] = measure(() => kernel.exportModel({ features: big, format: 'step' }), { iterations: 5, warmup: 1 });
 cases['plate.100holes.exportStl'] = measure(() => kernel.exportModel({ features: big, format: 'stl' }), { iterations: 5, warmup: 1 });
 cases['memory.wasmHeapMb'] = { ...summarize([0]), info: { mb: Math.round(kernel.memoryStats().wasmHeapBytes / 1048576) } };
 
-const report: BenchReport = { suite: 'kernel', meta: meta(), cases };
+const report: BenchReport = { suite: backendName === 'parawerk' ? 'kernel' : `kernel-${backendName}`, meta: meta(), cases };
 printReport(report);
 console.log(`Results written to ${writeReport(report)}`);

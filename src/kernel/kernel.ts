@@ -1,7 +1,7 @@
 import type { Feature } from '../shared/model/feature.ts';
-import { displayQuality, exportQuality, extractMesh, meshTransferables, qualityTag } from './mesh.ts';
-import { Arena, loadOpenCascade, type OC, type TopoDS_Shape } from './occt.ts';
-import { boundingBox, diagonalOf, massProperties } from './properties.ts';
+import type { GeometryBackend, ShapeHandle } from './backend.ts';
+import { meshTransferables } from './mesh-transfer.ts';
+import { displayQuality, exportQuality, qualityTag } from './mesh-quality.ts';
 import type {
   CapturedState,
   ExportRequest,
@@ -11,9 +11,7 @@ import type {
   RebuildResult,
 } from './protocol.ts';
 import { Rebuilder } from './rebuild.ts';
-import { exportStep } from './step.ts';
 import { writeBinaryStl } from './stl.ts';
-import { countSubShapes } from './topology.ts';
 
 interface ShapeInfo {
   diagonal: number;
@@ -32,22 +30,27 @@ export class NothingToExportError extends Error {
   }
 }
 
+function diagonalOf(bbox: { min: number[]; max: number[] }): number {
+  const [x0 = 0, y0 = 0, z0 = 0] = bbox.min;
+  const [x1 = 0, y1 = 0, z1 = 0] = bbox.max;
+  return Math.hypot(x1 - x0, y1 - y0, z1 - z0);
+}
+
+export type BackendName = GeometryBackend['name'];
+
 /**
  * Environment-independent geometry kernel: used by the Web Worker in the app
- * and directly by integration tests and benchmarks in Node.
+ * and directly by integration tests and benchmarks in Node. The geometric
+ * operations come from a backend (docs/adr/0001-geometry-kernel.md).
  */
 export class Kernel implements Disposable {
-  readonly oc: OC;
+  readonly backend: GeometryBackend;
   private readonly rebuilder: Rebuilder;
   private readonly shapeInfo = new Map<string, ShapeInfo>();
 
-  private constructor(oc: OC) {
-    this.oc = oc;
-    this.rebuilder = new Rebuilder(oc);
-  }
-
-  static async create(wasmUrl?: string): Promise<Kernel> {
-    return new Kernel(await loadOpenCascade(wasmUrl));
+  constructor(backend: GeometryBackend) {
+    this.backend = backend;
+    this.rebuilder = new Rebuilder(backend);
   }
 
   rebuild(request: RebuildRequest): { result: RebuildResult; transfer: ArrayBuffer[] } {
@@ -76,7 +79,7 @@ export class Kernel implements Disposable {
       };
       if (!known.has(meshKey)) {
         const meshStart = performance.now();
-        state.mesh = extractMesh(this.oc, shape, quality, meshKey);
+        state.mesh = this.backend.mesh(shape, quality, meshKey);
         meshMs += performance.now() - meshStart;
         transfer.push(...meshTransferables(state.mesh));
       }
@@ -97,55 +100,49 @@ export class Kernel implements Disposable {
     this.rebuilder.rebuild(request.features);
     const shape = this.rebuilder.shapeAfter(request.features.length - 1);
     if (!shape) throw new NothingToExportError();
-    if (request.format === 'step') return exportStep(this.oc, shape);
-
-    const diagonal = diagonalOf(boundingBox(this.oc, shape));
-    const mesh = extractMesh(this.oc, shape, exportQuality(diagonal), 'export', { withEdges: false });
-    // Drop the fine triangulation again so the 3D view keeps its lighter display mesh.
-    this.oc.BRepTools.Clean(shape, true);
+    if (request.format === 'step') return this.backend.exportStep(shape);
+    const mesh = this.backend.exportMesh(shape, exportQuality(diagonalOf(this.backend.boundingBox(shape))));
     return writeBinaryStl(mesh.positions, mesh.indices);
   }
 
   /**
    * Runs representative operations once so WebAssembly compiles their code paths
-   * before the user needs them (the first fillet otherwise takes about a second).
+   * before the user needs them.
    */
   warmUp(): number {
     const start = performance.now();
-    const box: Feature = { id: 'warm-box', type: 'box', operation: 'add', width: 100, depth: 60, height: 40, position: [0, 0, 0] };
-    const hole: Feature = { id: 'warm-hole', type: 'cylinder', operation: 'cut', radius: 8, height: 100, axis: 'z', position: [0, 0, -10] };
-    const fillet: Feature = { id: 'warm-fillet', type: 'fillet', radius: 4, edges: [{ kind: 'edge-index', index: 0 }] };
-    const chamfer: Feature = { id: 'warm-chamfer', type: 'chamfer', distance: 2, edges: [{ kind: 'edge-index', index: 1 }] };
-    using rebuilder = new Rebuilder(this.oc);
-    rebuilder.rebuild([box, hole, fillet, chamfer]);
-    const shape = rebuilder.shapeAfter(3);
+    const features: Feature[] = [
+      { id: 'warm-box', type: 'box', operation: 'add', width: 100, depth: 60, height: 40, position: [0, 0, 0] },
+      { id: 'warm-hole', type: 'cylinder', operation: 'cut', radius: 8, height: 100, axis: 'z', position: [0, 0, -10] },
+      { id: 'warm-fillet', type: 'fillet', radius: 4, edges: [{ kind: 'edge-index', index: 0 }] },
+      { id: 'warm-chamfer', type: 'chamfer', distance: 2, edges: [{ kind: 'edge-index', index: 1 }] },
+    ];
+    using rebuilder = new Rebuilder(this.backend);
+    rebuilder.rebuild(features);
+    const shape = rebuilder.shapeAfter(features.length - 1);
     if (shape) {
-      extractMesh(this.oc, shape, displayQuality(200), 'warm');
-      massProperties(this.oc, shape);
+      this.backend.mesh(shape, displayQuality(200), 'warm');
+      this.backend.massProperties(shape);
     }
     return performance.now() - start;
   }
 
   memoryStats(): MemoryStats {
-    return { wasmHeapBytes: this.oc.wasmMemory.buffer.byteLength, cachedShapes: this.rebuilder.cachedShapes };
+    return { wasmHeapBytes: this.backend.heapBytes(), cachedShapes: this.rebuilder.cachedShapes };
   }
 
-  private infoFor(shapeKey: string, shape: TopoDS_Shape, withProperties: boolean): ShapeInfo {
+  private infoFor(shapeKey: string, shape: ShapeHandle, withProperties: boolean): ShapeInfo {
     let info = this.shapeInfo.get(shapeKey);
     if (!info) {
-      using arena = new Arena();
-      info = {
-        diagonal: diagonalOf(boundingBox(this.oc, shape)),
-        faceCount: countSubShapes(this.oc, arena, shape, 'face'),
-        edgeCount: countSubShapes(this.oc, arena, shape, 'edge'),
-      };
+      const counts = this.backend.counts(shape);
+      info = { diagonal: diagonalOf(this.backend.boundingBox(shape)), faceCount: counts.faces, edgeCount: counts.edges };
       this.shapeInfo.set(shapeKey, info);
       if (this.shapeInfo.size > SHAPE_INFO_LIMIT) {
         const oldest = this.shapeInfo.keys().next().value;
         if (oldest !== undefined) this.shapeInfo.delete(oldest);
       }
     }
-    if (withProperties && !info.properties) info.properties = massProperties(this.oc, shape);
+    if (withProperties && !info.properties) info.properties = this.backend.massProperties(shape);
     return info;
   }
 

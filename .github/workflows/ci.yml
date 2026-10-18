@@ -34,6 +34,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run licenses:check
+      - run: npm run kernel:verify
 
   e2e:
     name: End-to-end tests (${{ matrix.os }})

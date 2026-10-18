@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { mimeType, resolveAppPath } from '../../src/main/protocol-path.ts';
-import { contentSecurityPolicy, KERNEL_WORKER_PATTERN } from '../../src/shared/security.ts';
+import { contentSecurityPolicy } from '../../src/shared/security.ts';
 
 const root = path.resolve('/app/out/renderer');
 
@@ -42,9 +42,7 @@ describe('content security policy', () => {
     expect(csp).toContain("object-src 'none'");
   });
 
-  it('allows eval only for the kernel worker', () => {
-    expect(contentSecurityPolicy({ dev: false, worker: true })).toContain("'unsafe-eval'");
-    expect(KERNEL_WORKER_PATTERN.test('/assets/worker-AbC_12-x.js')).toBe(true);
-    expect(KERNEL_WORKER_PATTERN.test('/assets/index-123.js')).toBe(false);
+  it('never allows eval, not even in development', () => {
+    expect(contentSecurityPolicy({ dev: true })).not.toContain("'unsafe-eval'");
   });
 });

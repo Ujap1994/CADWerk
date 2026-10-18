@@ -24,22 +24,23 @@ CI run and copy the JSON files into `bench/baselines`.
 
 ## Reference results – Phase 0 (Apple M3, 16 GB, macOS)
 
-### Geometry kernel
+### Geometry kernel (ParaWerk kernel: OCCT 8.0.1, own WebAssembly build)
 
-| Case | Median |
-|---|---|
-| Kernel start (load WebAssembly) | 128 ms |
-| Background warm-up | 310 ms |
-| Box rebuild | 0.9 ms |
-| Fillet of all 12 box edges | 32 ms |
-| Plate with 10 holes, full rebuild (11 features) | 94 ms |
-| Plate with 50 holes, full rebuild (51 features) | 774 ms |
-| Plate with 100 holes, full rebuild (101 features) | 2,264 ms |
-| Plate with 100 holes, edit last feature | 463 ms |
-| Tessellation of the 100-hole plate (17,212 triangles) | 422 ms |
-| Mass properties of the 100-hole plate | 38 ms |
-| STEP export of the 100-hole plate | 45 ms |
-| STL export of the 100-hole plate (fine tessellation) | 1,410 ms |
+| Case | Median | Phase 0 prebuilt build |
+|---|---|---|
+| Kernel start (load WebAssembly) | 51 ms | 114 ms |
+| Box rebuild | 0.7 ms | 1.1 ms |
+| Fillet of all 12 box edges (with validity check) | 34 ms | 24 ms |
+| Plate with 10 holes, full rebuild (11 features) | 84 ms | 74 ms |
+| Plate with 50 holes, full rebuild (51 features) | 576 ms | 572 ms |
+| Plate with 100 holes, full rebuild (101 features) | 1,657 ms | 1,822 ms |
+| Plate with 100 holes, edit last feature | 218 ms | 495 ms |
+| Mesh of the unchanged 100-hole plate (25,612 triangles) | 60 ms | 421 ms |
+| Mass properties of the 100-hole plate | 35 ms | 30 ms |
+| STEP export of the 100-hole plate | 46 ms | 43 ms |
+| STL export of the 100-hole plate (fine tessellation) | 795 ms | 774 ms |
+
+`KERNEL_BACKEND=replicad npm run bench:kernel` runs the same suite on the Phase 0 build.
 
 ### 2D constraint solver (PlaneGCS, one connected sketch)
 
@@ -79,9 +80,9 @@ Draw calls include the view cube and the axis indicator (about 41).
 
 - Small and medium parts rebuild well within interactive limits; the incremental cache makes edits
   independent of the number of features before the edited one.
-- Tessellation of large faces with many holes is the slowest step today. The prebuilt kernel
-  re-triangulates the whole body on every change; the planned custom kernel build keeps the
-  triangulation of unchanged faces and meshes in parallel ([ADR 0001](../adr/0001-geometry-kernel.md)).
+- ParaWerk's own kernel keeps the triangulation of unchanged faces and uses a fast Delaunay
+  triangulator, which made editing large parts about twice as fast and removed the memory leaks of the
+  prebuilt build ([ADR 0001](../adr/0001-geometry-kernel.md)). Multi-threading is the next step.
 - Instancing keeps assemblies with thousands of identical parts fast. Beyond about 10,000 components,
   level of detail and culling are needed to reach the v1.0 target of 30 fps for 50,000 instances.
 - The sketch solver needs decomposition or a sparse solver before Phase 1 can reach its targets.

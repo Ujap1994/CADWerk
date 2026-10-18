@@ -1,6 +1,6 @@
 import type { Feature } from '../shared/model/feature.ts';
-import { applyFeature, FeatureError } from './features.ts';
-import { describeError, type OC, type TopoDS_Shape } from './occt.ts';
+import type { GeometryBackend, ShapeHandle } from './backend.ts';
+import { FeatureError } from './feature-error.ts';
 import type { FeatureResult } from './protocol.ts';
 
 interface CacheEntry {
@@ -8,7 +8,7 @@ interface CacheEntry {
   key: string;
   /** Key of the entry that produced the shape (suppressed and failed features pass the body through). */
   shapeKey: string;
-  shape: TopoDS_Shape | null;
+  shape: ShapeHandle | null;
   ownsShape: boolean;
   result: FeatureResult;
 }
@@ -62,11 +62,11 @@ export function featureKeys(features: readonly Feature[]): string[] {
  * the last feature never recomputes the ones before it.
  */
 export class Rebuilder implements Disposable {
-  private readonly oc: OC;
+  private readonly backend: GeometryBackend;
   private entries: CacheEntry[] = [];
 
-  constructor(oc: OC) {
-    this.oc = oc;
+  constructor(backend: GeometryBackend) {
+    this.backend = backend;
   }
 
   get cachedShapes(): number {
@@ -104,7 +104,7 @@ export class Rebuilder implements Disposable {
       }
 
       try {
-        const shape = applyFeature(this.oc, input, feature);
+        const shape = this.backend.applyFeature(input, feature);
         this.entries.push({
           key,
           shapeKey: key,
@@ -116,7 +116,7 @@ export class Rebuilder implements Disposable {
         const failure =
           error instanceof FeatureError
             ? { code: error.code, ...(error.detail === undefined ? {} : { detail: error.detail }) }
-            : { code: 'unknown' as const, detail: describeError(this.oc, error) };
+            : { code: 'unknown' as const, detail: this.backend.describeError(error) };
         this.entries.push({
           key,
           shapeKey: inputKey,
@@ -134,7 +134,7 @@ export class Rebuilder implements Disposable {
   }
 
   /** Body after the feature at `index`; index -1 is the empty start state. */
-  shapeAfter(index: number): TopoDS_Shape | null {
+  shapeAfter(index: number): ShapeHandle | null {
     return index < 0 ? null : (this.entries[index]?.shape ?? null);
   }
 
@@ -145,7 +145,7 @@ export class Rebuilder implements Disposable {
   private truncate(from: number): void {
     for (let i = this.entries.length - 1; i >= from; i--) {
       const entry = this.entries[i];
-      if (entry?.ownsShape && entry.shape) entry.shape.delete();
+      if (entry?.ownsShape && entry.shape) this.backend.release(entry.shape);
     }
     this.entries.length = Math.min(this.entries.length, from);
   }

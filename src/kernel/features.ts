@@ -1,30 +1,8 @@
-import type { Axis, BoxFeature, CylinderFeature, EdgeFeature, Feature, Vec3 } from '../shared/model/feature.ts';
+import type { BoxFeature, CylinderFeature, EdgeFeature, Feature } from '../shared/model/feature.ts';
+import { axisDirection } from './feature-geometry.ts';
 import { Arena, describeError, type OC, type TopoDS_Shape } from './occt.ts';
-import type { FeatureErrorCode } from './protocol.ts';
+import { FeatureError } from './feature-error.ts';
 import { countSubShapes, uniqueSubShapes } from './topology.ts';
-
-export class FeatureError extends Error {
-  readonly code: FeatureErrorCode;
-  readonly detail: string | undefined;
-
-  constructor(code: FeatureErrorCode, detail?: string) {
-    super(detail ? `${code}: ${detail}` : code);
-    this.name = 'FeatureError';
-    this.code = code;
-    this.detail = detail;
-  }
-}
-
-function axisDirection(axis: Axis): Vec3 {
-  switch (axis) {
-    case 'x':
-      return [1, 0, 0];
-    case 'y':
-      return [0, 1, 0];
-    case 'z':
-      return [0, 0, 1];
-  }
-}
 
 function makeBox(oc: OC, arena: Arena, feature: BoxFeature): TopoDS_Shape {
   const [x, y, z] = feature.position;

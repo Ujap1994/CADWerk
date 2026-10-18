@@ -1,6 +1,8 @@
 # 0001 – Geometry kernel: Open CASCADE Technology in WebAssembly
 
-**Status:** accepted for Phase 0 and Phase 1; a custom build is the top Gate 1 action item.
+**Status:** accepted. Since 2026-10-19 ParaWerk uses its own OCCT 8.0.1 WebAssembly build with a thin
+C++ facade (`native/kernel`). The prebuilt `replicad-opencascadejs` build of Phase 0 remains only as a
+comparison backend in tests and benchmarks.
 
 ## Context
 
@@ -12,60 +14,60 @@ with ParaWerk's GPL-3.0-or-later license.
 
 ## Decision
 
-- Use OCCT compiled to WebAssembly. Phase 0 uses the prebuilt `replicad-opencascadejs` package
-  (embind bindings plus fast C++ mesh extractors).
-- Run the kernel in a dedicated **Web Worker**, so the UI never blocks.
-- Hide the kernel behind ParaWerk's own `Kernel` class and message protocol
-  (`src/kernel/protocol.ts`). The rest of the app never touches OCCT objects, so the kernel can be
-  replaced (custom WebAssembly build or native add-on) without UI changes.
-- Keep the document in the UI process. The worker only holds caches, so a crashed or recycled worker
-  is restarted transparently and the document is rebuilt.
-- Rebuild incrementally: the body after each feature is cached under a key that hashes the feature's
-  parameters and everything before it.
+- **OCCT 8.0.1 compiled to WebAssembly** with Emscripten (`scripts/build-occt.sh`), static libraries,
+  native WebAssembly exceptions.
+- **Own C++ facade** (`native/kernel/src/kernel.cpp`, built by `scripts/build-kernel.sh`):
+  - shapes live only in C++ and are referenced from JavaScript by integer ids, so no binding object can
+    leak;
+  - every call returns plain data (numbers, objects, copies of typed arrays) and turns OCCT exceptions
+    into error codes;
+  - tessellation, edge polylines, seam detection and exact face/edge geometry are computed in one C++
+    call;
+  - built with `-sDYNAMIC_EXECUTION=0`, so no `'unsafe-eval'` is needed in the content security policy.
+- **Kernel in a Web Worker** behind ParaWerk's `GeometryBackend` interface (`src/kernel/backend.ts`);
+  the document stays in the UI process, a crashed worker is restarted transparently.
+- **Incremental rebuild**: the body after each feature is cached; meshing keeps the triangulation of
+  faces that did not change.
+- **Tessellation**: the 3D view uses OCCT's Delabella triangulator (fast for large planar faces with
+  many holes), STL export uses the default Watson algorithm (Delabella is far slower at the fine export
+  tolerance).
+- The prebuilt binary is committed in `vendor/parawerk-kernel` with a manifest (versions, SHA-256);
+  CI verifies the checksums (`npm run kernel:verify`).
 
-## Measured findings (Phase 0, Apple M3)
+## Measured comparison (Apple M3, median)
 
-| Operation | Median |
-|---|---|
-| Kernel start (load and compile WebAssembly) | 128 ms |
-| Warm-up of booleans, fillets, meshing | 310 ms (runs in the background after start) |
-| Box rebuild | 0.9 ms |
-| Fillet of 12 box edges | 32 ms |
-| Plate with 100 holes, full rebuild (101 features) | 2.3 s |
-| Same plate, edit last feature (incremental) | 463 ms |
-| Tessellation of that plate (17,212 triangles) | 422 ms |
-| STEP export of that plate | 45 ms |
+| Operation | Prebuilt build (Phase 0) | ParaWerk kernel |
+|---|---|---|
+| Kernel start | 114 ms | 51 ms |
+| Box rebuild | 1.1 ms | 0.7 ms |
+| Fillet of 12 box edges | 24 ms | 34 ms (includes a validity check of every result) |
+| Plate with 100 holes, full rebuild (101 features) | 1,822 ms | 1,657 ms |
+| Same plate, edit last feature | 495 ms | 218 ms |
+| Mesh of an unchanged body | 421 ms | 60 ms |
+| STEP export | 43 ms | 46 ms |
+| STL export (fine tessellation) | 774 ms | 795 ms |
+| WebAssembly heap after the benchmark | 199 MB | 92 MB |
+| Memory growth over 400 fillet rebuilds | leaks ≈ 150–250 KB per rebuild | none (test budget 8 MB) |
+| Size of the WebAssembly module | 23.0 MB | 15.2 MB |
 
-Full numbers: [docs/benchmarks](../benchmarks/README.md).
+## Problems of the prebuilt build that led to the decision
 
-### Issues found in the prebuilt WebAssembly build
+1. `delete()` on `BRepAlgoAPI_*` objects did not release internal data (≈ 200 KB per boolean);
+   worked around with `Clear()`.
+2. `BRepCheck_Analyzer` and fillet results leaked memory on every use.
+3. The mesh extractor re-triangulated whole bodies on every call.
+4. Embind needed `new Function`, forcing an `'unsafe-eval'` exception for the kernel worker.
 
-1. **Memory leak in booleans.** `delete()` on `BRepAlgoAPI_*` objects does not release their internal
-   data (about 200 KB per boolean). Calling `Clear()` before `delete()` fixes it completely
-   (`Arena.trackAlgorithm`). A regression test guards this.
-2. **`BRepCheck_Analyzer` leaks** on every use. It is not used in the rebuild path; fillet results get
-   a cheap solid check instead.
-3. **Re-tessellation on every call.** The mesh extractor triangulates the whole shape again even when
-   a triangulation exists, which dominates the cost of editing large parts.
-4. **Dynamic code generation.** Embind creates glue code with `new Function`, so the kernel worker
-   alone needs `'unsafe-eval'` in its content security policy (the UI keeps a strict policy).
-5. **Single-threaded.** Booleans and meshing do not use more than one core.
+## Lessons from building OCCT for WebAssembly
 
-As a safety net, the client restarts the worker when its WebAssembly heap exceeds 1.5 GB, because
-WebAssembly memory never shrinks.
+OCCT's CMake adds `-fexceptions` (Emscripten's JavaScript exception model) and enables signal conversion
+with `setjmp`/`longjmp` on all non-MSVC compilers. Combined with native WebAssembly exceptions this
+produced invalid WebAssembly ("br_table: label arity inconsistent"). The build script disables both for
+Emscripten; WebAssembly has no signals to convert.
 
-## Consequences and next steps (Gate 1)
+## Next steps
 
-Build OCCT ourselves with Emscripten and a thin C++ facade that exposes ParaWerk's operations
-(features, tessellation, export) instead of thousands of raw classes:
-
-- RAII inside C++, so no embind object lifetimes leak into JavaScript;
-- `-sDYNAMIC_EXECUTION=0` (no `'unsafe-eval'`), pthreads for parallel meshing and booleans,
-  optional Memory64 for very large models;
-- incremental tessellation that keeps triangulations of unchanged faces;
-- the same facade compiled natively as a Node add-on in an Electron utility process, if WebAssembly
-  stays too slow for large assemblies.
-
-## Revisit when
-
-The custom build is ready, or benchmarks show that the WebAssembly route cannot meet the v1.0 budgets.
+- Multi-threaded meshing and booleans (`-pthread`, OCCT's thread pool; cross-origin isolation is already
+  enabled).
+- Comparison with native OCCT to decide whether large assemblies need a native add-on.
+- History tracking in the facade for persistent naming (ADR 0002).

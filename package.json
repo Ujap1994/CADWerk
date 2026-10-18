@@ -35,7 +35,9 @@
     "icons": "node scripts/build-icons.mjs",
     "licenses:check": "node scripts/check-licenses.mjs",
     "package": "npm run build && electron-builder --publish never",
-    "package:dir": "npm run build && electron-builder --dir --publish never"
+    "package:dir": "npm run build && electron-builder --dir --publish never",
+    "kernel:verify": "node scripts/verify-kernel.mjs",
+    "kernel:build": "scripts/build-occt.sh && scripts/build-kernel.sh"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

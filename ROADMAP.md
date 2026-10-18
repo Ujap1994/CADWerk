@@ -76,13 +76,14 @@ how that time is spread over the calendar.
 | Release pipeline for all packages | ✅ done: 24 packages (Windows x64/arm64, macOS universal/arm64/x64, Linux x64/arm64 in 7 formats), each smoke-tested with `--self-test` before upload |
 | Documentation with automated screenshots | ✅ done |
 | License policy and license check | ✅ done ([ADR 0008](docs/adr/0008-dependency-licenses.md)) |
-| Custom OCCT build (C++ facade, threads, no eval) and comparison with native OCCT | ⏳ next, required for Gate 1 |
+| Custom OCCT build (C++ facade, no eval, no leaks) | ✅ done: OCCT 8.0.1, editing large parts 2× faster, memory halved ([ADR 0001](docs/adr/0001-geometry-kernel.md)) |
+| Multi-threaded kernel and comparison with native OCCT | ⏳ next, required for Gate 1 |
 
 **Findings so far that change the plan:**
 
-- The prebuilt OCCT WebAssembly build leaked memory in booleans (fixed with a workaround and covered by
-  tests) and re-triangulates whole bodies on every change. A custom kernel build moves to the top of the
-  list before Gate 1.
+- The prebuilt OCCT WebAssembly build leaked memory and re-triangulated whole bodies on every change.
+  ParaWerk now uses its own OCCT 8 build with a C++ facade: no leaks, half the memory, edits of large
+  parts twice as fast, no `'unsafe-eval'`.
 - PlaneGCS solves one dense system and runs out of memory at about 1,000 connected constraints. Phase 1
   starts with sketch decomposition and plans a sparse solver.
 - GPU instancing keeps 10,000 components at about 30 fps on an Apple M3; level of detail is needed for the

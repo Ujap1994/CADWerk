@@ -87,7 +87,7 @@ The Phase 0 preview proves the technology stack end to end:
 
 ![ParaWerk main window](docs/images/screenshots/main-window.png)
 
-- **Geometry kernel:** Open CASCADE Technology in a background worker; box and cylinder (add or remove
+- **Geometry kernel:** Open CASCADE Technology 8 (own WebAssembly build) in a background worker; box and cylinder (add or remove
   material), fillet and chamfer; incremental rebuild that only recomputes from the first changed feature;
   exact volume and surface area.
 - **3D view:** shaded model with edges, view cube, standard views, orthographic and perspective
@@ -182,7 +182,7 @@ What you can expect:
 |---|---|
 | Application shell | Electron with secure defaults (context isolation, sandbox, no Node integration in the renderer), single instance |
 | Language | TypeScript (strict) |
-| Geometry kernel | [Open CASCADE Technology](https://dev.opencascade.org/) (B-Rep modeling, booleans, fillets, STEP/IGES), compiled to WebAssembly and running in a worker |
+| Geometry kernel | [Open CASCADE Technology](https://dev.opencascade.org/) 8.0.1 (B-Rep modeling, booleans, fillets, STEP), compiled to WebAssembly with ParaWerk's own C++ facade, running in a worker ([ADR 0001](docs/adr/0001-geometry-kernel.md)) |
 | Sketch solver | Geometric constraint solver; PlaneGCS evaluated in Phase 0, sparse solver planned ([ADR 0005](docs/adr/0005-sketch-solver.md)) |
 | Assembly solver | Rigid-body mate solver with degree-of-freedom analysis |
 | 3D viewport | three.js (WebGL 2, WebGPU later) with GPU picking, instancing and level of detail |
