@@ -61,6 +61,15 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           SNAPCRAFT_BUILD_ENVIRONMENT: host
+      - name: Allow the Chromium sandbox on Ubuntu
+        if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: Smoke-test the packaged app
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/smoke-test-package.mjs
+      - name: Smoke-test the packaged app
+        if: runner.os != 'Linux'
+        run: node scripts/smoke-test-package.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.name }}
