@@ -11,3 +11,7 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 - Project vision, README with disclaimer and planned feature overview.
 - Detailed roadmap with effort estimates, architecture, performance targets, risks and decision gates.
 - Project icon (SVG) and roadmap timeline graphic.
+- GPL-3.0-or-later license.
+
+### Removed
+- DWG from the planned formats, because it is a closed, proprietary format. DXF covers 2D exchange.

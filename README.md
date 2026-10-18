@@ -13,6 +13,7 @@
   <img alt="Status: planning" src="https://img.shields.io/badge/status-planning%20%2F%20pre--alpha-orange">
   <img alt="Platforms" src="https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-blue">
   <img alt="UI languages" src="https://img.shields.io/badge/UI-English%20%7C%20Deutsch-informational">
+  <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-green"></a>
 </p>
 
 > [!WARNING]
@@ -124,10 +125,12 @@ makers, students and small workshops that covers the everyday mechanical design 
 | STL | ✓ (mesh) | ✓ | 3D printing |
 | IGES | ✓ | ✓ | Legacy CAD exchange |
 | DXF | ✓ | ✓ | Laser cutting, CNC, 2D exchange |
-| DWG | – | best effort | 2D exchange (proprietary format, see roadmap) |
 | PDF | – | ✓ | Vector drawings at true scale |
 | SVG, PNG | – | ✓ | Documentation |
 | glTF / GLB, OBJ | – | ✓ | Visualization |
+
+DWG is not supported because it is a closed, proprietary format. DXF is the open format for 2D exchange
+and is read by all common CAD programs.
 
 ## Design approach
 
@@ -209,5 +212,9 @@ release; see [CHANGELOG.md](CHANGELOG.md) for what has changed.
 
 ## License
 
-The license has not been chosen yet (see the open decisions in [ROADMAP.md](ROADMAP.md#open-decisions)).
-Until a license file is added, no rights to use, copy or distribute the code are granted.
+CADWerk is free software: you can redistribute it and/or modify it under the terms of the
+**GNU General Public License** as published by the Free Software Foundation, either **version 3** of the
+License, or (at your option) any later version. See [LICENSE](LICENSE) for the full text.
+
+CADWerk is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

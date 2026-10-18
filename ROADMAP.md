@@ -351,7 +351,7 @@ populated in minutes.
 - **Automatic drawing creation:** choose views, scale and sheet size, import model dimensions and arrange
   them without overlaps; every result stays fully editable by hand
 - Full associativity: model changes update the drawing
-- Export to PDF (vector, true scale), DXF, SVG and PNG; DWG on a best-effort basis; printing
+- Export to PDF (vector, true scale), DXF, SVG and PNG; printing
 
 **Expectation management:** fully automatic, standard-compliant dimensioning is not solved even in
 commercial systems. The automatic mode creates a strong starting point that you finish by hand.
@@ -376,7 +376,6 @@ Phase 2 and DXF and PDF in Phase 6. This phase completes and hardens them.
 | 3MF | ✓ | ✓ | Colors, multiple objects, units, build items |
 | STL | ✓ (mesh) | ✓ | Binary / ASCII, resolution settings |
 | DXF | ✓ | ✓ | Sketches, faces, drawings |
-| DWG | – | best effort | Proprietary format: only through an external converter that the user installs (for example ODA File Converter or LibreDWG). DXF is the reliable path. |
 | PDF | – | ✓ | Vector, true scale, multiple sheets |
 | SVG, PNG, JPG | – | ✓ | |
 | glTF / GLB, OBJ | – | ✓ | Visualization |
@@ -384,6 +383,8 @@ Phase 2 and DXF and PDF in Phase 6. This phase completes and hardens them.
 
 Also: export presets (for example "3MF for my printer"), batch export, and round-trip tests against
 reference files. Native files of commercial CAD systems cannot be read because their formats are proprietary.
+For the same reason DWG is not supported: DXF is the open format for 2D exchange and is read by all common
+CAD programs.
 
 **Effort:** 3–5 PM · Scenario B: 3–5 weeks
 
@@ -489,14 +490,13 @@ All suites run in CI on Windows, macOS and Linux. Every reported bug gets a fail
 | 2 | Kernel failures in fillets and booleans | High | Medium | Clear rebuild errors, tolerance strategies, pinned OCCT version, every failure becomes a test case |
 | 3 | WebAssembly speed or memory limits | High | Medium | Benchmarks at Gate 1, kernel behind an interface, native add-on or 64-bit WebAssembly as fallback, caching |
 | 4 | Sketch and mate solving feels less smooth than in established tools | Medium | Medium | Early spikes, degree-of-freedom analysis, owner testing in every iteration |
-| 5 | DWG export | Medium | High | DXF as the reliable path, DWG only through an external converter, clear communication |
-| 6 | Quality of automatic dimensioning | Medium | High | Realistic expectations, strong manual tools |
-| 7 | Errors in standard-part data | High | Medium | Two sources per table, automated consistency checks, spot checks against catalogs, disclaimer |
-| 8 | Scope creep toward "everything a commercial CAD suite can do" | High | High | Fixed phase scopes, decision gates, a post-1.0 backlog |
-| 9 | Maintainability of a large code base | Medium | Medium | Strict TypeScript, clear module boundaries, architecture decision records, high test coverage |
-| 10 | Product name conflicts with existing trademarks | Medium | Medium | Trademark search (DPMA, EUIPO) before the first public release |
-| 11 | Dependency licenses (LGPL / GPL) | Medium | Low | License policy in Phase 0; GPL tools only as optional external programs |
-| 12 | Owner time and motivation | High | Medium | Useful milestones early (v0.3), gates with low sunk cost |
+| 5 | Quality of automatic dimensioning | Medium | High | Realistic expectations, strong manual tools |
+| 6 | Errors in standard-part data | High | Medium | Two sources per table, automated consistency checks, spot checks against catalogs, disclaimer |
+| 7 | Scope creep toward "everything a commercial CAD suite can do" | High | High | Fixed phase scopes, decision gates, a post-1.0 backlog |
+| 8 | Maintainability of a large code base | Medium | Medium | Strict TypeScript, clear module boundaries, architecture decision records, high test coverage |
+| 9 | Product name conflicts with existing trademarks | Medium | Medium | Trademark search (DPMA, EUIPO) before the first public release |
+| 10 | Dependency licenses (LGPL / GPL) | Medium | Low | Every dependency must be compatible with GPL-3.0; automated license check in CI |
+| 11 | Owner time and motivation | High | Medium | Useful milestones early (v0.3), gates with low sunk cost |
 
 ## 10. Decision gates
 
@@ -526,9 +526,11 @@ Only once the CAD core is stable and the v1.0 budgets are met:
 
 ## Open decisions
 
+Already decided: CADWerk is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE)).
+
+
 | Decision | Options | Needed by |
 |---|---|---|
-| License | Permissive (MIT, Apache-2.0) or copyleft (GPL-3.0, LGPL) | Before the first code is published |
 | Product name | Trademark search for "CADWerk" | Before the first public release |
 | Code signing | Apple Developer Program for notarized macOS builds; a Windows code-signing certificate. Unsigned builds work but show security warnings. | Before v0.1 packages are shared |
 | UI framework | React or SolidJS for the UI shell (the viewport is independent) | Phase 0 |
