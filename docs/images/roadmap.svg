@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 632" width="1200" height="632" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-labelledby="title">
-  <title id="title">CADWerk indicative roadmap (Scenario B)</title>
+  <title id="title">ParaWerk indicative roadmap (Scenario B)</title>
   <defs>
     <pattern id="stripesPerf" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="10" height="10" fill="#FFF1E0"/>
@@ -17,7 +17,7 @@
 
   <rect x="0.5" y="0.5" width="1199" height="631" rx="14" fill="#FFFFFF" stroke="#D0D7DE"/>
 
-  <text x="28" y="44" font-size="22" font-weight="700" fill="#1F2328">CADWerk — indicative roadmap</text>
+  <text x="28" y="44" font-size="22" font-weight="700" fill="#1F2328">ParaWerk — indicative roadmap</text>
   <text x="28" y="68" font-size="13" fill="#59636E">Scenario B: AI-assisted development with ~15–20 h/week of owner time · months from project start · estimates, not commitments</text>
 
   <!-- Row backgrounds -->

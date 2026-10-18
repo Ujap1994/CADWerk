@@ -1,6 +1,6 @@
-# CADWerk Roadmap
+# ParaWerk Roadmap
 
-This document is the plan for building CADWerk from scratch to v1.0. It contains effort and time
+This document is the plan for building ParaWerk from scratch to v1.0. It contains effort and time
 estimates, the architecture, the scope of every phase, performance targets, the test strategy, risks
 and decision gates. It is reviewed and updated at the end of every phase.
 
@@ -26,7 +26,7 @@ and decision gates. It is reviewed and updated at the end of every phase.
 
 ## 1. Summary
 
-![CADWerk roadmap timeline](docs/images/roadmap.svg)
+![ParaWerk roadmap timeline](docs/images/roadmap.svg)
 
 | Phase | Content | Traditional effort ¹ | AI-assisted, Scenario B ² | Milestone |
 |---|---|---|---|---|
@@ -60,12 +60,12 @@ how that time is spread over the calendar.
 ## 2. Guiding principles
 
 1. **Not a clone, a focused tool.** Full parity with commercial CAD suites, which represent thousands of
-   person-years of work, is explicitly not a goal. CADWerk covers the everyday mechanical workflow
+   person-years of work, is explicitly not a goal. ParaWerk covers the everyday mechanical workflow
    (sketch → part → assembly with standard parts → drawing → export) and does it well.
-2. **Own implementation, own look.** CADWerk adopts proven *functionality* from established
+2. **Own implementation, own look.** ParaWerk adopts proven *functionality* from established
    feature-based CAD systems, never their code, assets or visual design. All source code, tests, UI
-   layout, icons and styling are written for CADWerk. Visually it is an independent product.
-3. **Use a proven geometry kernel.** Writing a B-Rep kernel is a multi-decade effort. CADWerk builds on
+   layout, icons and styling are written for ParaWerk. Visually it is an independent product.
+3. **Use a proven geometry kernel.** Writing a B-Rep kernel is a multi-decade effort. ParaWerk builds on
    Open CASCADE Technology (OCCT) and invests its own effort in the parametric layer, the solvers, the UI
    and performance.
 4. **Performance is a feature from day one.** Benchmarks exist before features do. Every phase raises the
@@ -166,7 +166,7 @@ traditional person-months (PM) and as calendar weeks in Scenario B.
 
 **Scope**
 - Electron application skeleton in TypeScript with secure defaults, single instance and clean shutdown
-- UI shell prototype in CADWerk's own design language (design tokens, light and dark themes, own icon set): command bar, feature tree, property panel, status bar, view controls; English and German
+- UI shell prototype in ParaWerk's own design language (design tokens, light and dark themes, own icon set): command bar, feature tree, property panel, status bar, view controls; English and German
 - 3D viewport: orbit, pan and zoom with configurable mouse mapping, view cube, standard views,
   shaded-with-edges display, pre-selection and selection highlighting
 - **Kernel spike:** OCCT compiled to WebAssembly in a worker; primitives, booleans, fillets,
@@ -370,7 +370,7 @@ Phase 2 and DXF and PDF in Phase 6. This phase completes and hardens them.
 
 | Format | Import | Export | Notes |
 |---|:---:|:---:|---|
-| Native `.cwpart` / `.cwasm` / `.cwdrw` | ✓ | ✓ | Versioned, forward migration |
+| Native `.pwpart` / `.pwasm` / `.pwdrw` | ✓ | ✓ | Versioned, forward migration |
 | STEP AP203 / AP214 / AP242 | ✓ | ✓ | Assembly structure, names, colors |
 | IGES | ✓ | ✓ | |
 | 3MF | ✓ | ✓ | Colors, multiple objects, units, build items |
@@ -526,12 +526,12 @@ Only once the CAD core is stable and the v1.0 budgets are met:
 
 ## Open decisions
 
-Already decided: CADWerk is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE)).
+Already decided: ParaWerk is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE)).
 
 
 | Decision | Options | Needed by |
 |---|---|---|
-| Product name | Trademark search for "CADWerk" | Before the first public release |
+| Product name | Trademark search for "ParaWerk" | Before the first public release |
 | Code signing | Apple Developer Program for notarized macOS builds; a Windows code-signing certificate. Unsigned builds work but show security warnings. | Before v0.1 packages are shared |
 | UI framework | React or SolidJS for the UI shell (the viewport is independent) | Phase 0 |
 | Reference machines | The owner's Mac plus a mid-range Windows / Linux PC with integrated graphics | Phase 0 |

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/brand/cadwerk-icon.svg" alt="CADWerk icon" width="128" height="128">
+  <img src="assets/brand/parawerk-icon.svg" alt="ParaWerk icon" width="128" height="128">
 </p>
 
-<h1 align="center">CADWerk</h1>
+<h1 align="center">ParaWerk</h1>
 
 <p align="center">
   <strong>Parametric 2D/3D CAD for the desktop: parts, assemblies, standard parts and drawings.</strong><br>
@@ -17,14 +17,14 @@
 </p>
 
 > [!WARNING]
-> **CADWerk is in the planning stage. There is no usable release yet.**
+> **ParaWerk is in the planning stage. There is no usable release yet.**
 > Please read the [disclaimer](#disclaimer) before you use anything from this repository.
 
 ---
 
 ## Contents
 
-- [What is CADWerk?](#what-is-cadwerk)
+- [What is ParaWerk?](#what-is-parawerk)
 - [Disclaimer](#disclaimer)
 - [Planned features](#planned-features)
 - [Design approach](#design-approach)
@@ -35,9 +35,9 @@
 - [Documentation and screenshots](#documentation-and-screenshots)
 - [License](#license)
 
-## What is CADWerk?
+## What is ParaWerk?
 
-CADWerk is a desktop CAD application for designing mechanical parts and assemblies. It follows the
+ParaWerk is a desktop CAD application for designing mechanical parts and assemblies. It follows the
 **feature-based, history-driven workflow** that professional mechanical CAD systems use:
 
 1. **Sketch** a fully constrained 2D profile.
@@ -52,11 +52,11 @@ makers, students and small workshops that covers the everyday mechanical design 
 ## Disclaimer
 
 > [!CAUTION]
-> **CADWerk is under active development.** It is not finished, not stable and not suitable for productive
+> **ParaWerk is under active development.** It is not finished, not stable and not suitable for productive
 > or commercial use. Features can be missing, behave incorrectly or change at any time, and files created
 > with development versions may not open in later versions. Use it at your own risk.
 
-- **Early development.** CADWerk is an independent project in an early stage of development. Features
+- **Early development.** ParaWerk is an independent project in an early stage of development. Features
   may be incomplete, change without notice or contain errors. Do not use it for productive work yet,
   and always keep backups of your files.
 - **No warranty.** The software is provided **"as is"**, without warranty of any kind, express or implied,
@@ -64,17 +64,17 @@ makers, students and small workshops that covers the everyday mechanical design 
   damage, data loss, faulty parts, production costs or other consequences resulting from its use.
 - **You are responsible for your designs.** Geometry, dimensions, tolerances, mass properties,
   standard-part data, drawings and exported files must be checked by a qualified person before anything
-  is manufactured, ordered or used. CADWerk is **not** certified for safety-critical applications.
+  is manufactured, ordered or used. ParaWerk is **not** certified for safety-critical applications.
 - **Standards.** Standard parts and drawing conventions are implemented to the best of our knowledge from
   publicly available information. They do not replace the official ISO, EN and DIN standards, which are
-  published by the respective standards bodies. CADWerk makes no claim of conformity with any standard.
+  published by the respective standards bodies. ParaWerk makes no claim of conformity with any standard.
 - **File compatibility.** Import and export of third-party file formats is provided on a best-effort basis.
   Exchanged data can lose information or differ from the original.
 - **Trademarks.** SOLIDWORKS is a registered trademark of Dassault Systèmes SolidWorks Corporation.
   AutoCAD is a registered trademark of Autodesk, Inc. All other product names and trademarks belong to
-  their respective owners. CADWerk is **not affiliated with, endorsed by or sponsored by** any of these
+  their respective owners. ParaWerk is **not affiliated with, endorsed by or sponsored by** any of these
   companies. Product names are mentioned for descriptive purposes only.
-- **Third-party software.** CADWerk will build on open-source components (for example Open CASCADE
+- **Third-party software.** ParaWerk will build on open-source components (for example Open CASCADE
   Technology). Their licenses and notices will be listed in the application and in this repository.
 
 ## Planned features
@@ -119,7 +119,7 @@ makers, students and small workshops that covers the everyday mechanical design 
 ### Import and export
 | Format | Import | Export | Typical use |
 |---|:---:|:---:|---|
-| CADWerk native (`.cwpart`, `.cwasm`, `.cwdrw`) | ✓ | ✓ | Your working files |
+| ParaWerk native (`.pwpart`, `.pwasm`, `.pwdrw`) | ✓ | ✓ | Your working files |
 | STEP (AP203 / AP214 / AP242) | ✓ | ✓ | Exchange with other CAD systems |
 | 3MF | ✓ | ✓ | 3D printing, with colors and multiple objects |
 | STL | ✓ (mesh) | ✓ | 3D printing |
@@ -134,9 +134,9 @@ and is read by all common CAD programs.
 
 ## Design approach
 
-**Proven functionality, independent implementation.** CADWerk offers the capabilities that experienced
+**Proven functionality, independent implementation.** ParaWerk offers the capabilities that experienced
 mechanical designers rely on in feature-based CAD, but it is not a copy of any product. All source code,
-tests, user interface, icons and visual design are CADWerk's own work. No code, assets or UI designs from
+tests, user interface, icons and visual design are ParaWerk's own work. No code, assets or UI designs from
 other products are used.
 
 What you can expect:
@@ -176,7 +176,7 @@ The architecture and all technology choices are explained in [ROADMAP.md](ROADMA
 ## Roadmap
 
 <p align="center">
-  <img src="docs/images/roadmap.svg" alt="CADWerk roadmap timeline" width="100%">
+  <img src="docs/images/roadmap.svg" alt="ParaWerk roadmap timeline" width="100%">
 </p>
 
 | Phase | Content | Milestone |
@@ -212,9 +212,9 @@ release; see [CHANGELOG.md](CHANGELOG.md) for what has changed.
 
 ## License
 
-CADWerk is free software: you can redistribute it and/or modify it under the terms of the
+ParaWerk is free software: you can redistribute it and/or modify it under the terms of the
 **GNU General Public License** as published by the Free Software Foundation, either **version 3** of the
 License, or (at your option) any later version. See [LICENSE](LICENSE) for the full text.
 
-CADWerk is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+ParaWerk is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
 implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
