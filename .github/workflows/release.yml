@@ -55,6 +55,13 @@ jobs:
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           # snapcraft 8 renamed the "snap" command that electron-builder calls for core22 builds.
           sudo snap install snapcraft --classic --channel=7.x/stable
+          # In host mode snapcraft cannot install its build snaps without root, so install them up front.
+          if [ "$(uname -m)" = "aarch64" ]; then
+            sudo snap install core18
+            sudo snap install core22
+            sudo snap install gnome-3-28-1804
+            sudo snap install gtk-common-themes
+          fi
       - run: npm run build
       - name: Build packages
         run: ${{ matrix.command }}
