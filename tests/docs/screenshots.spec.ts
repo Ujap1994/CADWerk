@@ -237,6 +237,23 @@ test('README and user guide screenshots', async () => {
   if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
   await page.waitForTimeout(400);
   await page.screenshot({ path: out('sketch-tools.png') });
+
+  // Trim: a line across the slot; the piece of the slot's top side left of it turns red under the cursor.
+  await page.keyboard.press('l');
+  await front(12, 80);
+  await front(12, 102);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('t');
+  {
+    const p = await page.evaluate(
+      ([x, y, z]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(x, y, z),
+      [3, 0, 96] as const,
+    );
+    if (canvas) await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+  }
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-trim.png') });
+  await page.keyboard.press('Escape');
   await page.click('[data-testid="sketch-cancel"]');
   await idle(page);
 

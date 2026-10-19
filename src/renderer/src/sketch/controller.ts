@@ -78,7 +78,12 @@ export function describeToolInfo(info: ToolInfo, language: string): string {
 function toolDisplay(preview: ToolPreview): SketchToolDisplay {
   const { snap } = preview;
   const marker = snap.target.kind === 'none' ? null : { u: snap.u, v: snap.v, ring: snap.target.kind !== 'point' };
-  return { geometry: preview.geometry, marker, guides: snap.alignments.map((alignment) => [alignment.from, [snap.u, snap.v]] as const) };
+  return {
+    geometry: preview.geometry,
+    marker,
+    guides: snap.alignments.map((alignment) => [alignment.from, [snap.u, snap.v]] as const),
+    ...(preview.remove ? { remove: preview.remove } : {}),
+  };
 }
 
 /**

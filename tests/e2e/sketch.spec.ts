@@ -506,7 +506,7 @@ test('fits the smallest window in sketch mode: nothing overflows, the whole view
   expect(layout.barOverflow).toBeLessThanOrEqual(1);
   expect(layout.canvasRight).toBeLessThanOrEqual(layout.innerWidth);
   // Every command of the sketch tab is on screen.
-  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'tool-sketchFillet', 'construction', 'delete-sketch', 'settings', 'about']) {
+  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'tool-trim', 'tool-sketchFillet', 'construction', 'delete-sketch', 'settings', 'about']) {
     const box = await page.locator(`[data-command="${command}"]`).boundingBox();
     expect(box && box.x + box.width <= layout.innerWidth).toBe(true);
   }
@@ -787,4 +787,64 @@ test('rounds and bevels corners of a fully defined rectangle, keeping it fully d
   await page.locator('[data-testid="dimension-editor"]').press('Enter');
   await expect.poll(async () => ((await sketch())?.entities.find((e) => e.id === 'b') as { x: number } | undefined)?.x).toBeCloseTo(70, 6);
   await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
+});
+
+test('trims pieces between crossings and extends lines up to the next curve', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('a', -40, 0), P('b', 60, 0), { id: 'h', type: 'line', p1: 'a', p2: 'b' },
+        P('c', 0, -20), P('d', 0, 20), { id: 'v1', type: 'line', p1: 'c', p2: 'd' },
+        P('e', 30, -20), P('f', 30, 20), { id: 'v2', type: 'line', p1: 'e', p2: 'f' },
+        P('g', -40, 30), P('i', -20, 30), { id: 'short', type: 'line', p1: 'g', p2: 'i' },
+        P('j', -10, 40), P('k', -10, 20), { id: 'stop', type: 'line', p1: 'j', p2: 'k' },
+      ],
+      constraints: [],
+    };
+    const features = [{ id: 's', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await page.dblclick('.tree-item[data-feature-id="s"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const at = async (u: number, v: number) => {
+    const p = await project(page, [u, v, 0]);
+    return { x: canvas.x + p.x, y: canvas.y + p.y };
+  };
+  const sketch = async () => (await state(page)).sketch?.draft.sketch;
+  const lines = async () => (await sketch())?.entities.filter((e) => e.type === 'line').length;
+
+  // Trim (key T): the middle piece of the horizontal line between the two vertical lines.
+  await page.keyboard.press('t');
+  const middle = await at(15, 0);
+  await page.mouse.move(middle.x, middle.y, { steps: 3 });
+  await page.mouse.click(middle.x, middle.y);
+  expect(await lines()).toBe(6);
+  expect(((await sketch())?.constraints ?? []).map((c) => (c as unknown as { type: string }).type)).toContain('collinear');
+
+  // Undo, then trim the end piece instead: the line just gets shorter.
+  await page.click('[data-command="undo"]');
+  const end = await at(50, 0);
+  await page.mouse.move(end.x, end.y, { steps: 3 });
+  await page.mouse.click(end.x, end.y);
+  expect(await lines()).toBe(5);
+  const b = (await sketch())?.entities.find((e) => e.id === 'b');
+  expect(b).toBeUndefined();
+
+  // Extend (Trim ▾ > Extend): the short line grows to the line it points at.
+  await page.click('.split-toggle[data-variants="trim extend"]');
+  await page.click('.menu-item[data-tool="extend"]');
+  const shortEnd = await at(-22, 30);
+  await page.mouse.move(shortEnd.x, shortEnd.y, { steps: 3 });
+  await page.mouse.click(shortEnd.x, shortEnd.y);
+  expect((await sketch())?.entities.find((e) => e.id === 'i')?.x).toBeCloseTo(-10, 6);
+  // Nothing in this direction: a message instead.
+  const otherEnd = await at(-38, 30);
+  await page.mouse.move(otherEnd.x, otherEnd.y, { steps: 3 });
+  await page.mouse.click(otherEnd.x, otherEnd.y);
+  await expect(page.locator('.toast')).toContainText('no curve');
 });

@@ -106,6 +106,21 @@ explains the active tool.
 **R**, **C** and **A** start the variant you used last; the small arrow next to *Rectangle*, *Circle* and
 *Arc* offers all variants.
 
+### Trim and extend
+
+**Trim** (key **T**, in the *Modify* group) removes the piece of a curve between its neighboring
+crossings: move the cursor over a curve, and the piece a click would remove turns red. Ends at a crossing
+stay on the crossing curve (*on curve* relation); when the piece is in the middle of a line, the two
+remaining parts stay *collinear* (arcs keep an *equal* radius). A circle trimmed between two crossings
+becomes an arc, and a curve that nothing crosses is removed completely.
+
+**Extend** (in the menu next to *Trim*) lengthens a line or arc up to the next curve: move near the end you
+want to extend – a dashed preview shows how far it grows and highlights the curve it runs into – and click.
+Ends that are connected to other geometry or held by relations or dimensions are not moved; a message says
+why.
+
+![Trim: the piece of the slot's side up to the crossing line is shown in red before it is removed](../images/screenshots/sketch-trim.png)
+
 ### Fillets and chamfers in a sketch
 
 **Fillet** and **Chamfer** (in the *Modify* group) round or bevel the corner where two lines meet: set the

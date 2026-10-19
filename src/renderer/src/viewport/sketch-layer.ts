@@ -14,6 +14,8 @@ export interface SketchToolDisplay {
   /** Snap marker: a filled dot on points, a ring on midpoints and curves. */
   marker: { u: number; v: number; ring: boolean } | null;
   guides: readonly (readonly [Point2, Point2])[];
+  /** What a click would remove (trim), drawn in red. */
+  remove?: readonly Point2[];
 }
 
 const MARKER_SIZE_PX = 12;
@@ -103,6 +105,7 @@ export class SketchLayer {
   private readonly toolGroup = new Group();
   private readonly marker: Points<BufferGeometry, ShaderMaterial>;
   private readonly guides: LineSegments2;
+  private readonly removal: LineSegments2;
   private mmPerPixel = 1;
 
   constructor(materials: SketchMaterials) {
@@ -111,7 +114,8 @@ export class SketchLayer {
     this.preview = new SketchGraphics(materials, 'active');
     this.marker = new Points(new BufferGeometry(), materials.points.active);
     this.guides = new LineSegments2(new LineSegmentsGeometry(), materials.guide);
-    for (const object of [this.marker, this.guides]) {
+    this.removal = new LineSegments2(new LineSegmentsGeometry(), materials.removal);
+    for (const object of [this.marker, this.guides, this.removal]) {
       object.frustumCulled = false;
       object.raycast = () => undefined;
       object.visible = false;
@@ -119,7 +123,8 @@ export class SketchLayer {
     this.marker.renderOrder = 40;
     this.guides.renderOrder = 29;
     this.toolGroup.matrixAutoUpdate = false;
-    this.toolGroup.add(this.guides, this.marker);
+    this.removal.renderOrder = 41;
+    this.toolGroup.add(this.guides, this.marker, this.removal);
     this.grid = new Mesh(
       new PlaneGeometry(2, 2),
       new ShaderMaterial({
@@ -186,6 +191,14 @@ export class SketchLayer {
     const guides = display?.guides ?? [];
     setSegments(this.guides, guides.flatMap(([a, b]) => [a[0], a[1], 0, b[0], b[1], 0]));
     if (this.guides.visible) this.guides.computeLineDistances();
+    const remove = display?.remove ?? [];
+    const removal: number[] = [];
+    for (let i = 1; i < remove.length; i++) {
+      const a = remove[i - 1] as Point2;
+      const b = remove[i] as Point2;
+      removal.push(a[0], a[1], 0, b[0], b[1], 0);
+    }
+    setSegments(this.removal, removal);
   }
 
   /** Shows the geometry of the open sketch (also intermediate states while dragging). */
@@ -263,6 +276,7 @@ export class SketchLayer {
     this.preview.dispose();
     this.marker.geometry.dispose();
     this.guides.geometry.dispose();
+    this.removal.geometry.dispose();
     this.grid.geometry.dispose();
     this.grid.material.dispose();
     this.origin.geometry.dispose();

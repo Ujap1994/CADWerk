@@ -332,6 +332,26 @@ export const SketchChamferIcon = (p: P) => (
   </Icon>
 );
 
+/** Trim: a crossing with the piece to remove dashed, and scissors-like cut marks. */
+export const TrimIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3 12h7" />
+    <path d="M10 12h11" strokeDasharray="2 2.2" strokeWidth={1.3} />
+    <path d="M10 4v16" />
+    <path d="m15 8 4 8M19 8l-4 8" strokeWidth={1.4} />
+  </Icon>
+);
+
+/** Extend: a line growing up to a boundary. */
+export const ExtendIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M20 4v16" />
+    <path d="M3 12h8" />
+    <path d="M11 12h7" strokeDasharray="2 2" strokeWidth={1.3} />
+    <path d="m15 9 3 3-3 3" strokeWidth={1.4} />
+  </Icon>
+);
+
 /** Construction geometry is drawn dashed. */
 export const ConstructionIcon = (p: P) => (
   <Icon {...p}>

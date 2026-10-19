@@ -384,6 +384,7 @@ export function setSketchTool(tool: SketchToolName | null): void {
   if (next === 'circle' || next === 'threePointCircle') variants.circle = next;
   if (next === 'centerArc' || next === 'threePointArc' || next === 'tangentArc') variants.arc = next;
   if (next === 'sketchFillet' || next === 'sketchChamfer') variants.corner = next;
+  if (next === 'trim' || next === 'extend') variants.trim = next;
   setState({ sketchTool: next, sketchToolVariants: variants, sketchSelection: next ? [] : state.sketchSelection, sketchHover: null, commandTab: 'sketch' });
 }
 

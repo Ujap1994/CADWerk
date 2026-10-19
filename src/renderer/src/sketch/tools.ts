@@ -7,8 +7,10 @@
 import type { SketchData } from '../../../shared/model/sketch.ts';
 import { SketchBuilder, type PlacedPoint } from './builder.ts';
 import { chamferCorner, cornerAt, filletCorner, type CornerError } from './corners.ts';
+import { extensionTargets } from './intersect.ts';
+import { extendAt, nearerEnd, piecePolyline, trimAt, trimPiece, type TrimError } from './trim.ts';
 import { proposeDimension, type DimensionDraft } from './dimensions.ts';
-import { arcGeometry, hitTest, isCurve, pointPositions, type Point2 } from './geometry.ts';
+import { arcGeometry, distanceToCurve, hitTest, isCurve, pointPositions, type Point2 } from './geometry.ts';
 import { snapCursor, type SnapResult } from './snap.ts';
 
 export type SketchToolName =
@@ -26,6 +28,8 @@ export type SketchToolName =
   | 'point'
   | 'sketchFillet'
   | 'sketchChamfer'
+  | 'trim'
+  | 'extend'
   | 'dimension';
 
 export const SKETCH_TOOLS: readonly SketchToolName[] = [
@@ -43,6 +47,8 @@ export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'point',
   'sketchFillet',
   'sketchChamfer',
+  'trim',
+  'extend',
   'dimension',
 ];
 
@@ -86,6 +92,8 @@ export interface ToolPreview {
   dimension?: DimensionDraft;
   /** Entities the dimension tool has picked so far. */
   picks?: readonly string[];
+  /** What a click would remove (trim), as a polyline. */
+  remove?: readonly Point2[];
 }
 
 export interface ToolStep {
@@ -938,6 +946,94 @@ export class CornerTool implements SketchTool {
   }
 }
 
+/** The curve under the cursor (points do not count here). */
+function curveAt(sketch: SketchData, event: ToolEvent): string | null {
+  const positions = pointPositions(sketch);
+  let best: { id: string; distance: number } | null = null;
+  for (const entity of sketch.entities) {
+    if (!isCurve(entity)) continue;
+    const distance = distanceToCurve(entity, positions, event.u, event.v);
+    if (distance <= event.tolerance * 0.75 && (!best || distance < best.distance)) best = { id: entity.id, distance };
+  }
+  return best?.id ?? null;
+}
+
+const TRIM_MESSAGES: Record<TrimError, string> = {
+  'not-a-curve': 'trimNotACurve',
+  'no-target': 'extendNoTarget',
+  connected: 'extendConnected',
+  constrained: 'extendConstrained',
+};
+
+/** Trim: click the piece of a curve to remove; it ends at the neighboring crossings. */
+export class TrimTool implements SketchTool {
+  readonly name = 'trim' as const;
+  readonly busy = false;
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const none: SnapResult = { u: event.u, v: event.v, target: { kind: 'none' }, alignments: [] };
+    const curve = curveAt(sketch, event);
+    const piece = curve ? trimPiece(sketch, curve, [event.u, event.v]) : null;
+    return { geometry: EMPTY, snap: none, info: null, ...(piece ? { remove: piecePolyline(piece) } : {}) };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const curve = curveAt(sketch, event);
+    if (!curve) return { commit: null, preview: this.hover(sketch, event) };
+    const result = trimAt(sketch, curve, [event.u, event.v]);
+    if (!result.ok) return { commit: null, preview: this.hover(sketch, event), message: TRIM_MESSAGES[result.error] };
+    return { commit: result.sketch, preview: this.hover(result.sketch, event) };
+  }
+
+  cancel(): boolean {
+    return false;
+  }
+}
+
+/** Extend: click a line or arc near the end to lengthen; it grows up to the next curve. */
+export class ExtendTool implements SketchTool {
+  readonly name = 'extend' as const;
+  readonly busy = false;
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const none: SnapResult = { u: event.u, v: event.v, target: { kind: 'none' }, alignments: [] };
+    const curve = curveAt(sketch, event);
+    const end = curve ? nearerEnd(sketch, curve, [event.u, event.v]) : null;
+    const target = curve && end ? extensionTargets(sketch, curve, end)[0] : undefined;
+    if (!curve || !end || !target) return { geometry: EMPTY, snap: none, info: null };
+    const entity = sketch.entities.find((candidate) => candidate.id === curve);
+    const positions = pointPositions(sketch);
+    const preview = new Preview();
+    if (entity?.type === 'line') {
+      const from = positions.get(end === 'start' ? entity.p1 : entity.p2);
+      if (from) preview.line(from, target.at, true);
+    } else if (entity?.type === 'arc') {
+      const center = positions.get(entity.center);
+      const from = positions.get(end === 'start' ? entity.start : entity.end);
+      if (center && from) {
+        if (end === 'end') preview.arc(center, from, target.at, true);
+        else preview.arc(center, target.at, from, true);
+      }
+    }
+    // The ring marks where the curve will end; the curve it runs into is highlighted.
+    const into = sketch.entities.find((candidate) => candidate.id === target.curve);
+    const curveType = into?.type === 'circle' || into?.type === 'arc' ? into.type : 'line';
+    return { geometry: preview.build(), snap: { ...none, target: { kind: 'curve', curve: target.curve ?? '', curveType }, u: target.at[0], v: target.at[1] }, info: null };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const curve = curveAt(sketch, event);
+    if (!curve) return { commit: null, preview: this.hover(sketch, event) };
+    const result = extendAt(sketch, curve, [event.u, event.v]);
+    if (!result.ok) return { commit: null, preview: this.hover(sketch, event), message: TRIM_MESSAGES[result.error] };
+    return { commit: result.sketch, preview: this.hover(result.sketch, event) };
+  }
+
+  cancel(): boolean {
+    return false;
+  }
+}
+
 export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_TOOL_OPTIONS): SketchTool {
   switch (name) {
     case 'line':
@@ -966,6 +1062,10 @@ export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_
       return new CornerTool(name, options.filletRadius);
     case 'sketchChamfer':
       return new CornerTool(name, options.chamferDistance);
+    case 'trim':
+      return new TrimTool();
+    case 'extend':
+      return new ExtendTool();
     case 'dimension':
       return new DimensionTool();
   }

@@ -82,6 +82,8 @@ export class SketchMaterials {
   readonly guide: LineMaterial;
   /** Dimension lines and arrows (vertex colors). */
   readonly dimension: LineMaterial;
+  /** What the trim tool would remove. */
+  readonly removal: LineMaterial;
   format: DimensionFormat = defaultDimensionFormat('en');
   readonly points: Record<SketchLook, ShaderMaterial>;
   readonly colors = {
@@ -112,6 +114,7 @@ export class SketchMaterials {
     this.highlight = new LineMaterial({ linewidth: 3.2, worldUnits: false, vertexColors: true, depthTest: false, transparent: true });
     this.guide = new LineMaterial({ linewidth: 1, worldUnits: false, dashed: true, depthTest: false, transparent: true, opacity: 0.85 });
     this.dimension = new LineMaterial({ linewidth: 1.1, worldUnits: false, vertexColors: true, depthTest: false, transparent: true });
+    this.removal = new LineMaterial({ linewidth: 3.6, worldUnits: false, depthTest: false, transparent: true, opacity: 0.9 });
     const points = (look: SketchLook) =>
       new ShaderMaterial({
         vertexShader: POINT_VERTEX,
@@ -134,11 +137,12 @@ export class SketchMaterials {
     this.colors.guide.setHex(palette.guide);
     this.colors.dimension.setHex(palette.dimension);
     this.colors.dimensionDriven.setHex(palette.dimensionDriven);
+    this.removal.color.setHex(palette.sketchOver);
     this.guide.color.copy(this.colors.guide);
   }
 
   setResolution(resolution: Vector2, pixelRatio: number): void {
-    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, this.dimension]) {
+    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, this.dimension, this.removal]) {
       material.resolution.copy(resolution);
     }
     for (const material of Object.values(this.points)) (material.uniforms.uPixelRatio as { value: number }).value = pixelRatio;
@@ -155,7 +159,15 @@ export class SketchMaterials {
   }
 
   dispose(): void {
-    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, this.dimension, ...Object.values(this.points)]) {
+    for (const material of [
+      ...Object.values(this.lines),
+      ...Object.values(this.construction),
+      this.highlight,
+      this.guide,
+      this.dimension,
+      this.removal,
+      ...Object.values(this.points),
+    ]) {
       material.dispose();
     }
   }

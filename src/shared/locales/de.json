@@ -113,7 +113,9 @@
       "slot": "Langloch",
       "polygon": "Polygon",
       "sketchFillet": "Verrundung",
-      "sketchChamfer": "Fase"
+      "sketchChamfer": "Fase",
+      "trim": "Trimmen",
+      "extend": "Verlängern"
     },
     "sketchToolTips": {
       "line": "Verbundene Linien zeichnen (L)",
@@ -132,7 +134,9 @@
       "slot": "Gerades Langloch aus den beiden Bogenmittelpunkten und der Breite",
       "polygon": "Regelmäßiges Vieleck aus Mittelpunkt und einer Ecke",
       "sketchFillet": "Ecke zwischen zwei Linien abrunden",
-      "sketchChamfer": "Ecke zwischen zwei Linien anfasen"
+      "sketchChamfer": "Ecke zwischen zwei Linien anfasen",
+      "trim": "Das Stück einer Kurve zwischen ihren Schnittpunkten entfernen (T)",
+      "extend": "Linie oder Bogen bis zur nächsten Kurve verlängern (T)"
     }
   },
   "features": {
@@ -343,7 +347,9 @@
       "slot": "Die Mittelpunkte beider Enden anklicken, dann seitlich bewegen, um die Breite festzulegen, und klicken.",
       "polygon": "Mittelpunkt anklicken, dann eine Ecke. Alle Seiten bleiben gleich lang; die Ecken liegen auf einem Konstruktionskreis.",
       "sketchFillet": "Radius einstellen, dann Ecken anklicken, an denen sich zwei Linien treffen. Die Linien werden gekürzt und durch einen tangentialen Bogen mit Radiusmaß verbunden.",
-      "sketchChamfer": "Abstand einstellen, dann Ecken anklicken, an denen sich zwei Linien treffen. Beide Linien werden um den Abstand gekürzt und durch eine Linie verbunden."
+      "sketchChamfer": "Abstand einstellen, dann Ecken anklicken, an denen sich zwei Linien treffen. Beide Linien werden um den Abstand gekürzt und durch eine Linie verbunden.",
+      "trim": "Über eine Kurve fahren: Das Stück bis zu den benachbarten Schnittpunkten wird rot; Klicken entfernt es. Eine Kurve ohne Schnittpunkte wird ganz entfernt.",
+      "extend": "In die Nähe des Endes einer Linie oder eines Bogens fahren: Eine gestrichelte Vorschau zeigt die Verlängerung; Klicken verlängert bis zur nächsten Kurve."
     },
     "tool": "Werkzeug",
     "selectTool": "Auswählen",
@@ -377,7 +383,11 @@
       "drivenNotEditable": "Referenzbemaßungen zeigen den gemessenen Wert und lassen sich nicht ändern.",
       "cornerNotACorner": "Klicke eine Ecke an, an der sich genau zwei Linien treffen.",
       "cornerTooLarge": "Radius oder Abstand ist für die Linien an dieser Ecke zu groß.",
-      "cornerStraight": "Die beiden Linien setzen sich geradlinig fort; hier ist keine Ecke."
+      "cornerStraight": "Die beiden Linien setzen sich geradlinig fort; hier ist keine Ecke.",
+      "trimNotACurve": "Klicke auf eine Linie, einen Kreis oder Bogen.",
+      "extendNoTarget": "In dieser Richtung gibt es keine Kurve, bis zu der verlängert werden kann.",
+      "extendConnected": "Dieses Ende ist mit anderer Geometrie verbunden und kann nicht verlängert werden.",
+      "extendConstrained": "Beziehungen oder Bemaßungen halten dieses Ende fest; lösche sie, um es zu verlängern."
     },
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
     "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",

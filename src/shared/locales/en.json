@@ -113,7 +113,9 @@
       "slot": "Slot",
       "polygon": "Polygon",
       "sketchFillet": "Fillet",
-      "sketchChamfer": "Chamfer"
+      "sketchChamfer": "Chamfer",
+      "trim": "Trim",
+      "extend": "Extend"
     },
     "sketchToolTips": {
       "line": "Draw connected lines (L)",
@@ -132,7 +134,9 @@
       "slot": "Straight slot from the two arc centers and the width",
       "polygon": "Regular polygon from the center and a corner",
       "sketchFillet": "Round the corner where two lines meet",
-      "sketchChamfer": "Bevel the corner where two lines meet"
+      "sketchChamfer": "Bevel the corner where two lines meet",
+      "trim": "Remove the piece of a curve between its crossings (T)",
+      "extend": "Lengthen a line or arc up to the next curve (T)"
     }
   },
   "features": {
@@ -343,7 +347,9 @@
       "slot": "Click the centers of both ends, then move sideways to set the width and click.",
       "polygon": "Click the center, then a corner. All sides stay equal; the corners lie on a construction circle.",
       "sketchFillet": "Set the radius, then click corners where two lines meet. The lines are shortened and joined by a tangent arc with a radius dimension.",
-      "sketchChamfer": "Set the distance, then click corners where two lines meet. Both lines are shortened by the distance and joined by a line."
+      "sketchChamfer": "Set the distance, then click corners where two lines meet. Both lines are shortened by the distance and joined by a line.",
+      "trim": "Move over a curve: the piece up to the neighboring crossings turns red; click to remove it. A curve that nothing crosses is removed completely.",
+      "extend": "Move near the end of a line or arc: a dashed preview shows how far it grows; click to extend it up to the next curve."
     },
     "tool": "Tool",
     "selectTool": "Select",
@@ -377,7 +383,11 @@
       "drivenNotEditable": "Reference dimensions show the measured value and cannot be changed.",
       "cornerNotACorner": "Click a corner where exactly two lines meet.",
       "cornerTooLarge": "The radius or distance is too large for the lines at this corner.",
-      "cornerStraight": "The two lines continue each other in a straight line; there is no corner."
+      "cornerStraight": "The two lines continue each other in a straight line; there is no corner.",
+      "trimNotACurve": "Click on a line, circle or arc.",
+      "extendNoTarget": "There is no curve to extend to in this direction.",
+      "extendConnected": "This end is connected to other geometry and cannot be extended.",
+      "extendConstrained": "Relations or dimensions hold this end in place; delete them to extend it."
     },
     "dimensionsSelected_one": "{{count}} dimension selected",
     "dimensionsSelected_other": "{{count}} dimensions selected",

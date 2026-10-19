@@ -13,7 +13,9 @@ import {
   ChevronDownIcon,
   CircleIcon,
   PolygonIcon,
+  ExtendIcon,
   SketchChamferIcon,
+  TrimIcon,
   SketchFilletIcon,
   SlotIcon,
   TangentArcIcon,
@@ -56,6 +58,8 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   polygon: PolygonIcon,
   sketchFillet: SketchFilletIcon,
   sketchChamfer: SketchChamferIcon,
+  trim: TrimIcon,
+  extend: ExtendIcon,
   point: PointIcon,
   dimension: DimensionIcon,
 };
@@ -237,6 +241,7 @@ function SketchTab() {
         <ToolButton tool="point" disabled={off} />
       </Group>
       <Group label={t('commands.groups.modify')}>
+        <SplitToolButton tools={['trim', 'extend']} current={variants.trim} disabled={off} />
         <SplitToolButton tools={['sketchFillet', 'sketchChamfer']} current={variants.corner} disabled={off} />
         <CommandButton
           id="construction"

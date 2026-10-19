@@ -80,6 +80,7 @@ export interface AppState {
     circle: 'circle' | 'threePointCircle';
     arc: 'centerArc' | 'threePointArc' | 'tangentArc';
     corner: 'sketchFillet' | 'sketchChamfer';
+    trim: 'trim' | 'extend';
   };
   /** Number of sides the polygon tool draws. */
   polygonSides: number;
@@ -117,7 +118,7 @@ export const initialState: AppState = {
   sketchAnalysis: null,
   sketchStatuses: {},
   sketchTool: null,
-  sketchToolVariants: { rectangle: 'cornerRectangle', circle: 'circle', arc: 'centerArc', corner: 'sketchFillet' },
+  sketchToolVariants: { rectangle: 'cornerRectangle', circle: 'circle', arc: 'centerArc', corner: 'sketchFillet', trim: 'trim' },
   polygonSides: 6,
   filletRadius: 5,
   chamferDistance: 3,

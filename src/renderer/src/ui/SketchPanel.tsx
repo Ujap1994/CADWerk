@@ -3,6 +3,7 @@ import { STANDARD_PLANES, type SketchPlaneRef } from '../../../shared/model/sket
 import * as commands from '../commands.ts';
 import { isDimension, type SketchConstraint } from '../../../shared/model/sketch.ts';
 import { applicableRelations, relationKindOf, relationsOf } from '../sketch/relations.ts';
+import type { SketchToolName } from '../sketch/tools.ts';
 import { useAppState } from '../state/store.ts';
 import { useFeatureName } from './FeatureTree.tsx';
 import { CheckIcon, CloseIcon, PlaneIcon, SketchIcon, TrashIcon } from './icons.tsx';
@@ -59,6 +60,9 @@ function useConstraintName() {
     return kind ? t(`sketch.relationNames.${kind}`) : constraint.type;
   };
 }
+
+/** Tools that change existing geometry; the snapping hint is about drawing new geometry. */
+const EDITING_TOOLS: ReadonlySet<SketchToolName> = new Set(['trim', 'extend', 'sketchFillet', 'sketchChamfer', 'dimension']);
 
 function CornerSize({ tool }: { tool: 'sketchFillet' | 'sketchChamfer' }) {
   const { t } = useTranslation();
@@ -228,7 +232,7 @@ function OpenSketch() {
         <p className="panel-hint is-flush">{t(`sketch.toolHints.${tool ?? 'select'}`)}</p>
         {tool === 'polygon' ? <PolygonSides /> : null}
         {tool === 'sketchFillet' || tool === 'sketchChamfer' ? <CornerSize tool={tool} /> : null}
-        {tool ? <p className="panel-hint is-flush">{t('sketch.toolHints.snapping')}</p> : null}
+        {tool && !EDITING_TOOLS.has(tool) ? <p className="panel-hint is-flush">{t('sketch.toolHints.snapping')}</p> : null}
       </fieldset>
       {tool ? null : <SelectionSection />}
       <fieldset className="panel-section">
