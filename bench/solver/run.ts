@@ -3,7 +3,9 @@
  * Run: npm run bench:solver   Results: bench/results/solver-<platform>-<arch>.json
  */
 import { GcsWrapper, init_planegcs_module } from '@salusoft89/planegcs';
+import { solveSketch } from '../../src/sketch/solver/index.ts';
 import { calibration, measure, meta, printReport, summarize, writeReport, type BenchReport, type CaseResult } from '../lib.ts';
+import { rectangleChain } from './parawerk.ts';
 
 type Primitive = Record<string, unknown> & { id: string; type: string };
 
@@ -61,9 +63,30 @@ for (const rectangles of sizes) {
       wrapper.destroy_gcs_module();
     }
   }, { iterations: rectangles > 100 ? 5 : 15, warmup: 1 });
-  cases[`solve.${constraints}constraints`] = { ...result, info: { constraints, status } };
-  console.log(`solved ${constraints} constraints: ${result.medianMs} ms`);
+  cases[`planegcs.solve.${constraints}constraints`] = { ...result, info: { constraints, status } };
+  console.log(`planegcs solved ${constraints} constraints: ${result.medianMs} ms`);
 }
+
+// ParaWerk's own sparse solver (src/sketch/solver) on the same connected sketches, larger sizes too.
+for (const rectangles of [8, 36, 72, 143, 286]) {
+  const { constraints } = rectangleChain(rectangles, 1);
+  let converged = false;
+  const result = measure((i) => {
+    converged = solveSketch(rectangleChain(rectangles, i + 10).sketch, { analyze: false }).converged;
+  }, { iterations: rectangles > 100 ? 5 : 15, warmup: 1 });
+  cases[`parawerk.solve.${constraints}constraints`] = { ...result, info: { constraints, converged: converged ? 1 : 0 } };
+  console.log(`parawerk solved ${constraints} constraints: ${result.medianMs} ms`);
+}
+
+// Interactive dragging and definition analysis on a solved sketch with about 1,000 constraints.
+const solved = solveSketch(rectangleChain(143, 3).sketch, { analyze: false }).sketch;
+const last = solved.entities.find((e) => e.id === 'p142_2');
+if (last?.type === 'point') {
+  cases['parawerk.drag.1000constraints'] = measure((i) => {
+    solveSketch(solved, { drag: { kind: 'point', id: 'p142_2', x: last.x + (i % 5), y: last.y + 1 }, analyze: false });
+  }, { iterations: 20, warmup: 2 });
+}
+cases['parawerk.analyze.1000constraints'] = measure(() => solveSketch(solved, { analyze: true }), { iterations: 5, warmup: 1 });
 
 const report: BenchReport = { suite: 'solver', meta: meta(), cases };
 printReport(report);
