@@ -77,7 +77,8 @@ how that time is spread over the calendar.
 | Documentation with automated screenshots | ✅ done |
 | License policy and license check | ✅ done ([ADR 0008](docs/adr/0008-dependency-licenses.md)) |
 | Custom OCCT build (C++ facade, no eval, no leaks) | ✅ done: OCCT 8.0.1, editing large parts 2× faster, memory halved ([ADR 0001](docs/adr/0001-geometry-kernel.md)) |
-| Multi-threaded kernel and comparison with native OCCT | ⏳ next, required for Gate 1 |
+| Comparison with native OCCT | ✅ done: WebAssembly is 1.5–4× slower; stays the default, native add-on path kept open |
+| Multi-threaded kernel | ⏳ next |
 
 **Findings so far that change the plan:**
 

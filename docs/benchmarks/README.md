@@ -42,6 +42,10 @@ CI run and copy the JSON files into `bench/baselines`.
 
 `KERNEL_BACKEND=replicad npm run bench:kernel` runs the same suite on the Phase 0 build.
 
+**Native comparison:** `bench/native/build-occt-native.sh` and `bench/native/run.sh` run the same cases
+on natively compiled OCCT with the same kernel core. Native is 1.5–4× faster (for example editing the
+100-hole plate: 60 ms native, 218 ms WebAssembly); see [ADR 0001](../adr/0001-geometry-kernel.md).
+
 ### 2D constraint solver (PlaneGCS, one connected sketch)
 
 | Constraints | Median |

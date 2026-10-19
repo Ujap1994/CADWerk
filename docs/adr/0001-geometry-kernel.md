@@ -50,6 +50,28 @@ with ParaWerk's GPL-3.0-or-later license.
 | Memory growth over 400 fillet rebuilds | leaks ≈ 150–250 KB per rebuild | none (test budget 8 MB) |
 | Size of the WebAssembly module | 23.0 MB | 15.2 MB |
 
+## WebAssembly compared with native OCCT (Gate 1)
+
+The same kernel core (`native/kernel/src/core.cpp`) compiled natively against OCCT 8.0.1
+(`bench/native`), single-threaded, Apple M3, median:
+
+| Case | Native | WebAssembly | Factor |
+|---|---|---|---|
+| Box rebuild | 0.23 ms | 0.66 ms | 2.9× |
+| Fillet of 12 box edges | 8.1 ms | 34 ms | 4.2× |
+| Plate with 100 holes, edit last feature | 60 ms | 218 ms | 3.7× |
+| Plate with 100 holes, full rebuild | 781 ms | 1,657 ms | 2.1× |
+| Mesh of the unchanged plate | 23 ms | 60 ms | 2.6× |
+| Mass properties | 11 ms | 35 ms | 3.3× |
+| STEP export | 28 ms | 46 ms | 1.6× |
+| STL export | 547 ms | 795 ms | 1.5× |
+
+WebAssembly costs a factor of 1.5–4 (the WebAssembly figures also include the transfer of results to
+JavaScript). **Decision:** stay with WebAssembly: interactive edits of typical parts stay well below one
+second, one portable binary serves all six platform/architecture combinations, and the kernel runs
+sandboxed. Because the core has no Emscripten dependency, a native Node add-on in an Electron utility
+process remains a contained change. It is re-evaluated with the assembly scale ladder in Phase 4.
+
 ## Problems of the prebuilt build that led to the decision
 
 1. `delete()` on `BRepAlgoAPI_*` objects did not release internal data (≈ 200 KB per boolean);
@@ -69,5 +91,4 @@ Emscripten; WebAssembly has no signals to convert.
 
 - Multi-threaded meshing and booleans (`-pthread`, OCCT's thread pool; cross-origin isolation is already
   enabled).
-- Comparison with native OCCT to decide whether large assemblies need a native add-on.
 - History tracking in the facade for persistent naming (ADR 0002).
