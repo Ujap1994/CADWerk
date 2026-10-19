@@ -394,7 +394,8 @@ test('draws with the tools: snapping, automatic relations, drag drawing, Esc and
   // Keyboard shortcut and drag drawing: a circle around the midpoint of the bottom line.
   await page.keyboard.press('c');
   const center = await screen(25, 0.3);
-  const rim = await screen(25, 8);
+  // Below the line, where nothing else lines up (snapping depends on the zoom level).
+  const rim = await screen(25, -8);
   await page.mouse.move(center.x, center.y, { steps: 3 });
   await page.mouse.down();
   await page.mouse.move(rim.x, rim.y, { steps: 8 });
@@ -410,8 +411,9 @@ test('draws with the tools: snapping, automatic relations, drag drawing, Esc and
   await clickAt(-30, 46);
   expect(await count('line')).toBe(4 + 6);
   await page.keyboard.press('Escape');
-  const corner = await screen(-50, 34);
-  await page.mouse.click(corner.x + 40, corner.y);
+  // A point on the bottom edge of the center rectangle, away from corners and its midpoint.
+  const edge = await screen(-45, 34);
+  await page.mouse.click(edge.x, edge.y);
   const selected = (await state(page)).sketchSelection;
   expect(selected).toHaveLength(1);
   await page.click('[data-command="construction"]');
@@ -476,4 +478,23 @@ test('adds relations to selected geometry, refuses over-defining ones and delete
   // Relations of the selection can be deleted from the list.
   await page.click('.relation-item[data-constraint] .icon-button');
   expect(await constraints()).toEqual(['horizontal']);
+});
+
+test('fits the smallest window in sketch mode: nothing overflows, the whole view is reachable', async () => {
+  launched = await launchApp({ width: 960, height: 600 });
+  const { page } = launched;
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  await expect(page.locator('[data-command="tool-line"]')).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const canvas = document.querySelector('.viewport-canvas')?.getBoundingClientRect();
+    return { scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, canvasRight: canvas?.right ?? Infinity };
+  });
+  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth);
+  expect(layout.canvasRight).toBeLessThanOrEqual(layout.innerWidth);
+  // Every command of the sketch tab is on screen.
+  for (const command of ['exit-sketch', 'tool-line', 'tool-point', 'construction', 'delete-sketch', 'settings', 'about']) {
+    const box = await page.locator(`[data-command="${command}"]`).boundingBox();
+    expect(box && box.x + box.width <= layout.innerWidth).toBe(true);
+  }
 });
