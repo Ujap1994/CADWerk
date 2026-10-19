@@ -281,6 +281,34 @@ a part reliable to edit. ParaWerk shows the state at all times:
 ParaWerk avoids conflicts while you work: relations that contradict the sketch are refused, and
 dimensions that would over-define it become reference dimensions.
 
+## Example: a bracket profile
+
+This walk-through draws an L-shaped bracket, 60 × 40 mm with 10 mm legs and a Ø 6 mm hole in each leg,
+and defines it fully. It takes about 64 clicks and key presses; an automated test repeats exactly these
+steps in the smallest window, so the workflow stays this short.
+
+1. **Sketch** → **Top plane**.
+2. **The outline.** Press **L** and click the corners in turn, starting and ending at the origin:
+   (0, 0), (60, 0), (60, 10), (10, 10), (10, 40), (0, 40), (0, 0). Close to horizontal and vertical lines
+   get their relations automatically (**H** and **V** symbols appear). Press **Esc** twice.
+3. **Zoom to fit** (**F** or the view toolbar) so the profile fills the view.
+4. **The holes.** Press **C**, click a center in the lower leg and a point on the rim, then the same in the
+   upper leg. **Esc**.
+5. **Same size.** Click the first circle, **Shift**-click the second and choose **Equal** in the side panel.
+6. **Dimensions.** Press **D**. For each value, click the geometry, click where the value should go and
+   type the value:
+   - the bottom line: **60**; the short right line: **10**; the top line of the upright leg: **10**; the
+     left line: **40**;
+   - one circle: **6** (the other one follows through *Equal*);
+   - the lower hole's center and the bottom line: **5**; the same center and the right line: **15**;
+   - the upper hole's center and the left line: **5**; the same center and the top line: **10**.
+7. The status turns **Fully defined**: all geometry is dark, and the feature tree shows no marker.
+   A further dimension – for example the length of the step – becomes a reference dimension in
+   parentheses, because it already follows from the others.
+8. Click **✓** to keep the sketch.
+
+![The bracket profile, fully defined: relation symbols, nine driving dimensions and one reference dimension](../images/screenshots/sketch-bracket.png)
+
 ## Working with sketch geometry
 
 ![An open sketch on the top face; the line under the cursor is highlighted](../images/screenshots/sketch-geometry.png)

@@ -1009,3 +1009,120 @@ test('imports a DXF outline into the sketch and exports the sketch as DXF', asyn
   expect(text.match(/\nLINE\n/g)).toHaveLength(4);
   expect(text).toContain('\nCIRCLE\n');
 });
+
+test('exit check: a bracket profile with two holes is drawn and fully defined with mouse and keyboard only', async () => {
+  launched = await launchApp({ width: 960, height: 600 });
+  const { page } = launched;
+  let actions = 0;
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  actions += 2;
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const clickAt = async (u: number, v: number, modifiers: 'Shift'[] = []) => {
+    const p = await project(page, [u, v, 0]);
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+    for (const key of modifiers) await page.keyboard.down(key);
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+    for (const key of modifiers) await page.keyboard.up(key);
+    actions++;
+  };
+  const key = async (name: string) => {
+    await page.keyboard.press(name);
+    actions++;
+  };
+  const sketch = async () => (await state(page)).sketch?.draft.sketch;
+  const count = async (type: string) => (await sketch())?.entities.filter((e) => e.type === type).length;
+  const kinds = async () => ((await sketch())?.constraints ?? []).map((c) => (c as unknown as { type: string }).type).sort();
+  const status = page.locator('[data-testid="sketch-status"]');
+  const editor = page.locator('[data-testid="dimension-editor"]');
+
+  // The L-shaped outline: one chain of lines from the origin and back; horizontals and verticals are inferred.
+  await key('l');
+  for (const [u, v] of [[0, 0], [60, 0], [60, 10], [10, 10], [10, 40], [0, 40], [0, 0]] as const) await clickAt(u, v);
+  await key('Escape');
+  await key('Escape');
+  expect(await count('line')).toBe(6);
+  expect(await kinds()).toEqual(['horizontal', 'horizontal', 'horizontal', 'vertical', 'vertical', 'vertical']);
+  await expect(status).toHaveText('Under defined');
+
+  // Fill the view with the outline (the button animates; wait until the view stands still).
+  await page.click('[data-testid="zoom-to-fit"]');
+  actions++;
+  let last = '';
+  await expect
+    .poll(async () => {
+      const now = JSON.stringify(await project(page, [60, 40, 0]));
+      const still = now === last;
+      last = now;
+      return still;
+    })
+    .toBe(true);
+
+  // Two holes, one in each leg.
+  await key('c');
+  await clickAt(45, 5);
+  await clickAt(48, 5);
+  await clickAt(5, 30);
+  await clickAt(8, 30);
+  await key('Escape');
+  expect(await count('circle')).toBe(2);
+
+  // Both holes get the same size.
+  await clickAt(45, 8);
+  await clickAt(5, 33, ['Shift']);
+  await page.click('.relation-button[data-relation="equal"]');
+  actions++;
+  await expect.poll(kinds).toContain('equal');
+  await key('Escape');
+
+  // Smart dimension: pick, place, type the value.
+  await key('d');
+  const dimension = async (picks: (readonly [number, number])[], place: readonly [number, number], value: string) => {
+    for (const [u, v] of picks) await clickAt(u, v);
+    await clickAt(...place);
+    await expect(editor).toBeVisible();
+    await editor.fill(value);
+    await editor.press('Enter');
+    actions += 2;
+    await expect(editor).toBeHidden();
+  };
+  await dimension([[30, 0]], [30, -7], '60');
+  await dimension([[60, 5]], [67, 5], '10');
+  await dimension([[4, 40]], [4, 47], '10');
+  await dimension([[0, 20]], [-7, 20], '40');
+  await dimension([[45, 2]], [36, -5], '6');
+  await dimension([[45, 5], [20, 0]], [53, 2], '5');
+  await dimension([[45, 5], [60, 3]], [52, -9], '15');
+  await dimension([[5, 30], [0, 15]], [-8, 30], '5');
+  await dimension([[5, 30], [8, 40]], [16, 35], '10');
+  await expect(status).toHaveText('Fully defined');
+  expect((await kinds()).filter((kind) => !['horizontal', 'vertical', 'equal'].includes(kind))).toHaveLength(9);
+  // From the Sketch command to a fully defined profile: 64 clicks and key presses (a typed value with
+  // Enter counts as two). More would mean the workflow got slower.
+  console.log(`bracket profile fully defined after ${actions} actions`);
+  expect(actions).toBeLessThanOrEqual(64);
+
+  // One more value on a defined distance would over-define the sketch: it becomes a reference dimension.
+  await clickAt(35, 10);
+  await clickAt(35, 15);
+  await expect(editor).toBeVisible();
+  await editor.press('Enter');
+  await expect(page.locator('.toast')).toContainText('reference dimension');
+  await expect(status).toHaveText('Fully defined');
+  await key('Escape');
+
+  // Stored as a fully defined sketch; the geometry is where the values say.
+  await page.click('[data-testid="sketch-ok"]');
+  const feature = (await state(page)).history.features.find((f) => f.type === 'sketch');
+  expect(feature?.sketch?.entities).toHaveLength(15);
+  await expect(page.locator(`.tree-item[data-feature-id="${feature?.id}"] [data-sketch-status]`)).toHaveCount(0);
+  const at = (id: string) => (feature?.sketch?.entities as { id: string; x?: number; y?: number; radius?: number; type: string }[]).find((e) => e.id === id);
+  const circles = (feature?.sketch?.entities as { type: string; radius?: number; center?: string }[]).filter((e) => e.type === 'circle');
+  expect(circles.map((c) => c.radius)).toEqual([expect.closeTo(3, 6), expect.closeTo(3, 6)]);
+  expect(circles.map((c) => [at(c.center ?? '')?.x, at(c.center ?? '')?.y])).toEqual([
+    [expect.closeTo(45, 6), expect.closeTo(5, 6)],
+    [expect.closeTo(5, 6), expect.closeTo(30, 6)],
+  ]);
+});

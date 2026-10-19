@@ -49,6 +49,21 @@ describe('relation glyphs', () => {
     expect(left?.symbol).toBe('V');
   });
 
+  it('finds the outside of non-convex outlines such as an L profile', () => {
+    const P = point;
+    const L = (id: string, p1: string, p2: string) => ({ id, type: 'line' as const, p1, p2 });
+    // Drawn clockwise, so the walking direction alone would put the symbols inside.
+    const sketch: SketchData = {
+      entities: [P('o', 0, 0), P('a', 0, 40), P('b', 10, 40), P('c', 10, 10), P('d', 60, 10), P('e', 60, 0)],
+      constraints: [],
+    };
+    sketch.entities.push(L('up', 'o', 'a'), L('top', 'a', 'b'), L('inner', 'b', 'c'), L('step', 'c', 'd'), L('end', 'd', 'e'), L('base', 'e', 'o'));
+    sketch.constraints.push({ id: 'v', type: 'vertical', line: 'inner' }, { id: 'h', type: 'horizontal', line: 'step' });
+    const [inner, step] = relationGlyphs(sketch, pointPositions(sketch), 1);
+    expect(inner?.at).toEqual([expect.closeTo(23), expect.closeTo(25)]);
+    expect(step?.at).toEqual([expect.closeTo(35), expect.closeTo(23)]);
+  });
+
   it('puts symbols of a line on its own above it, or left of it', () => {
     const sketch: SketchData = {
       entities: [point('p', 0, 0), point('q', -40, 0), { id: 'line', type: 'line', p1: 'p', p2: 'q' }, point('r', 50, 0), point('s', 50, -30), { id: 'post', type: 'line', p1: 'r', p2: 's' }],
@@ -82,10 +97,23 @@ describe('relation glyphs', () => {
       { id: 'on', type: 'pointOnCircle', point: 'free', circle: 'hole' },
       { id: 'tan', type: 'tangent', a: 'right', b: 'hole' },
     ]).filter((glyph) => glyph.key === 'on:free' || glyph.key === 'tan:hole');
-    expect(onCircle?.symbol).toBe('◦');
+    expect(onCircle?.symbol).toBe('○');
     expect(onCircle?.at).toEqual([expect.closeTo(300 + 0.7 * 6.5), expect.closeTo(20 - 0.9 * 6.5)]);
     const distance = Math.hypot((tangent?.at[0] ?? 0) - 200, tangent?.at[1] ?? 0);
     expect(distance).toBeCloseTo(16.5);
+  });
+
+  it('shows a tangency of curves meeting at a point once, at the joint', () => {
+    const sketch: SketchData = {
+      entities: [
+        point('s', 0, 0), point('e', 20, 0), { id: 'line', type: 'line', p1: 's', p2: 'e' },
+        point('m', 20, 10), point('t', 30, 10), { id: 'arc', type: 'arc', center: 'm', start: 'e', end: 't' },
+      ],
+      constraints: [{ id: 'tan', type: 'tangent', a: 'line', b: 'arc' }],
+    };
+    const glyphs = relationGlyphs(sketch, pointPositions(sketch), 1);
+    expect(glyphs.map((glyph) => glyph.key)).toEqual(['tan:e']);
+    expect(glyphs[0]?.at).toEqual([expect.closeTo(20 + 0.7 * 13), expect.closeTo(-0.9 * 13)]);
   });
 
   it('keeps a constant screen distance when zooming', () => {

@@ -29,10 +29,13 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- Phase 1 exit check as an end-to-end test: an L-shaped bracket profile with two holes is drawn and
+  fully defined with mouse and keyboard only in the smallest window (64 clicks and key presses); the
+  user guide walks through the same steps.
 - Drawing benchmark: snapping, tool preview and frame per mouse movement while drawing a line across
   sketches of 50 to 2,000 entities (`npm run bench:render`).
-- Relation symbols next to sketch geometry (H, V, ∥, ⊥, =, …), outside closed outlines and at a constant
-  distance on screen: pointing at one highlights the related geometry, clicking selects the relation,
+- Relation symbols next to sketch geometry (H, V, ∥, ⊥, =, …), outside closed outlines (convex or not),
+  one symbol per tangent joint, at a constant distance on screen: pointing at one highlights the related geometry, clicking selects the relation,
   Delete removes it; conflicting relations are red. A view toolbar button, the View menu and the settings
   hide and show them.
 - DXF import into the open sketch (lines, circles, arcs, points, polylines with arc segments; units

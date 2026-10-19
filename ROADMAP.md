@@ -114,13 +114,15 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | DXF import and export of sketches | ✅ done |
 | Relation symbols in the view (hover, select, delete, show/hide) | ✅ done |
 | Drawing benchmarks (snapping and preview: 1.3 ms per mouse movement at 2,000 entities) | ✅ done |
-| Exit check: drawing and fully defining a bracket profile | ⏳ next |
-| 3-point and parallelogram rectangles, ellipse, spline | ⏳ planned |
+| Exit check: drawing and fully defining a bracket profile (E2E test, 64 clicks and key presses) | ✅ done |
+| 3-point and parallelogram rectangles, ellipse, spline | ⏳ next |
+| Scale of the selection; project and convert model edges into the sketch | ⏳ planned |
+| Global variables and equations (basic) | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |
 | Status colors, conflict diagnosis | ✅ done |
 | Editing tools (trim, extend, offset, mirror, patterns, fillet, chamfer) | ✅ done |
-| DXF import and export; benchmarks at 50 → 500 → 2,000 entities | ⏳ planned |
+| DXF import and export; benchmarks at 50 → 500 → 2,000 entities | ✅ done |
 
 ## 2. Guiding principles
 

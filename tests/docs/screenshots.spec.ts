@@ -249,9 +249,10 @@ test('README and user guide screenshots', async () => {
   await page.screenshot({ path: out('sketch-tools.png') });
 
   // Trim: a line across the slot; the piece of the slot's top side left of it turns red under the cursor.
+  // (Right of the middle: the view toolbar floats above the slot.)
   await page.keyboard.press('l');
-  await front(12, 80);
-  await front(12, 102);
+  await front(22, 80);
+  await front(22, 102);
   await page.keyboard.press('Escape');
   await page.keyboard.press('t');
   {
@@ -279,6 +280,45 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: out('sketch-pattern.png') });
   await page.click('[data-testid="sketch-cancel"]');
+  await idle(page);
+
+  // The fully defined bracket profile of the user guide's example (as the exit-check test draws it).
+  const model = await page.evaluate(() => (window as unknown as { __parawerk: { getState(): { history: { features: unknown[] } } } }).__parawerk.getState().history.features);
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const L = (id: string, p1: string, p2: string) => ({ id, type: 'line', p1, p2 });
+    const D = (id: string, a: string, b: string, value: number, offset: [number, number], driving = true) => ({ id, type: 'distance', a, b, value, driving, offset });
+    const sketch = {
+      entities: [
+        P('p1', 60, 0), L('l1', 'origin', 'p1'), P('p2', 60, 10), L('l2', 'p1', 'p2'), P('p3', 10, 10), L('l3', 'p2', 'p3'),
+        P('p4', 10, 40), L('l4', 'p3', 'p4'), P('p5', 0, 40), L('l5', 'p4', 'p5'), L('l6', 'p5', 'origin'),
+        P('p6', 45, 5), { id: 'c1', type: 'circle', center: 'p6', radius: 3 }, P('p7', 5, 30), { id: 'c2', type: 'circle', center: 'p7', radius: 3 },
+      ],
+      constraints: [
+        { id: 'r1', type: 'horizontal', line: 'l1' }, { id: 'r2', type: 'vertical', line: 'l2' }, { id: 'r3', type: 'horizontal', line: 'l3' },
+        { id: 'r4', type: 'vertical', line: 'l4' }, { id: 'r5', type: 'horizontal', line: 'l5' }, { id: 'r6', type: 'vertical', line: 'l6' },
+        { id: 'r7', type: 'equal', a: 'c1', b: 'c2' },
+        D('d1', 'origin', 'p1', 60, [0, -7]), D('d2', 'p1', 'p2', 10, [7, 0]), D('d3', 'p4', 'p5', 10, [-1, 7]), D('d4', 'p5', 'origin', 40, [-7, 0]),
+        { id: 'd5', type: 'diameter', circle: 'c1', value: 6, driving: true, offset: [-9, -10] },
+        D('d6', 'p6', 'l1', 5, [8, -0.5]), D('d7', 'p6', 'l2', 15, [-0.5, -14]), D('d8', 'p7', 'l6', 5, [-10.5, 0]), D('d9', 'p7', 'l5', 10, [11, 0]),
+        D('d10', 'p2', 'p3', 50, [0, 5], false),
+      ],
+    };
+    const features = [{ id: 'bracket', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
+  });
+  await idle(page);
+  await page.dblclick('.tree-item[data-feature-id="bracket"]');
+  await idle(page);
+  await page.waitForTimeout(600);
+  await page.click('[data-testid="zoom-to-fit"]');
+  if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: out('sketch-bracket.png') });
+  await page.click('[data-testid="sketch-ok"]');
+  await page.evaluate((features) => {
+    (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
+  }, model);
   await idle(page);
 
   await page.click('[data-command="settings"]');
