@@ -42,6 +42,8 @@ function stableStringify(value: unknown): string {
 
 /** Everything that influences the geometry of a feature (the display name does not). */
 function featureSignature(feature: Feature): string {
+  // A sketch never changes the body, so editing it must not invalidate the features after it.
+  if (feature.type === 'sketch') return `sketch:${feature.id}`;
   const { name: _name, ...geometry } = feature;
   return stableStringify(geometry);
 }
@@ -92,13 +94,14 @@ export class Rebuilder implements Disposable {
       const inputKey = previous?.shapeKey ?? ROOT_KEY;
       const start = performance.now();
 
-      if (feature.suppressed) {
+      // Sketches do not change the body (extrude features consume them).
+      if (feature.suppressed || feature.type === 'sketch') {
         this.entries.push({
           key,
           shapeKey: inputKey,
           shape: input,
           ownsShape: false,
-          result: { id: feature.id, status: 'suppressed', timeMs: 0, cached: false },
+          result: { id: feature.id, status: feature.suppressed ? 'suppressed' : 'ok', timeMs: 0, cached: false },
         });
         continue;
       }

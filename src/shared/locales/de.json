@@ -57,6 +57,7 @@
     "new": "Neu",
     "open": "Öffnen",
     "save": "Speichern",
+    "sketch": "Skizze",
     "box": "Quader",
     "cylinder": "Zylinder",
     "fillet": "Verrundung",
@@ -68,6 +69,7 @@
     "settings": "Einstellungen",
     "about": "Info",
     "tooltips": {
+      "sketch": "2D-Skizze auf einer Ebene zeichnen",
       "new": "Neues Teil beginnen (Strg+N)",
       "open": "Teiledatei öffnen (Strg+O)",
       "save": "Teil speichern (Strg+S)",
@@ -84,6 +86,7 @@
     }
   },
   "features": {
+    "sketch": "Skizze",
     "box": "Quader",
     "cylinder": "Zylinder",
     "fillet": "Verrundung",

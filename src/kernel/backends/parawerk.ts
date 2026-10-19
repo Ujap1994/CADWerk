@@ -1,5 +1,5 @@
 import createParaWerkKernel from '../../../vendor/parawerk-kernel/parawerk-kernel.js';
-import type { Feature, Vec3 } from '../../shared/model/feature.ts';
+import type { SolidModelingFeature, Vec3 } from '../../shared/model/feature.ts';
 import type { GeometryBackend, ShapeHandle } from '../backend.ts';
 import { FeatureError } from '../feature-error.ts';
 import { axisDirection } from '../feature-geometry.ts';
@@ -83,7 +83,7 @@ export class ParaWerkBackend implements GeometryBackend {
     return value.id as unknown as ShapeHandle;
   }
 
-  applyFeature(body: ShapeHandle | null, feature: Feature): ShapeHandle {
+  applyFeature(body: ShapeHandle | null, feature: SolidModelingFeature): ShapeHandle {
     const k = this.kernel;
     switch (feature.type) {
       case 'box':

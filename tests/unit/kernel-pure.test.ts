@@ -37,6 +37,12 @@ describe('rebuild keys', () => {
     expect(featureKeys([reordered])).toEqual(featureKeys([box]));
   });
 
+  it('ignore sketch content, so sketch edits keep later features cached', () => {
+    const sketch = defaultFeature('sketch', 's');
+    const edited = { ...sketch, sketch: { entities: [{ id: 'p', type: 'point' as const, x: 1, y: 2 }], constraints: [] } };
+    expect(featureKeys([box, edited, fillet])).toEqual(featureKeys([box, sketch, fillet]));
+  });
+
   it('hash strings deterministically', () => {
     expect(hashString('abc')).toBe(hashString('abc'));
     expect(hashString('abc')).not.toBe(hashString('abd'));

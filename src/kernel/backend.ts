@@ -1,4 +1,4 @@
-import type { Feature, Vec3 } from '../shared/model/feature.ts';
+import type { SolidModelingFeature, Vec3 } from '../shared/model/feature.ts';
 import type { MassProperties, MeshPayload } from './protocol.ts';
 import type { MeshQuality } from './mesh-quality.ts';
 
@@ -13,7 +13,7 @@ export type ShapeHandle = { readonly __shape: unique symbol };
 export interface GeometryBackend {
   readonly name: 'parawerk' | 'replicad';
   /** Builds the body after `feature`; throws FeatureError. The caller owns the result. */
-  applyFeature(body: ShapeHandle | null, feature: Feature): ShapeHandle;
+  applyFeature(body: ShapeHandle | null, feature: SolidModelingFeature): ShapeHandle;
   release(shape: ShapeHandle): void;
   counts(shape: ShapeHandle): { faces: number; edges: number; solids: number };
   boundingBox(shape: ShapeHandle): { min: Vec3; max: Vec3 };

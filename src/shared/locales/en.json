@@ -57,6 +57,7 @@
     "new": "New",
     "open": "Open",
     "save": "Save",
+    "sketch": "Sketch",
     "box": "Box",
     "cylinder": "Cylinder",
     "fillet": "Fillet",
@@ -68,6 +69,7 @@
     "settings": "Settings",
     "about": "About",
     "tooltips": {
+      "sketch": "Draw a 2D sketch on a plane",
       "new": "Start a new part (Ctrl+N)",
       "open": "Open a part file (Ctrl+O)",
       "save": "Save the part (Ctrl+S)",
@@ -84,6 +86,7 @@
     }
   },
   "features": {
+    "sketch": "Sketch",
     "box": "Box",
     "cylinder": "Cylinder",
     "fillet": "Fillet",

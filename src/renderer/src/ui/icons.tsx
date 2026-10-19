@@ -200,7 +200,16 @@ export const OriginIcon = (p: P) => (
   </Icon>
 );
 
+export const SketchIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 20V10a6 6 0 0 1 6-6h5M4 20h6" />
+    <path d="m13.5 19.5.6-3 6-6a1.5 1.5 0 0 1 2.1 2.1l-6 6z" />
+    <circle cx="4" cy="20" r="1.2" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
 export const FEATURE_ICONS = {
+  sketch: SketchIcon,
   box: BoxIcon,
   cylinder: CylinderIcon,
   fillet: FilletIcon,

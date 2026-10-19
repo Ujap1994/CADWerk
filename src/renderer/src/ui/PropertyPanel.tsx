@@ -130,6 +130,9 @@ function FeatureFields({ draft, index }: { draft: Feature; index: number }) {
           </Section>
         </>
       );
+    case 'sketch':
+      // Sketches are edited in sketch mode, not in the property panel.
+      return null;
     case 'fillet':
     case 'chamfer':
       return (

@@ -5,9 +5,11 @@
  * (see docs/adr/0004-coordinate-system-and-units.md).
  */
 
+import type { SketchData, SketchPlaneRef } from './sketch.ts';
+
 export type Vec3 = [number, number, number];
 
-export type FeatureType = 'box' | 'cylinder' | 'fillet' | 'chamfer';
+export type FeatureType = 'sketch' | 'box' | 'cylinder' | 'fillet' | 'chamfer';
 
 /** How a solid-creating feature combines with the existing body. */
 export type BooleanOperation = 'add' | 'cut';
@@ -67,7 +69,17 @@ export interface ChamferFeature extends FeatureBase {
   edges: EdgeRef[];
 }
 
-export type Feature = BoxFeature | CylinderFeature | FilletFeature | ChamferFeature;
+/** A 2D sketch on a plane; it does not change the body by itself (extrudes use it later). */
+export interface SketchFeature extends FeatureBase {
+  type: 'sketch';
+  plane: SketchPlaneRef;
+  sketch: SketchData;
+}
+
+export type Feature = SketchFeature | BoxFeature | CylinderFeature | FilletFeature | ChamferFeature;
+
+/** Features that build or modify the solid body (everything except sketches). */
+export type SolidModelingFeature = Exclude<Feature, SketchFeature>;
 
 export type EdgeFeature = FilletFeature | ChamferFeature;
 
@@ -79,7 +91,7 @@ export function isSolidFeature(feature: Feature): feature is BoxFeature | Cylind
   return feature.type === 'box' || feature.type === 'cylinder';
 }
 
-export const FEATURE_TYPES: readonly FeatureType[] = ['box', 'cylinder', 'fillet', 'chamfer'];
+export const FEATURE_TYPES: readonly FeatureType[] = ['sketch', 'box', 'cylinder', 'fillet', 'chamfer'];
 
 let idCounter = 0;
 
@@ -92,6 +104,8 @@ export function createFeatureId(): string {
 
 export function defaultFeature(type: FeatureType, id: string = createFeatureId()): Feature {
   switch (type) {
+    case 'sketch':
+      return { id, type, plane: { kind: 'standard', plane: 'top' }, sketch: { entities: [], constraints: [] } };
     case 'box':
       return { id, type, operation: 'add', width: 100, depth: 60, height: 40, position: [0, 0, 0] };
     case 'cylinder':

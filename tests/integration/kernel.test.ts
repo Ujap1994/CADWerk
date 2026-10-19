@@ -107,6 +107,19 @@ describe.each(['parawerk', 'replicad'] as BackendName[])('%s backend', (backendN
       expect(state.properties?.volume).toBeCloseTo(240_000, 6);
     });
 
+    it('passes the body through sketches and keeps later features cached when a sketch changes', () => {
+      const fillet: FilletFeature = { id: 'fillet', type: 'fillet', radius: 5, edges: allEdges };
+      const sketch: Feature = { id: 'sketch', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch: { entities: [], constraints: [] } };
+      const first = finalState([box, sketch, fillet]);
+      expect(first.result.features.map((f) => f.status)).toEqual(['ok', 'ok', 'ok']);
+      expect(first.state.properties?.volume).toBeCloseTo(roundedBoxVolume(100, 60, 40, 5), 3);
+
+      const edited = { ...sketch, sketch: { entities: [{ id: 'p', type: 'point' as const, x: 3, y: 4 }], constraints: [] } };
+      const second = kernel.rebuild(request([box, edited, fillet], { knownMeshKeys: [first.state.meshKey!] })).result;
+      expect(second.timings.rebuiltFeatures).toBe(0);
+      expect(second.captures[0]?.meshKey).toBe(first.state.meshKey);
+    });
+
     it('captures intermediate states', () => {
       const fillet: FilletFeature = { id: 'fillet', type: 'fillet', radius: 5, edges: allEdges };
       const { result } = kernel.rebuild(request([box, fillet], { captures: [-1, 0, 1] }));

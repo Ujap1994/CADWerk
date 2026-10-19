@@ -1,4 +1,4 @@
-import type { Feature } from '../../shared/model/feature.ts';
+import type { SolidModelingFeature } from '../../shared/model/feature.ts';
 import type { GeometryBackend, ShapeHandle } from '../backend.ts';
 import { applyFeature } from '../features.ts';
 import { extractMesh } from '../mesh.ts';
@@ -28,7 +28,7 @@ export class ReplicadBackend implements GeometryBackend {
     return handle as unknown as TopoDS_Shape;
   }
 
-  applyFeature(body: ShapeHandle | null, feature: Feature): ShapeHandle {
+  applyFeature(body: ShapeHandle | null, feature: SolidModelingFeature): ShapeHandle {
     return applyFeature(this.oc, body ? this.shape(body) : null, feature) as unknown as ShapeHandle;
   }
 

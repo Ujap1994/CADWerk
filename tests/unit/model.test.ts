@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { defaultFeature, FEATURE_TYPES, type Feature } from '../../src/shared/model/feature.ts';
+import { defaultFeature, FEATURE_TYPES, type Feature, type SketchFeature } from '../../src/shared/model/feature.ts';
 import { decodePartFile, encodePartFile, PartFileError, PART_FORMAT } from '../../src/shared/model/part-file.ts';
 import { parseFeature, parseFeatures, ValidationError } from '../../src/shared/model/validate.ts';
-import { strToU8, zipSync } from 'fflate';
+import { strToU8, unzipSync, zipSync } from 'fflate';
 
 describe('feature validation', () => {
   it('accepts every default feature', () => {
@@ -30,6 +30,63 @@ describe('feature validation', () => {
   });
 });
 
+describe('sketch validation', () => {
+  const sketch: SketchFeature = {
+    id: 's',
+    type: 'sketch',
+    plane: { kind: 'standard', plane: 'front' },
+    sketch: {
+      entities: [
+        { id: 'p1', type: 'point', x: 0, y: 0 },
+        { id: 'p2', type: 'point', x: 10, y: 0 },
+        { id: 'p3', type: 'point', x: 5, y: 5, construction: true },
+        { id: 'l1', type: 'line', p1: 'p1', p2: 'p2' },
+        { id: 'c1', type: 'circle', center: 'p3', radius: 2 },
+        { id: 'a1', type: 'arc', center: 'p3', start: 'p2', end: 'p1' },
+      ],
+      constraints: [
+        { id: 'k1', type: 'coincident', a: 'p1', b: 'origin' },
+        { id: 'k2', type: 'horizontal', line: 'l1' },
+        { id: 'k3', type: 'tangent', a: 'l1', b: 'c1', inner: false },
+        { id: 'd1', type: 'distance', a: 'p1', b: 'p2', value: 10, driving: true, offset: [0, -5] },
+        { id: 'd2', type: 'angle', a: 'l1', b: 'l1', value: 0, driving: false },
+      ],
+    },
+  };
+
+  it('round-trips a valid sketch', () => {
+    expect(parseFeature(JSON.parse(JSON.stringify(sketch)))).toEqual(sketch);
+  });
+
+  it('accepts sketches on planar faces', () => {
+    const onFace = { ...sketch, plane: { kind: 'face', face: 3, frame: { origin: [0, 0, 10], xDir: [1, 0, 0], yDir: [0, 1, 0], normal: [0, 0, 1] } } };
+    expect(parseFeature(onFace)).toEqual(onFace);
+  });
+
+  function withSketch(change: (data: { entities: unknown[]; constraints: unknown[] }) => void): unknown {
+    const copy = JSON.parse(JSON.stringify(sketch));
+    change(copy.sketch);
+    return copy;
+  }
+
+  it.each([
+    [withSketch((d) => d.entities.push({ id: 'l2', type: 'line', p1: 'p1', p2: 'nothing' })), 'not a point'],
+    [withSketch((d) => d.entities.push({ id: 'l2', type: 'line', p1: 'p1', p2: 'l1' })), 'not a point'],
+    [withSketch((d) => d.entities.push({ id: 'p1', type: 'point', x: 1, y: 1 })), 'duplicate'],
+    [withSketch((d) => d.constraints.push({ id: 'k9', type: 'horizontal', line: 'gone' })), 'unknown reference'],
+    [withSketch((d) => d.constraints.push({ id: 'p1', type: 'horizontal', line: 'l1' })), 'duplicate'],
+    [withSketch((d) => d.constraints.push({ id: 'k9', type: 'radius', circle: 'c1', value: -1, driving: true })), 'non-negative'],
+    [withSketch((d) => d.constraints.push({ id: 'k9', type: 'glue', a: 'p1', b: 'p2' })), 'unknown constraint'],
+    [withSketch((d) => d.entities.push({ id: 'q', type: 'spline' })), 'unknown sketch entity'],
+    [withSketch((d) => d.entities.push({ id: 'q', type: 'point', x: Number.POSITIVE_INFINITY, y: 0 })), 'x'],
+    [{ ...sketch, plane: { kind: 'standard', plane: 'side' } }, 'plane'],
+    [{ ...sketch, plane: { kind: 'face', face: 1, frame: { origin: [0, 0, 0], xDir: [2, 0, 0], yDir: [0, 1, 0], normal: [0, 0, 1] } } }, 'unit vector'],
+  ])('rejects invalid sketches %#', (raw, message) => {
+    expect(() => parseFeature(raw)).toThrow(ValidationError);
+    expect(() => parseFeature(raw)).toThrow(message);
+  });
+});
+
 describe('part file', () => {
   const features: Feature[] = [defaultFeature('box', 'b'), { id: 'f', type: 'fillet', radius: 2, edges: [{ kind: 'edge-index', index: 3 }], name: 'Edge round' }];
 
@@ -38,6 +95,18 @@ describe('part file', () => {
     const { document, meta } = decodePartFile(bytes);
     expect(document.features).toEqual(features);
     expect(meta.appVersion).toBe('1.2.3');
+  });
+
+  it('writes version 1 without sketches and version 2 with them', () => {
+    const versionOf = (list: Feature[]) => {
+      const bytes = encodePartFile({ units: 'mm', features: list }, { appVersion: '1', savedAt: '' });
+      return JSON.parse(new TextDecoder().decode(unzipSync(bytes)['document.json'])).version;
+    };
+    expect(versionOf(features)).toBe(1);
+    const withSketch = [defaultFeature('sketch', 's'), ...features];
+    expect(versionOf(withSketch)).toBe(2);
+    const bytes = encodePartFile({ units: 'mm', features: withSketch }, { appVersion: '1', savedAt: '' });
+    expect(decodePartFile(bytes).document.features).toEqual(withSketch);
   });
 
   function zipWith(document: unknown): Uint8Array {

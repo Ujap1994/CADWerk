@@ -12,7 +12,8 @@ import { parseFeatures, ValidationError } from './validate.ts';
  */
 
 export const PART_FORMAT = 'parawerk-part';
-export const PART_FORMAT_VERSION = 1;
+/** 2: sketch features. Version 1 files are read unchanged. */
+export const PART_FORMAT_VERSION = 2;
 
 /** Upper bound for the uncompressed size of one entry, to reject zip bombs. */
 const MAX_ENTRY_BYTES = 64 * 1024 * 1024;
@@ -42,7 +43,8 @@ export class PartFileError extends Error {
 export function encodePartFile(document: PartDocument, meta: PartFileMeta): Uint8Array {
   const documentJson = {
     format: PART_FORMAT,
-    version: PART_FORMAT_VERSION,
+    // Files without new content stay readable by older ParaWerk versions.
+    version: document.features.some((feature) => feature.type === 'sketch') ? PART_FORMAT_VERSION : 1,
     units: document.units,
     features: document.features,
   };

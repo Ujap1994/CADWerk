@@ -1,4 +1,5 @@
 import type { Axis, BooleanOperation, EdgeRef, Feature, Vec3 } from './feature.ts';
+import { parseSketchData, parsePlaneRef } from './validate-sketch.ts';
 
 export class ValidationError extends Error {
   readonly path: string;
@@ -15,25 +16,25 @@ type Json = Record<string, unknown>;
 /** Largest model dimension accepted, in millimeters (100 m). */
 export const MAX_LENGTH = 100_000;
 
-function isObject(value: unknown): value is Json {
+export function isObject(value: unknown): value is Json {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function positiveLength(value: unknown, path: string): number {
+export function positiveLength(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0 || value > MAX_LENGTH) {
     throw new ValidationError(`expected a length between 0 and ${MAX_LENGTH} mm`, path);
   }
   return value;
 }
 
-function coordinate(value: unknown, path: string): number {
+export function coordinate(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > MAX_LENGTH) {
     throw new ValidationError('expected a finite coordinate', path);
   }
   return value;
 }
 
-function vec3(value: unknown, path: string): Vec3 {
+export function vec3(value: unknown, path: string): Vec3 {
   if (!Array.isArray(value) || value.length !== 3) throw new ValidationError('expected [x, y, z]', path);
   return [coordinate(value[0], `${path}[0]`), coordinate(value[1], `${path}[1]`), coordinate(value[2], `${path}[2]`)];
 }
@@ -82,6 +83,13 @@ export function parseFeature(raw: unknown, path = 'feature'): Feature {
   if (!isObject(raw)) throw new ValidationError('expected an object', path);
   const common = base(raw, path);
   switch (raw.type) {
+    case 'sketch':
+      return {
+        ...common,
+        type: 'sketch',
+        plane: parsePlaneRef(raw.plane, `${path}.plane`),
+        sketch: parseSketchData(raw.sketch, `${path}.sketch`),
+      };
     case 'box':
       return {
         ...common,
