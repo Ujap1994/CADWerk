@@ -121,12 +121,13 @@ why.
 
 ![Trim: the piece of the slot's side up to the crossing line is shown in red before it is removed](../images/screenshots/sketch-trim.png)
 
-### Mirror, patterns, move and copy
+### Offset, mirror, patterns, move and copy
 
 Select geometry, and the **Copy and move** section of the side panel offers:
 
 | | What it does |
 |---|---|
+| **Offset** | Copies the selected lines, arcs and circles at the *Distance*. Connected curves stay connected: corners meet where the offset curves cross, tangent transitions stay tangent. Closed outlines and circles grow outwards (inwards with *Other side*); open chains move to the left of the direction they were drawn in. Lines stay *parallel* to their originals, arcs and circles keep their centers, and the first line gets the distance as a dimension. |
 | **Mirror** | Mirrors the selection about a line: select a construction line along with the geometry (or select the axis line last). Mirrored points stay *symmetric* to their originals, and points on the axis are shared. |
 | **Linear** | Repeats the selection *Instances* times, shifted by *Step X* and *Step Y* each time. Copies of circles and arcs keep an *equal* radius, so one diameter dimension sizes a whole row of holes. |
 | **Circular** | Repeats the selection evenly around the sketch origin – or around a point you select along with it – over the *Total angle* (360° for a full circle). |

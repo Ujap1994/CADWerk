@@ -883,6 +883,7 @@ test('mirrors, patterns, moves and copies the selection', async () => {
   await click(15, 20);
   await click(0, -30, true);
   await expect(page.locator('[data-testid="sketch-transform"]')).toBeVisible();
+  await page.click('[data-transform="mirror"]');
   await page.click('[data-testid="sketch-transform"] .transform-action');
   expect(await count('line')).toBe(2);
   expect(((await state(page)).sketch?.draft.sketch.constraints ?? []).filter((c) => (c as unknown as { type: string }).type === 'symmetric')).toHaveLength(1);
@@ -914,4 +915,10 @@ test('mirrors, patterns, moves and copies the selection', async () => {
   await page.locator('[data-testid="move-dy"]').fill('0');
   await page.click('[data-testid="sketch-transform"] .transform-action >> nth=1');
   expect(await count('circle')).toBe(5);
+
+  // Offset the original circle outwards by 2: a concentric circle with radius 6.
+  await page.click('[data-transform="offset"]');
+  await page.locator('[data-testid="offset-distance"]').fill('2');
+  await page.click('[data-testid="sketch-transform"] .transform-action');
+  expect((await entities()).filter((e) => e.type === 'circle').at(-1)?.radius).toBeCloseTo(6, 9);
 });

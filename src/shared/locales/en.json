@@ -390,7 +390,8 @@
       "extendConstrained": "Relations or dimensions hold this end in place; delete them to extend it.",
       "transformNothing": "Select geometry first.",
       "transformNoAxis": "Select a line as mirror axis as well: a construction line, or select the axis last.",
-      "moveBlocked": "The selection cannot move there: relations or dimensions hold it in place."
+      "moveBlocked": "The selection cannot move there: relations or dimensions hold it in place.",
+      "offsetTooLarge": "The distance is too large for the selected curves."
     },
     "dimensionsSelected_one": "{{count}} dimension selected",
     "dimensionsSelected_other": "{{count}} dimensions selected",
@@ -421,6 +422,7 @@
     "chamferDistance": "Distance",
     "transform": {
       "title": "Copy and move",
+      "offset": "Offset",
       "mirror": "Mirror",
       "linear": "Linear",
       "circular": "Circular",
@@ -438,7 +440,11 @@
       "mirrorAction": "Mirror",
       "patternAction": "Create pattern",
       "moveAction": "Move",
-      "copyAction": "Copy"
+      "copyAction": "Copy",
+      "distance": "Distance",
+      "flip": "Other side",
+      "offsetHint": "Closed outlines and circles grow outwards (inwards with \"Other side\"); open chains move to the left of their direction. Lines stay parallel, arcs keep their centers, and the first line gets the distance as a dimension.",
+      "offsetAction": "Offset"
     }
   }
 }

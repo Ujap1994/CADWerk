@@ -390,7 +390,8 @@
       "extendConstrained": "Beziehungen oder Bemaßungen halten dieses Ende fest; lösche sie, um es zu verlängern.",
       "transformNothing": "Wähle zuerst Geometrie aus.",
       "transformNoAxis": "Wähle zusätzlich eine Linie als Spiegelachse: eine Konstruktionslinie, oder wähle die Achse zuletzt.",
-      "moveBlocked": "Die Auswahl lässt sich nicht dorthin verschieben: Beziehungen oder Bemaßungen halten sie fest."
+      "moveBlocked": "Die Auswahl lässt sich nicht dorthin verschieben: Beziehungen oder Bemaßungen halten sie fest.",
+      "offsetTooLarge": "Der Abstand ist für die ausgewählten Kurven zu groß."
     },
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
     "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",
@@ -421,6 +422,7 @@
     "chamferDistance": "Abstand",
     "transform": {
       "title": "Kopieren und verschieben",
+      "offset": "Versatz",
       "mirror": "Spiegeln",
       "linear": "Linear",
       "circular": "Kreisförmig",
@@ -438,7 +440,11 @@
       "mirrorAction": "Spiegeln",
       "patternAction": "Muster erzeugen",
       "moveAction": "Verschieben",
-      "copyAction": "Kopieren"
+      "copyAction": "Kopieren",
+      "distance": "Abstand",
+      "flip": "Andere Seite",
+      "offsetHint": "Geschlossene Konturen und Kreise wachsen nach außen (mit „Andere Seite“ nach innen); offene Ketten verschieben sich nach links ihrer Richtung. Linien bleiben parallel, Bögen behalten ihre Mittelpunkte, und die erste Linie erhält den Abstand als Bemaßung.",
+      "offsetAction": "Versetzen"
     }
   }
 }

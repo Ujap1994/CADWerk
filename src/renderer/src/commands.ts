@@ -11,6 +11,7 @@ import { storedAngle, type DimensionDraft } from './sketch/dimensions.ts';
 import { deleteEntities } from './sketch/geometry.ts';
 import { applicableRelations, type RelationKind } from './sketch/relations.ts';
 import { sketchSolver } from './sketch/solver.ts';
+import { offsetSelection } from './sketch/offset.ts';
 import { circularPattern, copySelection, linearPattern, mirrorSelection, movedPoints, type TransformResult } from './sketch/transform.ts';
 import { sameGeometry } from './sketch/drag.ts';
 import type { Point2 } from './sketch/geometry.ts';
@@ -560,6 +561,15 @@ export function selectionPivot(): { at: Point2; point: string | null } {
   const points = data.entities.filter((entity) => entity.type === 'point' && selected.has(entity.id) && !curvePoints.has(entity.id));
   const [only] = points;
   return points.length === 1 && only?.type === 'point' && sketchSelection.length > 1 ? { at: [only.x, only.y], point: only.id } : { at: [0, 0], point: null };
+}
+
+/** Offsets the selected curves; closed outlines grow outwards unless `flip`. */
+export function offsetSketchSelection(distance: number, flip: boolean): void {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  const result = offsetSelection(sketch.draft.sketch, sketchSelection, distance, flip);
+  if (result.ok) recordSketchChange(result.sketch);
+  else showToast('info', t(`sketch.messages.${result.error === 'too-large' ? 'offsetTooLarge' : 'transformNothing'}`));
 }
 
 export function mirrorSketchSelection(): void {

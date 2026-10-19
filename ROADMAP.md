@@ -110,7 +110,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Sketch fillet and chamfer | ✅ done |
 | Trim and extend | ✅ done |
 | Mirror, linear and circular patterns, move / rotate / copy | ✅ done |
-| Offset entities | ⏳ next |
+| Offset entities | ✅ done |
+| DXF import and export of sketches | ⏳ next |
 | 3-point and parallelogram rectangles, ellipse, spline | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |

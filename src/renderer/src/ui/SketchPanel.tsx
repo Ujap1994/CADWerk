@@ -138,14 +138,16 @@ function DefinitionSection() {
   );
 }
 
-type TransformKind = 'mirror' | 'linear' | 'circular' | 'move';
+type TransformKind = 'offset' | 'mirror' | 'linear' | 'circular' | 'move';
 
 /** Mirror, patterns, move and copy for the selected geometry, with their numbers. */
 function TransformSection() {
   const { t } = useTranslation();
   const sketch = useAppState((state) => state.sketch?.draft.sketch);
   const selection = useAppState((state) => state.sketchSelection);
-  const [kind, setKind] = useState<TransformKind>('mirror');
+  const [kind, setKind] = useState<TransformKind>('offset');
+  const [offset, setOffset] = useState(2);
+  const [flip, setFlip] = useState(false);
   const [count, setCount] = useState(3);
   const [step, setStep] = useState<[number, number]>([10, 0]);
   const [circularCount, setCircularCount] = useState(6);
@@ -154,7 +156,7 @@ function TransformSection() {
   const [rotation, setRotation] = useState(0);
   if (!sketch) return null;
   const aroundPoint = commands.selectionPivot().point !== null;
-  const kinds: TransformKind[] = ['mirror', 'linear', 'circular', 'move'];
+  const kinds: TransformKind[] = ['offset', 'mirror', 'linear', 'circular', 'move'];
   return (
     <fieldset className="panel-section" data-testid="sketch-transform">
       <legend className="panel-section-title">{t('sketch.transform.title')}</legend>
@@ -173,6 +175,19 @@ function TransformSection() {
           </button>
         ))}
       </div>
+      {kind === 'offset' ? (
+        <>
+          <NumberField label={t('sketch.transform.distance')} value={offset} step={0.5} testId="offset-distance" onChange={setOffset} />
+          <label className="checkbox-field">
+            <input type="checkbox" checked={flip} data-testid="offset-flip" onChange={(event) => setFlip(event.target.checked)} />
+            {t('sketch.transform.flip')}
+          </label>
+          <p className="panel-hint is-flush">{t('sketch.transform.offsetHint')}</p>
+          <button type="button" className="text-button transform-action" onClick={() => commands.offsetSketchSelection(offset, flip)}>
+            {t('sketch.transform.offsetAction')}
+          </button>
+        </>
+      ) : null}
       {kind === 'mirror' ? (
         <>
           <p className="panel-hint is-flush">{t('sketch.transform.mirrorHint')}</p>
