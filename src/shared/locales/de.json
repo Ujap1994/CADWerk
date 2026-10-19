@@ -51,6 +51,7 @@
     "groups": {
       "file": "Datei",
       "features": "Features",
+      "sketch": "Skizze",
       "export": "Export",
       "edit": "Bearbeiten"
     },
@@ -58,6 +59,7 @@
     "open": "Öffnen",
     "save": "Speichern",
     "sketch": "Skizze",
+    "exitSketch": "Skizze beenden",
     "box": "Quader",
     "cylinder": "Zylinder",
     "fillet": "Verrundung",
@@ -70,6 +72,7 @@
     "about": "Info",
     "tooltips": {
       "sketch": "2D-Skizze auf einer Ebene zeichnen",
+      "exitSketch": "Skizze übernehmen und zum Teil zurückkehren",
       "new": "Neues Teil beginnen (Strg+N)",
       "open": "Teiledatei öffnen (Strg+O)",
       "save": "Teil speichern (Strg+S)",
@@ -83,6 +86,11 @@
       "redo": "Wiederholen (Strg+Y)",
       "settings": "Sprache, Design, Navigation",
       "about": "Version und Lizenz"
+    },
+    "tabs": {
+      "label": "Befehlsregister",
+      "features": "Features",
+      "sketch": "Skizze"
     }
   },
   "features": {
@@ -95,8 +103,9 @@
   },
   "tree": {
     "title": "Featurebaum",
-    "empty": "Beginne mit einem Quader oder Zylinder aus der Befehlsleiste.",
+    "empty": "Beginne mit einer Skizze, einem Quader oder Zylinder aus der Befehlsleiste.",
     "edit": "Feature bearbeiten",
+    "sketchOnPlane": "Auf dieser Ebene skizzieren",
     "suppress": "Unterdrücken",
     "unsuppress": "Unterdrückung aufheben",
     "delete": "Löschen",
@@ -189,6 +198,8 @@
   "dialogs": {
     "discardMessage": "Ungespeicherte Änderungen verwerfen?",
     "discardDetail": "Deine Änderungen an „{{name}}“ gehen verloren.",
+    "discardSketchMessage": "Änderungen an der Skizze verwerfen?",
+    "discardSketchDetail": "Die Skizze wird auf den Stand vor dem Öffnen zurückgesetzt.",
     "discard": "Verwerfen",
     "cancel": "Abbrechen",
     "closeMessage": "ParaWerk beenden und ungespeicherte Änderungen verwerfen?",
@@ -245,5 +256,26 @@
       "bspline": "Spline",
       "other": "Kurve"
     }
+  },
+  "planes": {
+    "front": "Ebene vorne",
+    "top": "Ebene oben",
+    "right": "Ebene rechts"
+  },
+  "sketch": {
+    "title": "Skizze",
+    "choosePlane": "Ebene wählen",
+    "choosePlaneHint": "Klicke eine Ebene in der Ansicht oder im Featurebaum an oder wähle sie hier.",
+    "creating": "{{name}} erstellen",
+    "editing": "{{name}} bearbeiten",
+    "plane": "Ebene",
+    "contents": "Inhalt",
+    "entities_one": "{{count}} Skizzenelement",
+    "entities_other": "{{count}} Skizzenelemente",
+    "constraints_one": "{{count}} Beziehung oder Bemaßung",
+    "constraints_other": "{{count}} Beziehungen und Bemaßungen",
+    "exitHint": "✓ übernimmt die Skizze, ✕ verwirft deine Änderungen. Rückgängig und Wiederholen arbeiten innerhalb der Skizze Schritt für Schritt.",
+    "ok": "Skizze übernehmen",
+    "cancel": "Änderungen verwerfen"
   }
 }

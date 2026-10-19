@@ -5,6 +5,12 @@ export interface ViewportPalette {
   selected: number;
   referenceEdge: number;
   pivot: number;
+  /** Standard planes. */
+  plane: number;
+  /** Sketch grid lines. */
+  grid: number;
+  axisX: number;
+  axisY: number;
   cubeFace: number;
   cubeFaceHover: number;
   cubeEdge: number;
@@ -21,6 +27,10 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     selected: 0xff7a1a,
     referenceEdge: 0x2a63c9,
     pivot: 0xff7a1a,
+    plane: 0x2a63c9,
+    grid: 0x2c3a4f,
+    axisX: 0xe5484d,
+    axisY: 0x30a46c,
     cubeFace: 0xf4f6fa,
     cubeFaceHover: 0xffc978,
     cubeEdge: 0xc4cddb,
@@ -35,6 +45,10 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     selected: 0xff8a33,
     referenceEdge: 0x6c9cf5,
     pivot: 0xff8a33,
+    plane: 0x6c9cf5,
+    grid: 0xb4c0d2,
+    axisX: 0xf06368,
+    axisY: 0x4cc38a,
     cubeFace: 0x2c3442,
     cubeFaceHover: 0xb87522,
     cubeEdge: 0x3a4556,

@@ -5,6 +5,7 @@ import { CommandBar } from './CommandBar.tsx';
 import { AboutDialog, SettingsDialog, Toasts } from './Dialogs.tsx';
 import { FeatureTree } from './FeatureTree.tsx';
 import { PropertyPanel } from './PropertyPanel.tsx';
+import { SketchPanel } from './SketchPanel.tsx';
 import { StatusBar } from './StatusBar.tsx';
 import { Viewport } from './Viewport.tsx';
 
@@ -12,8 +13,21 @@ function isTyping(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
 }
 
-export function App() {
+function Sidebar() {
   const editing = useAppState((state) => state.activeEdit !== null);
+  const sketching = useAppState((state) => state.sketch !== null || state.choosingSketchPlane);
+  if (sketching) {
+    return (
+      <>
+        <SketchPanel />
+        <FeatureTree />
+      </>
+    );
+  }
+  return editing ? <PropertyPanel /> : <FeatureTree />;
+}
+
+export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -43,7 +57,9 @@ export function App() {
     <div className="app">
       <CommandBar />
       <div className="workspace">
-        <aside className="sidebar">{editing ? <PropertyPanel /> : <FeatureTree />}</aside>
+        <aside className="sidebar">
+          <Sidebar />
+        </aside>
         <main className="main-area">
           <Viewport />
         </main>

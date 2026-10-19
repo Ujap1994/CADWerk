@@ -47,9 +47,14 @@ export interface RebuildPlan {
  * What the kernel has to build for the current state.
  *
  * While a feature is edited, everything after it is rolled back and the body
- * before the feature is captured too, so its edges can be picked.
+ * before the feature is captured too, so its edges can be picked. In sketch mode
+ * the model is rolled back to the sketch (`sketchIndex`).
  */
-export function rebuildPlan(features: Feature[], edit: ActiveEdit | null): RebuildPlan {
+export function rebuildPlan(features: Feature[], edit: ActiveEdit | null, sketchIndex: number | null = null): RebuildPlan {
+  if (sketchIndex !== null) {
+    const before = features.slice(0, sketchIndex);
+    return { features: before, captures: [before.length - 1] };
+  }
   if (!edit) return { features, captures: [features.length - 1] };
   const before = features.slice(0, edit.index);
   return { features: [...before, edit.draft], captures: [edit.index - 1, edit.index] };

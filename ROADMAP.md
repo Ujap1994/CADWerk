@@ -95,6 +95,20 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 - GPU instancing keeps 10,000 components at about 30 fps on an Apple M3; level of detail is needed for the
   50,000-instance target (Phase 8, as planned).
 
+### Phase 1 – in progress
+
+| Item | Status |
+|---|---|
+| Sparse constraint solver with definition status and conflict detection | ✅ done ([ADR 0005](docs/adr/0005-sketch-solver.md)) |
+| Sketch feature in the document model and file format | ✅ done |
+| Solver worker with latest-wins dragging | ✅ done |
+| Sketch mode: plane choice, normal view, grid, sketch undo, edit from the tree | ✅ done |
+| Sketching on planar faces | ⏳ next |
+| Sketch geometry in the 3D view, drawing tools, inference and snapping | ⏳ planned |
+| Relations, dimension tool, status colors, conflict diagnosis | ⏳ planned |
+| Editing tools (trim, extend, offset, mirror, patterns, fillet, chamfer) | ⏳ planned |
+| DXF import and export; benchmarks at 50 → 500 → 2,000 entities | ⏳ planned |
+
 ## 2. Guiding principles
 
 1. **Not a clone, a focused tool.** Full parity with commercial CAD suites, which represent thousands of

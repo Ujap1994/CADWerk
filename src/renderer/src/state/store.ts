@@ -5,12 +5,16 @@ import type { AppInfo } from '../../../shared/ipc.ts';
 import type { Feature } from '../../../shared/model/feature.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../../../shared/settings.ts';
 import type { FeatureResult, MassProperties, MeshPayload } from '../../../kernel/protocol.ts';
+import type { SketchSession } from '../sketch/session.ts';
 import { emptyHistory, type ActiveEdit, type History } from './document.ts';
 
+/** A picked body face or edge (topological index), or a standard plane (index into STANDARD_PLANES). */
 export interface Pick {
-  kind: 'face' | 'edge';
+  kind: 'face' | 'edge' | 'plane';
   index: number;
 }
+
+export type CommandTab = 'features' | 'sketch';
 
 export type KernelStatus = 'loading' | 'ready' | 'busy' | 'error';
 
@@ -54,6 +58,10 @@ export interface AppState {
   dirty: boolean;
 
   activeEdit: ActiveEdit | null;
+  /** The sketch command waits for a plane (or planar face) to sketch on. */
+  choosingSketchPlane: boolean;
+  /** Sketch mode. */
+  sketch: SketchSession | null;
   selection: Pick[];
   hover: Pick | null;
 
@@ -61,6 +69,7 @@ export interface AppState {
   rebuild: RebuildState | null;
   display: DisplayMeshes;
 
+  commandTab: CommandTab;
   dialogs: { settings: boolean; about: boolean };
   toasts: Toast[];
   frameStats: FrameStats | null;
@@ -77,11 +86,14 @@ export const initialState: AppState = {
   fileName: null,
   dirty: false,
   activeEdit: null,
+  choosingSketchPlane: false,
+  sketch: null,
   selection: [],
   hover: null,
   kernelStatus: 'loading',
   rebuild: null,
   display: { body: null, preview: null, pickable: true },
+  commandTab: 'features',
   dialogs: { settings: false, about: false },
   toasts: [],
   frameStats: null,

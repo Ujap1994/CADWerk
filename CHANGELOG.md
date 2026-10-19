@@ -7,6 +7,14 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 
 ## [Unreleased]
 
+### Added
+- Sketch mode (Phase 1, first part): the front, top and right planes in the feature tree and, while
+  choosing a sketch plane, in the 3D view; the **Sketch** command; the view turns normal to the sketch
+  plane; adaptive grid and sketch origin; undo and redo step by step inside a sketch, with the whole
+  session as one step of the part history; editing existing sketches with rollback of later features.
+- Command bar tabs *Features* and *Sketch*.
+- Own sparse 2D constraint solver running in a worker (the basis for relations and dimensions).
+
 ### Changed
 - New geometry kernel: Open CASCADE Technology 8.0.1 compiled to WebAssembly with ParaWerk's own C++
   facade. Editing large parts is about twice as fast, the kernel uses half the memory, starts faster,

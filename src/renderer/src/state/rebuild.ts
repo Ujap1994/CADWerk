@@ -32,7 +32,12 @@ export function startKernel(): KernelClient {
   );
 
   store.subscribe((state, previous) => {
-    if (state.history.features !== previous.history.features || state.activeEdit !== previous.activeEdit) {
+    // Sketch edits do not change the body; only entering or leaving sketch mode rolls the model back or forward.
+    if (
+      state.history.features !== previous.history.features ||
+      state.activeEdit !== previous.activeEdit ||
+      state.sketch?.index !== previous.sketch?.index
+    ) {
       scheduleRebuild();
     }
   });
@@ -66,13 +71,13 @@ async function runLoop(): Promise<void> {
   while (queued) {
     queued = false;
     const state = getState();
-    const plan = rebuildPlan(state.history.features, state.activeEdit);
+    const plan = rebuildPlan(state.history.features, state.activeEdit, state.sketch?.index ?? null);
     const busyTimer = setTimeout(() => setState({ kernelStatus: 'busy' }), BUSY_INDICATOR_DELAY_MS);
     try {
       const { result, meshes } = await client.rebuild({
         features: plan.features,
         captures: plan.captures,
-        withProperties: state.activeEdit === null,
+        withProperties: state.activeEdit === null && state.sketch === null,
       });
       crashes = { plan: '', count: 0 };
       // A newer state is already waiting: skip these results to avoid flicker.
@@ -111,10 +116,12 @@ function applyResult(
   meshes: Map<number, MeshPayload | null>,
   timings: { totalMs: number; rebuiltFeatures: number },
 ): void {
-  const { activeEdit } = getState();
+  const { activeEdit, sketch } = getState();
   const last = plan.features.length - 1;
   let display: DisplayMeshes;
-  if (!activeEdit) {
+  if (sketch) {
+    display = { body: meshes.get(last) ?? null, preview: null, pickable: false };
+  } else if (!activeEdit) {
     display = { body: meshes.get(last) ?? null, preview: null, pickable: true };
   } else if (isEdgeFeature(activeEdit.draft)) {
     display = { body: meshes.get(activeEdit.index - 1) ?? null, preview: meshes.get(activeEdit.index) ?? null, pickable: true };
@@ -128,7 +135,7 @@ function applyResult(
       display,
       rebuild: {
         results,
-        properties: activeEdit ? (state.rebuild?.properties ?? null) : properties,
+        properties: activeEdit || sketch ? (state.rebuild?.properties ?? null) : properties,
         totalMs: timings.totalMs,
         rebuiltFeatures: timings.rebuiltFeatures,
       },

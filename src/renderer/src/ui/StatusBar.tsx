@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import type { Language } from '../../../shared/i18n.ts';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
+import { STANDARD_PLANES } from '../../../shared/model/sketch.ts';
 import { formatQuantity } from '../format.ts';
 import { useAppState, type Pick } from '../state/store.ts';
 
 /** "Face 3 · Cylinder Ø 40 mm · 3,769.9 mm²" from the exact B-Rep data. */
 function describePick(pick: Pick, mesh: MeshPayload | null, t: (key: string, options?: Record<string, unknown>) => string, language: Language): string {
+  if (pick.kind === 'plane') return t(`planes.${STANDARD_PLANES[pick.index] ?? 'front'}`);
   const label = t(pick.kind === 'face' ? 'status.face' : 'status.edge', { index: pick.index + 1 });
   const info = pick.kind === 'face' ? mesh?.faceInfo[pick.index] : mesh?.edgeInfo[pick.index];
   if (!info) return label;

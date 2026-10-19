@@ -51,6 +51,7 @@
     "groups": {
       "file": "File",
       "features": "Features",
+      "sketch": "Sketch",
       "export": "Export",
       "edit": "Edit"
     },
@@ -58,6 +59,7 @@
     "open": "Open",
     "save": "Save",
     "sketch": "Sketch",
+    "exitSketch": "Exit sketch",
     "box": "Box",
     "cylinder": "Cylinder",
     "fillet": "Fillet",
@@ -70,6 +72,7 @@
     "about": "About",
     "tooltips": {
       "sketch": "Draw a 2D sketch on a plane",
+      "exitSketch": "Keep the sketch and return to the part",
       "new": "Start a new part (Ctrl+N)",
       "open": "Open a part file (Ctrl+O)",
       "save": "Save the part (Ctrl+S)",
@@ -83,6 +86,11 @@
       "redo": "Redo (Ctrl+Y)",
       "settings": "Language, theme, navigation",
       "about": "Version and license"
+    },
+    "tabs": {
+      "label": "Command tabs",
+      "features": "Features",
+      "sketch": "Sketch"
     }
   },
   "features": {
@@ -95,8 +103,9 @@
   },
   "tree": {
     "title": "Feature tree",
-    "empty": "Start with a box or a cylinder from the command bar.",
+    "empty": "Start with a sketch, a box or a cylinder from the command bar.",
     "edit": "Edit feature",
+    "sketchOnPlane": "Sketch on this plane",
     "suppress": "Suppress",
     "unsuppress": "Unsuppress",
     "delete": "Delete",
@@ -189,6 +198,8 @@
   "dialogs": {
     "discardMessage": "Discard unsaved changes?",
     "discardDetail": "Your changes to “{{name}}” will be lost.",
+    "discardSketchMessage": "Discard your changes to the sketch?",
+    "discardSketchDetail": "The sketch returns to how it was before you opened it.",
     "discard": "Discard",
     "cancel": "Cancel",
     "closeMessage": "Quit ParaWerk and discard unsaved changes?",
@@ -245,5 +256,26 @@
       "bspline": "Spline",
       "other": "Curve"
     }
+  },
+  "planes": {
+    "front": "Front plane",
+    "top": "Top plane",
+    "right": "Right plane"
+  },
+  "sketch": {
+    "title": "Sketch",
+    "choosePlane": "Choose a plane",
+    "choosePlaneHint": "Click a plane in the view or in the feature tree, or choose one here.",
+    "creating": "New {{name}}",
+    "editing": "Edit {{name}}",
+    "plane": "Plane",
+    "contents": "Contents",
+    "entities_one": "{{count}} sketch entity",
+    "entities_other": "{{count}} sketch entities",
+    "constraints_one": "{{count}} relation or dimension",
+    "constraints_other": "{{count}} relations and dimensions",
+    "exitHint": "✓ keeps the sketch, ✕ discards your changes. Undo and redo work step by step inside the sketch.",
+    "ok": "Keep sketch",
+    "cancel": "Discard changes"
   }
 }

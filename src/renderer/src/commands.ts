@@ -1,13 +1,23 @@
 import { resolveLanguage } from '../../shared/i18n.ts';
 import type { MenuCommand } from '../../shared/ipc.ts';
 import { PART_FILE_EXTENSION } from '../../shared/app-info.ts';
-import { defaultFeature, isEdgeFeature, type EdgeRef, type Feature, type FeatureType } from '../../shared/model/feature.ts';
+import { defaultFeature, isEdgeFeature, type EdgeRef, type Feature, type FeatureType, type SketchFeature } from '../../shared/model/feature.ts';
 import { decodePartFile, encodePartFile, PartFileError } from '../../shared/model/part-file.ts';
+import { STANDARD_PLANES, type SketchData, type SketchPlaneRef } from '../../shared/model/sketch.ts';
 import type { Settings } from '../../shared/settings.ts';
 import { changeLanguage, t } from './i18n.ts';
+import {
+  applySketchSession,
+  hasSketchChanges,
+  openSketchSession,
+  recordSketch,
+  redoSketch,
+  undoSketch,
+  type SketchSession,
+} from './sketch/session.ts';
 import { applyEdit, commit, emptyHistory, hasBodyBefore, redo as redoHistory, undo as undoHistory } from './state/document.ts';
 import { kernel, whenIdle } from './state/rebuild.ts';
-import { getState, setHistory, setState, showToast, type Pick } from './state/store.ts';
+import { getState, setHistory, setState, showToast, type AppState, type CommandTab, type Pick } from './state/store.ts';
 import { viewport } from './viewport/registry.ts';
 import type { StandardView } from './viewport/views.ts';
 
@@ -16,6 +26,11 @@ const api = () => window.parawerk;
 function baseName(path: string): string {
   const name = path.split(/[\\/]/).pop() ?? path;
   return name.replace(/\.[^.]+$/, '');
+}
+
+/** State that leaves every mode (feature edit, sketch) without storing anything. */
+function closedModes(): Partial<AppState> {
+  return { activeEdit: null, sketch: null, choosingSketchPlane: false, selection: [], hover: null, commandTab: 'features' };
 }
 
 function documentName(): string {
@@ -42,7 +57,7 @@ async function confirmDiscard(): Promise<boolean> {
 export async function newDocument(): Promise<void> {
   if (!(await confirmDiscard())) return;
   const history = emptyHistory();
-  setState({ history, savedFeatures: history.features, dirty: false, filePath: null, fileName: null, activeEdit: null, selection: [] });
+  setState({ history, savedFeatures: history.features, dirty: false, filePath: null, fileName: null, ...closedModes() });
   viewport()?.requestFitOnNextBody();
   viewport()?.setStandardView('isometric');
 }
@@ -57,8 +72,7 @@ export function loadDocument(path: string, data: Uint8Array): void {
       dirty: false,
       filePath: path,
       fileName: baseName(path),
-      activeEdit: null,
-      selection: [],
+      ...closedModes(),
     });
     viewport()?.requestFitOnNextBody();
     showToast('success', t('toasts.opened', { name: baseName(path) }));
@@ -86,6 +100,7 @@ export async function openFromSystem(path: string, data: Uint8Array): Promise<vo
 
 export async function saveDocument(saveAs = false): Promise<boolean> {
   if (getState().activeEdit) commitEdit();
+  storeOpenSketch();
   const state = getState();
   const data = encodePartFile(
     { units: 'mm', features: state.history.features },
@@ -132,7 +147,12 @@ export async function exportModel(format: 'step' | 'stl'): Promise<void> {
 // ------------------------------------------------------------------ features
 
 export function startFeature(type: FeatureType): void {
+  if (type === 'sketch') {
+    startSketch();
+    return;
+  }
   const state = getState();
+  if (state.sketch || state.choosingSketchPlane) return;
   if (state.activeEdit) commitEdit();
   const features = getState().history.features;
   const index = features.length;
@@ -150,12 +170,17 @@ export function startFeature(type: FeatureType): void {
 }
 
 export function editFeature(id: string): void {
+  if (getState().sketch) return;
   if (getState().activeEdit) cancelEdit();
   const features = getState().history.features;
   const index = features.findIndex((feature) => feature.id === id);
   const feature = features[index];
   if (!feature) return;
-  setState({ activeEdit: { mode: 'edit', index, draft: feature }, selection: [] });
+  if (feature.type === 'sketch') {
+    enterSketch(openSketchSession('edit', index, feature));
+    return;
+  }
+  setState({ activeEdit: { mode: 'edit', index, draft: feature }, selection: [], choosingSketchPlane: false });
 }
 
 export function updateDraft(patch: Partial<Feature>): void {
@@ -190,6 +215,7 @@ export function cancelEdit(): void {
 
 export function deleteFeature(id: string): void {
   const state = getState();
+  if (state.sketch) return;
   if (state.activeEdit) cancelEdit();
   const features = state.history.features.filter((feature) => feature.id !== id);
   setHistory(commit(state.history, features));
@@ -197,6 +223,7 @@ export function deleteFeature(id: string): void {
 
 export function toggleSuppress(id: string): void {
   const state = getState();
+  if (state.sketch) return;
   const features = state.history.features.map((feature) =>
     feature.id === id ? ({ ...feature, suppressed: !feature.suppressed } as Feature) : feature,
   );
@@ -206,6 +233,15 @@ export function toggleSuppress(id: string): void {
 export function undo(): void {
   if (isTextInputFocused()) {
     document.execCommand('undo');
+    return;
+  }
+  const { sketch } = getState();
+  if (sketch) {
+    updateSketch(undoSketch(sketch));
+    return;
+  }
+  if (getState().choosingSketchPlane) {
+    setState({ choosingSketchPlane: false });
     return;
   }
   if (getState().activeEdit) {
@@ -220,14 +256,110 @@ export function redo(): void {
     document.execCommand('redo');
     return;
   }
-  if (getState().activeEdit) return;
+  const { sketch } = getState();
+  if (sketch) {
+    updateSketch(redoSketch(sketch));
+    return;
+  }
+  if (getState().activeEdit || getState().choosingSketchPlane) return;
   setHistory(redoHistory(getState().history), { selection: [] });
+}
+
+// ------------------------------------------------------------------ sketches
+
+/** Sketch command: sketches on a selected plane right away, otherwise asks for a plane. */
+export function startSketch(): void {
+  const state = getState();
+  if (state.sketch) return;
+  if (state.activeEdit) commitEdit();
+  const plane = STANDARD_PLANES[getState().selection.find((pick) => pick.kind === 'plane')?.index ?? -1];
+  if (plane) chooseSketchPlane({ kind: 'standard', plane });
+  else setState({ choosingSketchPlane: true, selection: [], hover: null, commandTab: 'sketch' });
+}
+
+/** Opens a new sketch on `plane`, behind the last feature. */
+export function chooseSketchPlane(plane: SketchPlaneRef): void {
+  if (getState().sketch) return;
+  const draft: SketchFeature = { ...(defaultFeature('sketch') as SketchFeature), plane };
+  enterSketch(openSketchSession('create', getState().history.features.length, draft));
+}
+
+function enterSketch(session: SketchSession): void {
+  updateSketch(session, { activeEdit: null, choosingSketchPlane: false, selection: [], hover: null, commandTab: 'sketch' });
+}
+
+/** Replaces the sketch session and keeps the dirty flag in sync with unsaved sketch work. */
+function updateSketch(sketch: SketchSession | null, extra: Partial<AppState> = {}): void {
+  setState((state) => ({
+    ...extra,
+    sketch,
+    dirty: state.history.features !== state.savedFeatures || (sketch !== null && hasSketchChanges(sketch, state.history.features)),
+  }));
+}
+
+/** Records one finished sketch operation (one undo step in sketch mode). */
+export function recordSketchChange(sketch: SketchData): void {
+  const session = getState().sketch;
+  if (session) updateSketch(recordSketch(session, sketch));
+}
+
+/** Leaves sketch mode and keeps the sketch: one step in the document history. An empty new sketch is dropped. */
+export function exitSketch(): void {
+  const state = getState();
+  const session = state.sketch;
+  if (!session) {
+    if (state.choosingSketchPlane) setState({ choosingSketchPlane: false, commandTab: 'features' });
+    return;
+  }
+  const features = applySketchSession(state.history.features, session);
+  if (features) setHistory(commit(state.history, features), { sketch: null, selection: [], hover: null, commandTab: 'features' });
+  else updateSketch(null, { selection: [], hover: null, commandTab: 'features' });
+}
+
+/** Leaves sketch mode and discards its changes (after asking, if there are any). */
+export async function cancelSketch(): Promise<void> {
+  const state = getState();
+  const session = state.sketch;
+  if (!session) {
+    if (state.choosingSketchPlane) setState({ choosingSketchPlane: false, commandTab: 'features' });
+    return;
+  }
+  if (hasSketchChanges(session, state.history.features)) {
+    const confirmed = await api().confirm({
+      message: t('dialogs.discardSketchMessage'),
+      detail: t('dialogs.discardSketchDetail'),
+      confirmLabel: t('dialogs.discard'),
+      cancelLabel: t('dialogs.cancel'),
+    });
+    if (!confirmed || getState().sketch !== session) return;
+  }
+  updateSketch(null, { selection: [], hover: null, commandTab: 'features' });
+}
+
+/** Stores the open sketch in the document without leaving sketch mode (before saving). */
+function storeOpenSketch(): void {
+  const state = getState();
+  const session = state.sketch;
+  if (!session) return;
+  const features = applySketchSession(state.history.features, session);
+  if (features) setHistory(commit(state.history, features), { sketch: { ...session, mode: 'edit' } });
+}
+
+export function setCommandTab(commandTab: CommandTab): void {
+  setState({ commandTab });
 }
 
 // ------------------------------------------------------------------ selection
 
 export function handlePick(pick: Pick | null, additive: boolean): void {
   const state = getState();
+  if (state.choosingSketchPlane) {
+    const plane = pick?.kind === 'plane' ? STANDARD_PLANES[pick.index] : undefined;
+    if (plane) chooseSketchPlane({ kind: 'standard', plane });
+    return;
+  }
+  // Sketch geometry is picked by the sketch layer, not here.
+  if (state.sketch) return;
   const edit = state.activeEdit;
   if (edit && isEdgeFeature(edit.draft)) {
     if (pick?.kind === 'edge') toggleDraftEdge(pick.index);
@@ -247,8 +379,20 @@ export function handlePick(pick: Pick | null, additive: boolean): void {
 }
 
 export function escape(): void {
-  if (getState().activeEdit) cancelEdit();
+  const state = getState();
+  if (state.choosingSketchPlane) void cancelSketch();
+  else if (state.activeEdit) cancelEdit();
   else setState({ selection: [] });
+}
+
+/** Hovering a plane in the feature tree shows it in the view. */
+export function hoverPlane(index: number | null): void {
+  const hover = getState().hover;
+  if (index === null) {
+    if (hover?.kind === 'plane') setState({ hover: null });
+  } else if (hover?.kind !== 'plane' || hover.index !== index) {
+    setState({ hover: { kind: 'plane', index } });
+  }
 }
 
 // ------------------------------------------------------------------ settings and views

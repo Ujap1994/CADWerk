@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isEdgeFeature } from '../../../shared/model/feature.ts';
+import { frameOf, STANDARD_PLANES } from '../../../shared/model/sketch.ts';
 import * as commands from '../commands.ts';
 import { setState, store, type AppState, type Pick } from '../state/store.ts';
-import { ViewportEngine } from '../viewport/engine.ts';
+import { ViewportEngine, type PickFilter } from '../viewport/engine.ts';
+import type { PlaneDisplay } from '../viewport/reference-planes.ts';
 import { registerViewport } from '../viewport/registry.ts';
 import type { CubeFace } from '../viewport/view-cube.ts';
 import { ViewToolbar } from './ViewToolbar.tsx';
@@ -24,6 +26,23 @@ function visibleSelection(state: AppState): Pick[] {
   const edit = state.activeEdit;
   if (edit && isEdgeFeature(edit.draft)) return edit.draft.edges.map((ref) => ({ kind: 'edge', index: ref.index }));
   return state.selection;
+}
+
+function pickFilter(state: AppState): PickFilter {
+  if (state.choosingSketchPlane) return 'planes';
+  if (state.sketch) return 'none';
+  const edit = state.activeEdit;
+  return edit ? (isEdgeFeature(edit.draft) ? 'edges' : 'none') : 'all';
+}
+
+/** All planes while choosing a sketch plane; otherwise only hovered (also in the tree) and selected ones. */
+function planeDisplay(state: AppState): PlaneDisplay {
+  if (state.sketch) return { visible: [], hovered: null, selected: [] };
+  return {
+    visible: STANDARD_PLANES.map(() => state.choosingSketchPlane),
+    hovered: state.hover?.kind === 'plane' ? state.hover.index : null,
+    selected: state.selection.filter((pick) => pick.kind === 'plane').map((pick) => pick.index),
+  };
 }
 
 export function Viewport() {
@@ -51,10 +70,30 @@ export function Viewport() {
         engine.setBody(state.display.body, state.display.pickable);
         engine.setPreview(state.display.preview);
       }
-      if (!previous || state.activeEdit !== previous.activeEdit || state.selection !== previous.selection || state.display !== previous.display) {
+      if (
+        !previous ||
+        state.activeEdit !== previous.activeEdit ||
+        state.selection !== previous.selection ||
+        state.display !== previous.display ||
+        state.choosingSketchPlane !== previous.choosingSketchPlane ||
+        state.sketch !== previous.sketch
+      ) {
         engine.setSelection(visibleSelection(state));
-        const edit = state.activeEdit;
-        engine.setPickFilter(edit ? (isEdgeFeature(edit.draft) ? 'edges' : 'none') : 'all');
+        engine.setPickFilter(pickFilter(state));
+      }
+      if (
+        !previous ||
+        state.choosingSketchPlane !== previous.choosingSketchPlane ||
+        state.selection !== previous.selection ||
+        state.hover !== previous.hover ||
+        (state.sketch === null) !== (previous.sketch === null)
+      ) {
+        engine.setReferencePlanes(planeDisplay(state));
+      }
+      const plane = state.sketch?.draft.plane;
+      if (!previous || plane !== previous.sketch?.draft.plane) {
+        // Entering sketch mode turns the view normal to the sketch plane.
+        engine.setSketchFrame(plane ? frameOf(plane) : null, plane !== undefined && !previous?.sketch);
       }
       if (!previous || state.effectiveTheme !== previous.effectiveTheme) engine.setTheme(state.effectiveTheme);
       if (!previous || state.settings.projection !== previous.settings.projection) engine.setProjection(state.settings.projection);

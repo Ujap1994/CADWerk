@@ -4,12 +4,14 @@ import {
   DirectionalLight,
   Group,
   HemisphereLight,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
   NoToneMapping,
   OrthographicCamera,
   PerspectiveCamera,
+  Quaternion,
   Raycaster,
   Scene,
   Sphere,
@@ -23,17 +25,21 @@ import {
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import type { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
+import type { SketchFrame } from '../../../shared/model/sketch.ts';
 import type { NavigationPreset, Projection } from '../../../shared/settings.ts';
 import type { FrameStats, Pick } from '../state/store.ts';
 import { CameraController } from './camera-controller.ts';
 import { AxisTriad } from './axis-triad.ts';
 import { palettes, type ViewportPalette } from './palette.ts';
 import { disposeOverlay, PartModel } from './part-model.ts';
+import { ReferencePlanes, type PlaneDisplay } from './reference-planes.ts';
+import { SketchLayer } from './sketch-layer.ts';
 import { createSyntheticAssembly, type SyntheticAssembly } from './synthetic-scene.ts';
 import { ViewCube, type CubeFace } from './view-cube.ts';
 import { VIEW_DIRECTIONS, viewQuaternion, type StandardView } from './views.ts';
 
-export type PickFilter = 'all' | 'edges' | 'none';
+/** What a click can pick: everything, only edges (fillet, chamfer), only planes (choosing a sketch plane) or nothing. */
+export type PickFilter = 'all' | 'edges' | 'planes' | 'none';
 
 export interface ViewportCallbacks {
   onHover(pick: Pick | null): void;
@@ -67,6 +73,8 @@ interface DragState {
 
 const CLICK_TOLERANCE_PX = 4;
 const EDGE_PICK_THRESHOLD_PX = 5;
+/** Smallest half side length of the standard planes, in mm. */
+const MIN_PLANE_HALF_SIZE = 40;
 
 function percentile(values: number[], p: number): number {
   if (values.length === 0) return 0;
@@ -95,6 +103,8 @@ export class ViewportEngine {
   private readonly resizeObserver: ResizeObserver;
   private readonly viewCube: ViewCube;
   private readonly triad = new AxisTriad();
+  private readonly referencePlanes = new ReferencePlanes();
+  private readonly sketchLayer = new SketchLayer();
   private readonly pivotMarker: Mesh<SphereGeometry, MeshBasicMaterial>;
   private palette: ViewportPalette = palettes.light;
   private readonly materials: {
@@ -171,7 +181,7 @@ export class ViewportEngine {
     };
 
     this.hemisphere = new HemisphereLight(0xffffff, 0x888888, 1.9);
-    this.scene.add(this.hemisphere, this.headlight, this.headlight.target, this.overlays);
+    this.scene.add(this.hemisphere, this.headlight, this.headlight.target, this.overlays, this.referencePlanes.group, this.sketchLayer.group);
 
     this.pivotMarker = new Mesh(new SphereGeometry(1, 16, 12), new MeshBasicMaterial({ depthTest: false }));
     this.pivotMarker.renderOrder = 10;
@@ -257,6 +267,21 @@ export class ViewportEngine {
     if (filter === 'none') this.clearHover();
   }
 
+  setReferencePlanes(display: PlaneDisplay): void {
+    const wasVisible = this.referencePlanes.anyVisible;
+    this.referencePlanes.setDisplay(display);
+    if (wasVisible !== this.referencePlanes.anyVisible) this.updateBounds();
+    this.requestRender();
+  }
+
+  /** Enters (frame) or leaves (null) sketch mode; `orient` turns the view normal to the sketch plane. */
+  setSketchFrame(frame: SketchFrame | null, orient = false): void {
+    this.sketchLayer.setFrame(frame);
+    this.updateBounds();
+    if (frame && orient) this.lookAtFrame(frame);
+    this.requestRender();
+  }
+
   /** The next body that appears is framed automatically (new or opened document). */
   requestFitOnNextBody(): void {
     this.fitOnNextBody = true;
@@ -275,6 +300,8 @@ export class ViewportEngine {
     this.materials.selectedEdge.color.setHex(p.selected);
     this.materials.referenceEdge.color.setHex(p.referenceEdge);
     this.pivotMarker.material.color.setHex(p.pivot);
+    this.referencePlanes.setPalette(p);
+    this.sketchLayer.setPalette(p);
     this.hemisphere.color = new Color(p.hemisphereSky);
     this.hemisphere.groundColor = new Color(p.hemisphereGround);
     this.viewCube.setPalette(p);
@@ -311,6 +338,15 @@ export class ViewportEngine {
   setViewDirection(direction: Vector3): void {
     this.updateBounds();
     const target = this.controller.fitState(this.bounds, this.aspect(), viewQuaternion(direction));
+    this.controller.animateTo(target);
+    this.requestRender();
+  }
+
+  /** Looks straight at a plane with its x axis pointing right ("normal to"). */
+  lookAtFrame(frame: SketchFrame): void {
+    this.updateBounds();
+    const basis = new Matrix4().makeBasis(new Vector3(...frame.xDir), new Vector3(...frame.yDir), new Vector3(...frame.normal));
+    const target = this.controller.fitState(this.bounds, this.aspect(), new Quaternion().setFromRotationMatrix(basis));
     this.controller.animateTo(target);
     this.requestRender();
   }
@@ -428,6 +464,10 @@ export class ViewportEngine {
     this.controller.apply(this.ortho, this.perspective, this.aspect(), this.bounds);
     this.updateHeadlight();
     this.updatePivotMarkerScale();
+    if (this.sketchLayer.active) {
+      const { target, height } = this.controller.state;
+      this.sketchLayer.update({ target, height, aspect: this.aspect(), viewportHeightPx: this.height });
+    }
 
     this.renderer.info.reset();
     this.renderer.setViewport(0, 0, this.width, this.height);
@@ -469,6 +509,8 @@ export class ViewportEngine {
     for (const material of [this.materials.edge, this.materials.hoverEdge, this.materials.selectedEdge, this.materials.referenceEdge]) {
       material.resolution.copy(resolution);
     }
+    this.referencePlanes.setResolution(resolution);
+    this.sketchLayer.setResolution(resolution);
     this.requestRender();
   }
 
@@ -494,6 +536,14 @@ export class ViewportEngine {
       this.bounds = this.bench.bounds.clone();
       return;
     }
+    // The standard planes reach a little beyond the body in every direction from the origin.
+    const reach = box.isEmpty() ? 0 : Math.max(...box.min.toArray().map(Math.abs), ...box.max.toArray().map(Math.abs));
+    this.referencePlanes.setHalfSize(Math.max(MIN_PLANE_HALF_SIZE, Math.ceil((reach * 1.15) / 10) * 10));
+    const planes = this.referencePlanes.visibleBounds();
+    if (planes) box.union(planes);
+    // The sketch plane must stay inside the camera's depth range.
+    const frame = this.sketchLayer.sketchFrame;
+    if (frame && !box.isEmpty()) box.expandByPoint(new Vector3(...frame.origin));
     if (box.isEmpty()) {
       this.bounds = new Sphere(new Vector3(0, 0, 20), 120);
       return;
@@ -507,10 +557,9 @@ export class ViewportEngine {
     return new Vector2((x / this.width) * 2 - 1, -(y / this.height) * 2 + 1);
   }
 
-  private pickAt(x: number, y: number): (Pick & { point: Vector3 }) | null {
-    const body = this.body;
-    if (!body || !this.bodyPickable || this.pickFilter === 'none') return null;
-    body.ensureBvh();
+  private pickAt(x: number, y: number): Pick | null {
+    if (this.pickFilter === 'none') return null;
+    const body = this.bodyPickable ? this.body : null;
     const camera = this.camera();
     this.controller.apply(this.ortho, this.perspective, this.aspect(), this.bounds);
     camera.updateMatrixWorld();
@@ -518,16 +567,20 @@ export class ViewportEngine {
     this.raycaster.params.Line2 = { threshold: EDGE_PICK_THRESHOLD_PX };
     (this.raycaster as Raycaster & { firstHitOnly?: boolean }).firstHitOnly = true;
 
-    const faceHit = this.raycaster.intersectObject(body.mesh, false)[0];
-    const edgeHit = this.raycaster.intersectObject(body.edges, false)[0];
+    body?.ensureBvh();
+    // Faces always occlude what lies behind them, even when they cannot be picked themselves.
+    const faceHit = body ? this.raycaster.intersectObject(body.mesh, false)[0] : undefined;
+    const edgeHit = body && this.pickFilter !== 'planes' ? this.raycaster.intersectObject(body.edges, false)[0] : undefined;
+    const planeHit = this.pickFilter === 'edges' ? null : this.referencePlanes.intersect(this.raycaster);
     const worldPerPixel = this.controller.state.height / this.height;
     const tolerance = worldPerPixel * 8;
 
-    if (edgeHit && edgeHit.faceIndex !== undefined && edgeHit.faceIndex !== null && (!faceHit || edgeHit.distance <= faceHit.distance + tolerance)) {
-      return { kind: 'edge', index: body.edgeOfSegment(edgeHit.faceIndex), point: edgeHit.point.clone() };
+    if (body && edgeHit && edgeHit.faceIndex !== undefined && edgeHit.faceIndex !== null && (!faceHit || edgeHit.distance <= faceHit.distance + tolerance)) {
+      return { kind: 'edge', index: body.edgeOfSegment(edgeHit.faceIndex) };
     }
-    if (faceHit && faceHit.faceIndex !== undefined && faceHit.faceIndex !== null && this.pickFilter === 'all') {
-      return { kind: 'face', index: body.faceOfTriangle(faceHit.faceIndex), point: faceHit.point.clone() };
+    if (planeHit && (!faceHit || planeHit.distance < faceHit.distance)) return { kind: 'plane', index: planeHit.index };
+    if (body && faceHit && faceHit.faceIndex !== undefined && faceHit.faceIndex !== null && this.pickFilter === 'all') {
+      return { kind: 'face', index: body.faceOfTriangle(faceHit.faceIndex) };
     }
     return null;
   }
@@ -555,7 +608,8 @@ export class ViewportEngine {
       this.hoverOverlay = null;
     }
     const alreadySelected = pick !== null && this.selection.some((s) => samePick(s, pick));
-    if (pick && this.body && !alreadySelected) {
+    // Planes show their hover state through setReferencePlanes.
+    if (pick && pick.kind !== 'plane' && this.body && !alreadySelected) {
       this.hoverOverlay =
         pick.kind === 'face'
           ? this.body.faceOverlay(pick.index, this.materials.hoverFace)
@@ -584,6 +638,7 @@ export class ViewportEngine {
     const body = this.body;
     if (!body) return;
     for (const pick of this.selection) {
+      if (pick.kind === 'plane') continue;
       if (pick.kind === 'face' && pick.index >= body.faceCount) continue;
       if (pick.kind === 'edge' && pick.index >= body.edgeCount) continue;
       const overlay =
@@ -696,8 +751,7 @@ export class ViewportEngine {
       const direction = this.viewCube.hitTest(x, y, this.width, this.controller.state.quaternion);
       if (direction) this.setViewDirection(direction);
     } else if (!drag.moved && drag.mode === 'select') {
-      const pick = this.pickAt(x, y);
-      this.callbacks.onPick(pick ? { kind: pick.kind, index: pick.index } : null, event.ctrlKey || event.metaKey || event.shiftKey);
+      this.callbacks.onPick(this.pickAt(x, y), event.ctrlKey || event.metaKey || event.shiftKey);
     }
     this.requestRender();
   };
@@ -746,6 +800,8 @@ export class ViewportEngine {
     this.bench?.dispose();
     this.viewCube.dispose();
     this.triad.dispose();
+    this.referencePlanes.dispose();
+    this.sketchLayer.dispose();
     this.pivotMarker.geometry.dispose();
     this.pivotMarker.material.dispose();
     Object.values(this.materials).forEach((material) => material.dispose());

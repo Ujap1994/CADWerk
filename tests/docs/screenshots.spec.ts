@@ -53,6 +53,18 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: out('filleted-part.png') });
 
+  // Sketch mode: choosing the plane (the hovered plane is highlighted), then sketching on it.
+  await page.click('[data-command="sketch"]');
+  await page.hover('.plane-choice[data-plane="front"]');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-choose-plane.png') });
+  await page.click('.plane-choice[data-plane="front"]');
+  await idle(page);
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: out('sketch-mode.png') });
+  await page.click('[data-testid="sketch-cancel"]');
+  await idle(page);
+
   await page.click('[data-command="settings"]');
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('settings-dialog.png') });

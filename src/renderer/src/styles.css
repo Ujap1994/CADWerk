@@ -223,6 +223,43 @@ input {
   white-space: nowrap;
 }
 
+/* Vertical tab switch between the command sets (Features, Sketch). */
+.command-tabs {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 6px 0 8px;
+  border-left: 1px solid var(--border);
+}
+
+.command-tab {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.command-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.command-tab.is-selected {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.command-tab-panel {
+  display: flex;
+}
+
 /* ------------------------------------------------------------ panels */
 
 .panel-title {
@@ -319,6 +356,90 @@ input {
 
 .tree-item.has-error .tree-name {
   color: var(--danger);
+}
+
+.tree-item.is-reference .tree-icon {
+  color: var(--text-muted);
+}
+
+.tree-item.is-reference.is-hovered {
+  background: var(--bg-hover);
+}
+
+.tree-item.is-reference.is-selected {
+  background: var(--accent-soft);
+}
+
+.tree-item.is-reference.is-selected .tree-icon {
+  color: var(--accent);
+}
+
+.tree-item.is-choice {
+  cursor: pointer;
+}
+
+.tree-item.is-choice .tree-name {
+  color: var(--accent-strong);
+}
+
+.feature-tree.is-locked .tree-item:not(.is-reference):not(.is-static) {
+  cursor: default;
+}
+
+/* ------------------------------------------------------------ sketch panel */
+
+.sketch-panel {
+  border-bottom: 1px solid var(--border);
+}
+
+.sketch-panel .panel-section:last-child {
+  border-bottom: 0;
+}
+
+.panel-hint.is-flush {
+  margin: 0 0 8px;
+}
+
+.plane-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.plane-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  text-align: left;
+  cursor: pointer;
+}
+
+.plane-choice:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.plane-choice-icon {
+  font-size: 17px;
+  color: var(--accent);
+}
+
+.sketch-plane {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sketch-count {
+  margin: 0 0 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .icon-button {

@@ -91,9 +91,14 @@ export function isDimension(constraint: SketchConstraint): constraint is SketchD
   return DIMENSION_TYPES.has(constraint.type);
 }
 
+/** The three planes through the origin. */
+export type StandardPlane = 'front' | 'top' | 'right';
+
+export const STANDARD_PLANES: readonly StandardPlane[] = ['front', 'top', 'right'];
+
 /** Where a sketch lies: a standard plane or a planar face of the body. */
 export type SketchPlaneRef =
-  | { kind: 'standard'; plane: 'front' | 'top' | 'right' }
+  | { kind: 'standard'; plane: StandardPlane }
   | { kind: 'face'; face: number; frame: SketchFrame };
 
 /** A plane in model space: origin plus orthonormal axes (sketch x, sketch y, normal). */
@@ -105,7 +110,7 @@ export interface SketchFrame {
 }
 
 /** Standard planes for Z up (see docs/adr/0004-coordinate-system-and-units.md). */
-export const STANDARD_FRAMES: Record<'front' | 'top' | 'right', SketchFrame> = {
+export const STANDARD_FRAMES: Record<StandardPlane, SketchFrame> = {
   front: { origin: [0, 0, 0], xDir: [1, 0, 0], yDir: [0, 0, 1], normal: [0, -1, 0] },
   top: { origin: [0, 0, 0], xDir: [1, 0, 0], yDir: [0, 1, 0], normal: [0, 0, 1] },
   right: { origin: [0, 0, 0], xDir: [0, 1, 0], yDir: [0, 0, 1], normal: [1, 0, 0] },
