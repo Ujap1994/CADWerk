@@ -9,7 +9,7 @@ import { SketchBuilder } from './builder.ts';
 import { constraintReferences, deleteEntities, isCurve, pointPositions, type Point2 } from './geometry.ts';
 import { boundaries, extensionTargets, parameterOf, pointAt, shapeOf, type Boundary, type CurveShape } from './intersect.ts';
 
-export type TrimError = 'not-a-curve' | 'no-target' | 'connected' | 'constrained';
+export type TrimError = 'not-a-curve' | 'no-target' | 'connected' | 'constrained' | 'ellipse';
 
 export type TrimResult = { ok: true; sketch: SketchData } | { ok: false; error: TrimError };
 
@@ -32,7 +32,7 @@ export function trimPiece(sketch: SketchData, curveId: string, at: Point2): Trim
   if (!shape) return null;
   const t = parameterOf(shape, at);
   const splits = boundaries(sketch, curveId);
-  if (shape.kind === 'circle' && shape.closed) {
+  if (shape.kind !== 'segment' && shape.closed) {
     if (splits.length < 2) return { curve: curveId, from: 0, to: 1, whole: true, shape };
     // Around the circle: the last boundary before the click, the first after it (wrapping around).
     const before = [...splits].reverse().find((b) => b.t < t) ?? (splits.at(-1) as Boundary);
@@ -47,8 +47,9 @@ export function trimPiece(sketch: SketchData, curveId: string, at: Point2): Trim
 /** Points along the piece, for highlighting what a click removes. */
 export function piecePolyline(piece: TrimPiece, segments = 48): Point2[] {
   let to = piece.to;
-  if (piece.shape.kind === 'circle' && piece.shape.closed && to <= piece.from) to += 1;
-  if (piece.whole && piece.shape.kind === 'circle' && piece.shape.closed) to = piece.from + 1;
+  const closed = piece.shape.kind !== 'segment' && piece.shape.closed;
+  if (closed && to <= piece.from) to += 1;
+  if (piece.whole && closed) to = piece.from + 1;
   const count = piece.shape.kind === 'segment' ? 1 : segments;
   return Array.from({ length: count + 1 }, (_, i) => pointAt(piece.shape, piece.from + ((to - piece.from) * i) / count));
 }
@@ -59,7 +60,7 @@ function endPointAt(sketch: SketchData, builder: SketchBuilder, boundary: Bounda
   const id = builder.freePoint(...boundary.at);
   const other = boundary.curve ? sketch.entities.find((entity) => entity.id === boundary.curve) : undefined;
   if (other?.type === 'line') builder.relation({ type: 'pointOnLine', point: id, line: other.id });
-  else if (other?.type === 'circle' || other?.type === 'arc') builder.relation({ type: 'pointOnCircle', point: id, circle: other.id });
+  else if (other?.type === 'circle' || other?.type === 'arc' || other?.type === 'ellipse') builder.relation({ type: 'pointOnCircle', point: id, circle: other.id });
   return id;
 }
 
@@ -70,6 +71,7 @@ function dropLoosePoints(sketch: SketchData, candidates: readonly string[]): Ske
     if (entity.type === 'line') used.add(entity.p1).add(entity.p2);
     if (entity.type === 'circle') used.add(entity.center);
     if (entity.type === 'arc') used.add(entity.center).add(entity.start).add(entity.end);
+    if (entity.type === 'ellipse') used.add(entity.center).add(entity.major).add(entity.minor);
   }
   const loose = candidates.filter((id) => !used.has(id));
   return loose.length > 0 ? deleteEntities(sketch, loose) : sketch;
@@ -81,6 +83,8 @@ export function trimAt(sketch: SketchData, curveId: string, at: Point2): TrimRes
   const curve = sketch.entities.find((entity) => entity.id === curveId) as SketchCurve | undefined;
   if (!piece || !curve) return { ok: false, error: 'not-a-curve' };
   if (piece.whole) return { ok: true, sketch: deleteEntities(sketch, [curveId]) };
+  // Pieces of an ellipse would be elliptical arcs, which sketches do not have.
+  if (curve.type === 'ellipse') return { ok: false, error: 'ellipse' };
 
   const builder = new SketchBuilder(sketch);
   if (curve.type === 'circle') {

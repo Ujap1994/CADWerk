@@ -3,7 +3,7 @@ import type { Language } from '../../../shared/i18n.ts';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
 import { ORIGIN_ID, STANDARD_PLANES, type SketchData } from '../../../shared/model/sketch.ts';
 import { formatNumber, formatQuantity } from '../format.ts';
-import { arcGeometry, pointPositions } from '../sketch/geometry.ts';
+import { arcGeometry, ellipseOf, pointPositions } from '../sketch/geometry.ts';
 import { relationKindOf } from '../sketch/relations.ts';
 import { useAppState, type Pick } from '../state/store.ts';
 
@@ -28,6 +28,9 @@ function describeSketchEntity(sketch: SketchData, id: string, t: Translate, lang
     if (a && b) text = t('status.sketchLine', { length: mm(Math.hypot(b[0] - a[0], b[1] - a[1])) });
   } else if (entity.type === 'circle') {
     text = t('status.sketchCircle', { diameter: mm(entity.radius * 2) });
+  } else if (entity.type === 'ellipse') {
+    const ellipse = ellipseOf(entity, positions);
+    if (ellipse) text = t('status.sketchEllipse', { major: mm(2 * ellipse.a), minor: mm(2 * ellipse.b) });
   } else {
     const [center, start, end] = [positions.get(entity.center), positions.get(entity.start), positions.get(entity.end)];
     if (center && start && end) {

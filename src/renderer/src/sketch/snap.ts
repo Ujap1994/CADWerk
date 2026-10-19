@@ -5,12 +5,13 @@
  */
 
 import { ORIGIN_ID, type SketchData } from '../../../shared/model/sketch.ts';
-import { arcGeometry, distanceToCurve, isCurve, type Point2 } from './geometry.ts';
+import { arcGeometry, closestOnEllipse, distanceToCurve, ellipseOf, isCurve, type Point2 } from './geometry.ts';
+import { lineEllipse } from './intersect.ts';
 
 export type SnapTarget =
   | { kind: 'point'; id: string }
   | { kind: 'midpoint'; line: string }
-  | { kind: 'curve'; curve: string; curveType: 'line' | 'circle' | 'arc' }
+  | { kind: 'curve'; curve: string; curveType: 'line' | 'circle' | 'arc' | 'ellipse' }
   | { kind: 'none' };
 
 /** An inference line: the cursor is aligned with `from` along an axis. */
@@ -51,6 +52,10 @@ function projectOntoCurve(sketch: SketchData, positions: ReadonlyMap<string, Poi
     const lengthSquared = dx * dx + dy * dy;
     const t = lengthSquared > 0 ? Math.max(0, Math.min(1, ((u - a[0]) * dx + (v - a[1]) * dy) / lengthSquared)) : 0;
     return [a[0] + t * dx, a[1] + t * dy];
+  }
+  if (curve.type === 'ellipse') {
+    const ellipse = ellipseOf(curve, positions);
+    return ellipse ? closestOnEllipse(ellipse, [u, v]).at : null;
   }
   const center = positions.get(curve.center);
   if (!center) return null;
@@ -114,7 +119,7 @@ export function snapCursor(sketch: SketchData, positions: ReadonlyMap<string, Po
     if (Math.abs(u - anchor[0]) <= alignTolerance) return { axis: 'vertical', from: anchor, anchor: true };
     return null;
   };
-  let curve: { id: string; type: 'line' | 'circle' | 'arc'; distance: number } | null = null;
+  let curve: { id: string; type: 'line' | 'circle' | 'arc' | 'ellipse'; distance: number } | null = null;
   for (const entity of sketch.entities) {
     if (!isCurve(entity) || exclude.has(entity.id)) continue;
     const distance = distanceToCurve(entity, positions, u, v);
@@ -182,6 +187,12 @@ function crossCurve(sketch: SketchData, positions: ReadonlyMap<string, Point2>, 
     const t = (level - ay) / (by - ay);
     if (t < 0 || t > 1) return null;
     return swap([ax + t * (bx - ax), level]);
+  }
+  if (curve.type === 'ellipse') {
+    const ellipse = ellipseOf(curve, positions);
+    if (!ellipse) return null;
+    const crossings = lineEllipse({ a: swap([0, level]), b: swap([1, level]) }, ellipse);
+    return crossings.reduce<Point2 | null>((best, p) => (!best || Math.hypot(p[0] - u, p[1] - v) < Math.hypot(best[0] - u, best[1] - v) ? p : best), null);
   }
   const center = positions.get(curve.center);
   if (!center) return null;

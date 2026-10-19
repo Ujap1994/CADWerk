@@ -31,6 +31,8 @@ export function curvePoints(curve: SketchCurve): string[] {
       return [curve.center];
     case 'arc':
       return [curve.center, curve.start, curve.end];
+    case 'ellipse':
+      return [curve.center, curve.major, curve.minor];
   }
 }
 
@@ -57,6 +59,79 @@ export function arcGeometry(center: Point2, start: Point2, end: Point2): ArcGeom
   return { center, radius: Math.hypot(start[0] - center[0], start[1] - center[1]), startAngle, sweep };
 }
 
+/**
+ * An ellipse in its own frame: the point at parameter t is center + a·cos t·axis + b·sin t·normal.
+ * `normal` points to the minor axis point, so t runs from the major towards the minor point.
+ */
+export interface EllipseGeometry {
+  center: Point2;
+  a: number;
+  b: number;
+  axis: Point2;
+  normal: Point2;
+}
+
+export function ellipseGeometry(center: Point2, major: Point2, minor: Point2): EllipseGeometry {
+  const a = Math.hypot(major[0] - center[0], major[1] - center[1]);
+  const axis: Point2 = a > 0 ? [(major[0] - center[0]) / a, (major[1] - center[1]) / a] : [1, 0];
+  // The minor point decides the side; its distance from the major axis line is the other semi-axis.
+  const side = (minor[0] - center[0]) * -axis[1] + (minor[1] - center[1]) * axis[0];
+  const normal: Point2 = side >= 0 ? [-axis[1], axis[0]] : [axis[1], -axis[0]];
+  return { center, a, b: Math.hypot(minor[0] - center[0], minor[1] - center[1]), axis, normal };
+}
+
+export function ellipsePoint(e: EllipseGeometry, t: number): Point2 {
+  const [c, s] = [Math.cos(t) * e.a, Math.sin(t) * e.b];
+  return [e.center[0] + c * e.axis[0] + s * e.normal[0], e.center[1] + c * e.axis[1] + s * e.normal[1]];
+}
+
+/** Parameter of a point on (or projected radially onto) the ellipse. */
+export function ellipseParameter(e: EllipseGeometry, p: Point2): number {
+  const [dx, dy] = [p[0] - e.center[0], p[1] - e.center[1]];
+  const x = dx * e.axis[0] + dy * e.axis[1];
+  const y = dx * e.normal[0] + dy * e.normal[1];
+  return Math.atan2(y / Math.max(e.b, 1e-12), x / Math.max(e.a, 1e-12));
+}
+
+/** The point of the ellipse nearest to p: coarse sampling, then Newton steps on the parameter. */
+export function closestOnEllipse(e: EllipseGeometry, p: Point2): { t: number; at: Point2; distance: number } {
+  const [dx, dy] = [p[0] - e.center[0], p[1] - e.center[1]];
+  const x = dx * e.axis[0] + dy * e.axis[1];
+  const y = dx * e.normal[0] + dy * e.normal[1];
+  const squared = (t: number) => (e.a * Math.cos(t) - x) ** 2 + (e.b * Math.sin(t) - y) ** 2;
+  let t = 0;
+  let best = Infinity;
+  for (let i = 0; i < 24; i++) {
+    const candidate = (i / 24) * 2 * Math.PI;
+    const value = squared(candidate);
+    if (value < best) [t, best] = [candidate, value];
+  }
+  for (let i = 0; i < 12; i++) {
+    const [c, s] = [Math.cos(t), Math.sin(t)];
+    // Half the derivative of the squared distance and its derivative.
+    const f = (e.b * e.b - e.a * e.a) * s * c + x * e.a * s - y * e.b * c;
+    const df = (e.b * e.b - e.a * e.a) * (c * c - s * s) + x * e.a * c + y * e.b * s;
+    if (Math.abs(df) < 1e-15) break;
+    const next = t - f / df;
+    if (squared(next) > squared(t)) break;
+    if (Math.abs(next - t) < 1e-13) {
+      t = next;
+      break;
+    }
+    t = next;
+  }
+  const at = ellipsePoint(e, t);
+  return { t, at, distance: Math.hypot(p[0] - at[0], p[1] - at[1]) };
+}
+
+/** The ellipse of a sketch entity, or null if a point is missing. */
+export function ellipseOf(curve: { center: string; major: string; minor: string }, positions: ReadonlyMap<string, Point2>): EllipseGeometry | null {
+  const center = positions.get(curve.center);
+  const major = positions.get(curve.major);
+  const minor = positions.get(curve.minor);
+  return center && major && minor ? ellipseGeometry(center, major, minor) : null;
+}
+
 /** Number of segments that keep a circular curve within MAX_DEVIATION_PX of the true shape. */
 export function segmentCount(radius: number, sweep: number, mmPerPixel: number): number {
   const tolerance = MAX_DEVIATION_PX * mmPerPixel;
@@ -72,6 +147,13 @@ export function curvePolyline(curve: SketchCurve, positions: ReadonlyMap<string,
     const p1 = positions.get(curve.p1);
     const p2 = positions.get(curve.p2);
     return p1 && p2 ? [p1, p2] : null;
+  }
+  if (curve.type === 'ellipse') {
+    const ellipse = ellipseOf(curve, positions);
+    if (!ellipse) return null;
+    // With even steps in t, the chord deviation is at most that of a circle with the larger semi-axis.
+    const count = segmentCount(Math.max(ellipse.a, ellipse.b), 2 * Math.PI, mmPerPixel);
+    return Array.from({ length: count + 1 }, (_, i) => ellipsePoint(ellipse, (2 * Math.PI * i) / count));
   }
   const center = positions.get(curve.center);
   if (!center) return null;
@@ -107,6 +189,10 @@ export function distanceToCurve(curve: SketchCurve, positions: ReadonlyMap<strin
     const p1 = positions.get(curve.p1);
     const p2 = positions.get(curve.p2);
     return p1 && p2 ? distanceToSegment(u, v, p1, p2) : Infinity;
+  }
+  if (curve.type === 'ellipse') {
+    const ellipse = ellipseOf(curve, positions);
+    return ellipse ? closestOnEllipse(ellipse, [u, v]).distance : Infinity;
   }
   const center = positions.get(curve.center);
   if (!center) return Infinity;

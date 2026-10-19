@@ -50,6 +50,15 @@ function parseEntity(raw: unknown, path: string): SketchEntity {
         end: identifier(raw.end, `${path}.end`),
         ...extra,
       };
+    case 'ellipse':
+      return {
+        id,
+        type: 'ellipse',
+        center: identifier(raw.center, `${path}.center`),
+        major: identifier(raw.major, `${path}.major`),
+        minor: identifier(raw.minor, `${path}.minor`),
+        ...extra,
+      };
     default:
       throw new ValidationError(`unknown sketch entity ${JSON.stringify(raw.type)}`, `${path}.type`);
   }
@@ -124,6 +133,7 @@ export function parseSketchData(raw: unknown, path = 'sketch'): SketchData {
     if (entity.type === 'line') [entity.p1, entity.p2].forEach((id) => expectPoint(id, where));
     if (entity.type === 'circle') expectPoint(entity.center, where);
     if (entity.type === 'arc') [entity.center, entity.start, entity.end].forEach((id) => expectPoint(id, where));
+    if (entity.type === 'ellipse') [entity.center, entity.major, entity.minor].forEach((id) => expectPoint(id, where));
   });
   const ids = new Set(kinds.keys());
   constraints.forEach((constraint, i) => {

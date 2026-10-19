@@ -55,7 +55,7 @@ function copyGeometry(
     else if (curve.type === 'arc') {
       const [start, end] = options.reverse ? [mapped(curve.end), mapped(curve.start)] : [mapped(curve.start), mapped(curve.end)];
       curves.set(curve.id, builder.arc(mapped(curve.center), start, end, construction));
-    }
+    } else if (curve.type === 'ellipse') curves.set(curve.id, builder.ellipse(mapped(curve.center), mapped(curve.major), mapped(curve.minor), construction));
   }
   return { points, curves };
 }

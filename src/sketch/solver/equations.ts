@@ -80,6 +80,7 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
     if (entity.type === 'point') entityParams.set(entity.id, [...(pointParams.get(entity.id) ?? [])]);
     else if (entity.type === 'line') entityParams.set(entity.id, [...(point(entity.p1) ?? []), ...(point(entity.p2) ?? [])]);
     else if (entity.type === 'circle') entityParams.set(entity.id, [...(point(entity.center) ?? []), radiusParam.get(entity.id) ?? -1]);
+    else if (entity.type === 'ellipse') entityParams.set(entity.id, [...(point(entity.center) ?? []), ...(point(entity.major) ?? []), ...(point(entity.minor) ?? [])]);
     else entityParams.set(entity.id, [...(point(entity.center) ?? []), ...(point(entity.start) ?? []), ...(point(entity.end) ?? [])]);
   }
 
@@ -117,6 +118,16 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
       return center && start ? { center, radius: null, start } : null;
     }
     return null;
+  };
+
+  /** Center and axis points of an ellipse, as parameter pairs. */
+  const ellipseOf = (id: string): [number, number][] | null => {
+    const entity = byId.get(id);
+    if (entity?.type !== 'ellipse') return null;
+    const c = point(entity.center);
+    const major = point(entity.major);
+    const minor = point(entity.minor);
+    return c && major && minor ? [c, major, minor] : null;
   };
 
   /** End points of lines and arcs (circles have none). */
@@ -164,6 +175,29 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
       return rs - re;
     });
   }
+
+  // Implicit ellipse rule: the two axes are perpendicular.
+  for (const entity of entities) {
+    if (entity.type !== 'ellipse') continue;
+    const ellipse = ellipseOf(entity.id);
+    if (!ellipse) continue;
+    add(`ellipse:${entity.id}`, ellipse.flat(), (v) => {
+      const ax = (v[2] as number) - (v[0] as number), ay = (v[3] as number) - (v[1] as number);
+      const bx = (v[4] as number) - (v[0] as number), by = (v[5] as number) - (v[1] as number);
+      return (ax * bx + ay * by) / Math.max(lengthOf(ax, ay), 1e-12);
+    });
+  }
+  /**
+   * Local layout of an ellipse's values (center, major, minor from `offset`): its semi-axes and the
+   * unit vector of the major axis.
+   */
+  const ellipseAt = (v: Float64Array, offset: number) => {
+    const cx = v[offset] as number, cy = v[offset + 1] as number;
+    const ax = (v[offset + 2] as number) - cx, ay = (v[offset + 3] as number) - cy;
+    const a = Math.max(lengthOf(ax, ay), 1e-12);
+    const b = Math.max(lengthOf((v[offset + 4] as number) - cx, (v[offset + 5] as number) - cy), 1e-12);
+    return { cx, cy, a, b, ux: ax / a, uy: ay / a };
+  };
 
   for (const constraint of constraints) {
     const id = constraint.id;
@@ -244,6 +278,20 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
             const bx = (v[2] as number) - (v[4] as number), by = (v[3] as number) - (v[5] as number);
             return (ax * by - ay * bx) / Math.max(lengthOf(ax, ay), 1e-12);
           });
+        } else if ((lineA || lineB) && (ellipseOf(constraint.a) || ellipseOf(constraint.b))) {
+          const line = (lineA ?? lineB) as Line;
+          const ellipse = (ellipseOf(constraint.a) ?? ellipseOf(constraint.b)) as [number, number][];
+          // The line's distance from the center equals the ellipse's extent in the line's normal direction.
+          add(id, [...line.a, ...line.b, ...ellipse.flat()], (v) => {
+            const dx = (v[2] as number) - (v[0] as number), dy = (v[3] as number) - (v[1] as number);
+            const length = Math.max(lengthOf(dx, dy), 1e-12);
+            const nx = -dy / length, ny = dx / length;
+            const e = ellipseAt(v, 4);
+            const along = nx * e.ux + ny * e.uy;
+            const across = ny * e.ux - nx * e.uy;
+            const distance = nx * (e.cx - (v[0] as number)) + ny * (e.cy - (v[1] as number));
+            return Math.abs(distance) - lengthOf(e.a * along, e.b * across);
+          });
         } else if ((lineA || lineB) && (roundA || roundB)) {
           const line = (lineA ?? lineB) as Line;
           const round = (roundA ?? roundB) as Round;
@@ -322,6 +370,19 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
       }
       case 'pointOnCircle': {
         const p = point(constraint.point);
+        const ellipse = ellipseOf(constraint.circle);
+        if (p && ellipse) {
+          // How far the point is from the ellipse along the ray from the center (in mm).
+          add(id, [...ellipse.flat(), ...p], (v) => {
+            const e = ellipseAt(v, 0);
+            const dx = (v[6] as number) - e.cx, dy = (v[7] as number) - e.cy;
+            const x = (dx * e.ux + dy * e.uy) / e.a;
+            const y = (dy * e.ux - dx * e.uy) / e.b;
+            const scaled = lengthOf(x, y);
+            return scaled > 1e-12 ? lengthOf(dx, dy) * (1 - 1 / scaled) : -Math.min(e.a, e.b);
+          });
+          break;
+        }
         const round = roundOf(constraint.circle);
         if (!p || !round) {
           invalid.push(id);

@@ -322,6 +322,44 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(800);
   await page.screenshot({ path: out('sketch-bracket.png') });
   await page.click('[data-testid="sketch-ok"]');
+
+  // A fully defined ellipse: center at the origin, horizontal axis, both semi-axes, a tangent line.
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('ma', 30, 0), P('mi', 0, 15), { id: 'e', type: 'ellipse', center: 'origin', major: 'ma', minor: 'mi' },
+        P('t1', -40, 15), P('t2', 40, 15), { id: 'top', type: 'line', p1: 't1', p2: 't2' },
+      ],
+      constraints: [
+        { id: 'h', type: 'horizontalPoints', a: 'origin', b: 'ma' },
+        { id: 'da', type: 'distance', a: 'origin', b: 'ma', value: 30, driving: true, offset: [0, -24] },
+        { id: 'db', type: 'distance', a: 'origin', b: 'mi', value: 15, driving: true, offset: [-12, 0] },
+        { id: 'flat', type: 'horizontal', line: 'top' },
+        { id: 'tan', type: 'tangent', a: 'top', b: 'e' },
+        { id: 'w', type: 'distance', a: 't1', b: 't2', value: 80, driving: true, offset: [0, 9] },
+        { id: 'left', type: 'horizontalDistance', a: 't1', b: 'origin', value: 40, driving: true, offset: [0, 25] },
+      ],
+    };
+    const features = [{ id: 'oval', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
+  });
+  await idle(page);
+  await page.dblclick('.tree-item[data-feature-id="oval"]');
+  await idle(page);
+  await page.waitForTimeout(600);
+  await page.click('[data-testid="zoom-to-fit"]');
+  await page.waitForTimeout(800);
+  {
+    const p = await page.evaluate(
+      ([x, y, z]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(x, y, z),
+      [-21.2, -10.6, 0] as const,
+    );
+    if (canvas) await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+  }
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-ellipse.png') });
+  await page.click('[data-testid="sketch-ok"]');
   await page.evaluate((features) => {
     (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
   }, model);

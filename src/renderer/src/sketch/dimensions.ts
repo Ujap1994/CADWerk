@@ -179,7 +179,7 @@ export function proposeDimension(sketch: SketchData, picks: readonly string[], p
   const kindOf = (id: string) => (positions.has(id) ? 'point' : (entityOf(sketch, id)?.type ?? null));
   const centerOf = (id: string) => {
     const entity = entityOf(sketch, id);
-    return entity?.type === 'circle' || entity?.type === 'arc' ? entity.center : null;
+    return entity?.type === 'circle' || entity?.type === 'arc' || entity?.type === 'ellipse' ? entity.center : null;
   };
   // Measures the draft and stores where the label goes, relative to the dimension's anchor.
   const complete = (draft: DimensionDraft): DimensionDraft => {
@@ -215,8 +215,8 @@ export function proposeDimension(sketch: SketchData, picks: readonly string[], p
     return null;
   }
   const secondKind = kindOf(second);
-  // Circles and arcs are dimensioned at their centers.
-  const pointLike = (id: string, kind: string | null) => (kind === 'point' ? id : kind === 'circle' || kind === 'arc' ? centerOf(id) : null);
+  // Circles, arcs and ellipses are dimensioned at their centers.
+  const pointLike = (id: string, kind: string | null) => (kind === 'point' ? id : kind === 'circle' || kind === 'arc' || kind === 'ellipse' ? centerOf(id) : null);
   const p1 = pointLike(first, firstKind);
   const p2 = pointLike(second, secondKind);
   if (p1 && p2) return betweenPoints(p1, p2);

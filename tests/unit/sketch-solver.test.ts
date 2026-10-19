@@ -149,6 +149,81 @@ describe('solving', () => {
   });
 });
 
+describe('ellipses', () => {
+  const ellipse = (constraints: SketchConstraint[] = [], extra: SketchEntity[] = []): SketchData => ({
+    entities: [point('c', 0, 0), point('ma', 30, 2), point('mi', 1, 15), { id: 'e', type: 'ellipse', center: 'c', major: 'ma', minor: 'mi' }, ...extra],
+    constraints,
+  });
+
+  it('keeps the axes perpendicular', () => {
+    const result = solveSketch(ellipse());
+    const [cx, cy] = pointOf(result.sketch, 'c');
+    const [ax, ay] = pointOf(result.sketch, 'ma');
+    const [bx, by] = pointOf(result.sketch, 'mi');
+    const cosine = ((ax - cx) * (bx - cx) + (ay - cy) * (by - cy)) / (Math.hypot(ax - cx, ay - cy) * Math.hypot(bx - cx, by - cy));
+    expect(cosine).toBeCloseTo(0, 7);
+    expect(result.status?.entities.e).toBe('under');
+  });
+
+  it('is fully defined by its center, a horizontal major axis and both semi-axes', () => {
+    const result = solveSketch(
+      ellipse([
+        { id: 'o', type: 'coincident', a: 'c', b: ORIGIN_ID },
+        { id: 'h', type: 'horizontalPoints', a: 'c', b: 'ma' },
+        { id: 'da', type: 'distance', a: 'c', b: 'ma', value: 40, driving: true },
+        { id: 'db', type: 'distance', a: 'c', b: 'mi', value: 15, driving: true },
+      ]),
+    );
+    expect(result.converged).toBe(true);
+    expect(result.status?.sketch).toBe('full');
+    expect(pointOf(result.sketch, 'ma')).toEqual([expect.closeTo(40, 7), expect.closeTo(0, 7)]);
+    expect(pointOf(result.sketch, 'mi')).toEqual([expect.closeTo(0, 7), expect.closeTo(15, 7)]);
+  });
+
+  it('puts points on the ellipse', () => {
+    const result = solveSketch(ellipse([{ id: 'on', type: 'pointOnCircle', point: 'p', circle: 'e' }], [point('p', 25, 20)]));
+    expect(result.converged).toBe(true);
+    expect(residualMax(result.sketch)).toBeLessThan(1e-7);
+    const [cx, cy] = pointOf(result.sketch, 'c');
+    const [ax, ay] = pointOf(result.sketch, 'ma');
+    const [bx, by] = pointOf(result.sketch, 'mi');
+    const [px, py] = pointOf(result.sketch, 'p');
+    const a = Math.hypot(ax - cx, ay - cy);
+    const b = Math.hypot(bx - cx, by - cy);
+    const along = ((px - cx) * (ax - cx) + (py - cy) * (ay - cy)) / a;
+    const across = ((px - cx) * (bx - cx) + (py - cy) * (by - cy)) / b;
+    expect((along / a) ** 2 + (across / b) ** 2).toBeCloseTo(1, 6);
+  });
+
+  it('makes a line tangent to the ellipse', () => {
+    const result = solveSketch(
+      ellipse(
+        [
+          { id: 'o', type: 'coincident', a: 'c', b: ORIGIN_ID },
+          { id: 'h', type: 'horizontalPoints', a: 'c', b: 'ma' },
+          { id: 'da', type: 'distance', a: 'c', b: 'ma', value: 30, driving: true },
+          { id: 'db', type: 'distance', a: 'c', b: 'mi', value: 15, driving: true },
+          { id: 'flat', type: 'horizontal', line: 'l' },
+          { id: 't', type: 'tangent', a: 'l', b: 'e' },
+        ],
+        [point('l1', -40, 20), point('l2', 40, 21), line('l', 'l1', 'l2')],
+      ),
+    );
+    expect(result.converged).toBe(true);
+    // A horizontal tangent touches the top of the ellipse: y = b.
+    expect(pointOf(result.sketch, 'l1')[1]).toBeCloseTo(15, 6);
+  });
+
+  it('reports a third semi-axis dimension as redundant', () => {
+    const base = ellipse([
+      { id: 'da', type: 'distance', a: 'c', b: 'ma', value: 30, driving: true },
+      { id: 'db', type: 'distance', a: 'c', b: 'mi', value: 15, driving: true },
+    ]);
+    const solved = solveSketch(base).sketch;
+    expect(isRedundant(solved.entities, solved.constraints, { id: 'dx', type: 'distance', a: 'ma', b: 'mi', value: Math.hypot(30, 15), driving: true })).toBe(true);
+  });
+});
+
 describe('dragging', () => {
   it('lets under-defined geometry follow the cursor', () => {
     const sketch: SketchData = { entities: [point('a', 0, 0), point('b', 50, 0), line('l', 'a', 'b')], constraints: [{ id: 'h', type: 'horizontal', line: 'l' }] };

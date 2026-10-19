@@ -42,8 +42,22 @@ export interface SketchArc {
   construction?: boolean;
 }
 
-export type SketchEntity = SketchPoint | SketchLine | SketchCircle | SketchArc;
-export type SketchCurve = SketchLine | SketchCircle | SketchArc;
+/**
+ * Ellipse around center. `major` and `minor` are the ends of its two axes (their distances from
+ * the center are the semi-axes); the solver keeps the axes perpendicular. Either axis may be the
+ * longer one.
+ */
+export interface SketchEllipse {
+  id: string;
+  type: 'ellipse';
+  center: string;
+  major: string;
+  minor: string;
+  construction?: boolean;
+}
+
+export type SketchEntity = SketchPoint | SketchLine | SketchCircle | SketchArc | SketchEllipse;
+export type SketchCurve = SketchLine | SketchCircle | SketchArc | SketchEllipse;
 
 interface ConstraintBase {
   id: string;
@@ -64,6 +78,7 @@ export type SketchRelation =
   | (ConstraintBase & { type: 'concentric'; a: string; b: string })
   | (ConstraintBase & { type: 'midpoint'; point: string; line: string })
   | (ConstraintBase & { type: 'pointOnLine'; point: string; line: string })
+  /** A point on a circle, arc or ellipse. */
   | (ConstraintBase & { type: 'pointOnCircle'; point: string; circle: string })
   | (ConstraintBase & { type: 'symmetric'; a: string; b: string; line: string })
   | (ConstraintBase & { type: 'fix'; point: string });

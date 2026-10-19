@@ -22,6 +22,7 @@ export type SketchToolName =
   | 'parallelogram'
   | 'circle'
   | 'threePointCircle'
+  | 'ellipse'
   | 'centerArc'
   | 'threePointArc'
   | 'tangentArc'
@@ -43,6 +44,7 @@ export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'parallelogram',
   'circle',
   'threePointCircle',
+  'ellipse',
   'centerArc',
   'threePointArc',
   'tangentArc',
@@ -145,6 +147,10 @@ class Preview {
 
   arc(center: Point2, start: Point2, end: Point2, construction = false): void {
     this.entities.push({ id: `tmp${this.count++}`, type: 'arc', center: this.point(center), start: this.point(start), end: this.point(end), ...(construction ? { construction } : {}) });
+  }
+
+  ellipse(center: Point2, major: Point2, minor: Point2): void {
+    this.entities.push({ id: `tmp${this.count++}`, type: 'ellipse', center: this.point(center), major: this.point(major), minor: this.point(minor) });
   }
 
   build(): SketchData {
@@ -356,6 +362,86 @@ export class CircleTool implements SketchTool {
   cancel(): boolean {
     const busy = this.busy;
     this.center = null;
+    return busy;
+  }
+}
+
+/**
+ * Ellipses: the center, the end of one axis (it snaps and aligns with the center), then the other
+ * semi-axis from the cursor's distance to the first axis.
+ */
+export class EllipseTool implements SketchTool {
+  readonly name = 'ellipse' as const;
+  private center: PlacedPoint | null = null;
+  private major: SnapResult | null = null;
+
+  get busy(): boolean {
+    return this.center !== null;
+  }
+
+  /** The end of the second axis for a cursor position: perpendicular to the first, on the cursor's side. */
+  private minorAt(center: Point2, major: Point2, cursor: Point2): Point2 {
+    const d = unit(sub(major, center));
+    const n: Point2 = [-d[1], d[0]];
+    const b = dot(sub(cursor, center), n);
+    return [center[0] + n[0] * b, center[1] + n[1] * b];
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const center = this.center;
+    const major = this.major;
+    const snap = snapAt(sketch, event, center && !major ? at(center) : null);
+    if (!center) return { geometry: EMPTY, snap, info: { relations: snapRelations(snap, false) } };
+    const preview = new Preview();
+    if (!major) {
+      preview.line(at(center), at(snap), true);
+      const du = snap.u - center.u;
+      const dv = snap.v - center.v;
+      return { geometry: preview.build(), snap, info: { length: Math.hypot(du, dv), angle: (Math.atan2(dv, du) * 180) / Math.PI, relations: snapRelations(snap, true) } };
+    }
+    const minor = this.minorAt(at(center), at(major), [event.u, event.v]);
+    preview.ellipse(at(center), at(major), minor);
+    preview.line(at(center), at(major), true);
+    preview.line(at(center), minor, true);
+    const a = Math.hypot(major.u - center.u, major.v - center.v);
+    const b = Math.hypot(minor[0] - center.u, minor[1] - center.v);
+    return { geometry: preview.build(), snap: { ...snap, target: { kind: 'none' }, alignments: [] }, info: { width: 2 * a, height: 2 * b, relations: [] } };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const center = this.center;
+    const snap = snapAt(sketch, event, center && !this.major ? at(center) : null);
+    const minimum = event.tolerance * MIN_SIZE_FACTOR;
+    if (!center) {
+      this.center = placed(snap);
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    if (!this.major) {
+      if (Math.hypot(snap.u - center.u, snap.v - center.v) < minimum) return { commit: null, preview: this.hover(sketch, event) };
+      this.major = snap;
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const major = this.major;
+    const minor = this.minorAt(at(center), at(major), [event.u, event.v]);
+    if (Math.hypot(minor[0] - center.u, minor[1] - center.v) < minimum) return { commit: null, preview: this.hover(sketch, event) };
+    const builder = new SketchBuilder(sketch);
+    const c = builder.point(center);
+    const end = builder.point(placed(major));
+    builder.ellipse(c, end, builder.freePoint(...minor));
+    // An axis drawn horizontally or vertically keeps that direction.
+    for (const alignment of major.alignments) {
+      if (alignment.anchor) builder.relation({ type: alignment.axis === 'horizontal' ? 'horizontalPoints' : 'verticalPoints', a: c, b: end });
+    }
+    this.center = null;
+    this.major = null;
+    const commit = builder.build();
+    return { commit, preview: this.hover(commit, event) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.center = null;
+    this.major = null;
     return busy;
   }
 }
@@ -1070,6 +1156,7 @@ const TRIM_MESSAGES: Record<TrimError, string> = {
   'no-target': 'extendNoTarget',
   connected: 'extendConnected',
   constrained: 'extendConstrained',
+  ellipse: 'trimEllipse',
 };
 
 /** Trim: click the piece of a curve to remove; it ends at the neighboring crossings. */
@@ -1156,6 +1243,8 @@ export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_
       return new CircleTool();
     case 'threePointCircle':
       return new ThreePointCircleTool();
+    case 'ellipse':
+      return new EllipseTool();
     case 'tangentArc':
       return new TangentArcTool();
     case 'slot':

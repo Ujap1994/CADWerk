@@ -1,12 +1,16 @@
 /**
- * DXF exchange for sketches: export as DXF R12 (lines, circles, arcs in millimeters; construction
- * geometry is left out, so laser and CNC software cut only the real outline) and import of the
- * common 2D entities. Imported geometry is connected where end points coincide.
+ * DXF exchange for sketches: export as DXF R12 (lines, circles, arcs in millimeters; R12 has no
+ * ellipses, so they become fine closed polylines; construction geometry is left out, so laser and
+ * CNC software cut only the real outline) and import of the common 2D entities. Imported geometry
+ * is connected where end points coincide.
  */
 
 import type { SketchData } from '../../../shared/model/sketch.ts';
 import { SketchBuilder } from './builder.ts';
-import { arcGeometry, pointPositions, type Point2 } from './geometry.ts';
+import { arcGeometry, ellipseOf, ellipsePoint, pointPositions, type Point2 } from './geometry.ts';
+
+/** Largest distance of an exported ellipse polyline from the true ellipse, in millimeters. */
+const ELLIPSE_TOLERANCE = 0.005;
 
 function number(value: number): string {
   const text = (Math.round(value * 1e6) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
@@ -70,6 +74,30 @@ export function sketchToDxf(sketch: SketchData): { text: string; entities: numbe
       pair(40, arc.radius);
       pair(50, degrees(arc.startAngle));
       pair(51, degrees(arc.startAngle + arc.sweep));
+      entities++;
+    } else if (entity.type === 'ellipse') {
+      const ellipse = ellipseOf(entity, positions);
+      if (!ellipse) continue;
+      const radius = Math.max(ellipse.a, ellipse.b);
+      const step = radius > ELLIPSE_TOLERANCE ? 2 * Math.acos(1 - ELLIPSE_TOLERANCE / radius) : Math.PI / 6;
+      const count = Math.min(4096, Math.max(24, Math.ceil((2 * Math.PI) / step)));
+      pair(0, 'POLYLINE');
+      pair(8, '0');
+      pair(66, '1');
+      pair(10, 0);
+      pair(20, 0);
+      pair(30, 0);
+      pair(70, '1');
+      for (let i = 0; i < count; i++) {
+        const [x, y] = ellipsePoint(ellipse, (2 * Math.PI * i) / count);
+        pair(0, 'VERTEX');
+        pair(8, '0');
+        pair(10, x);
+        pair(20, y);
+        pair(30, 0);
+      }
+      pair(0, 'SEQEND');
+      pair(8, '0');
       entities++;
     }
   }
@@ -213,6 +241,21 @@ export function dxfToSketch(text: string, base: SketchData): DxfImport {
         pointAt(at(entity, first(entity, 10), first(entity, 20)));
         imported++;
         break;
+      case 'ELLIPSE': {
+        // Center, end of the major axis relative to it, ratio of the axes; elliptical arcs are not supported.
+        const sweep = first(entity, 42, 2 * Math.PI) - first(entity, 41, 0);
+        const ratio = first(entity, 40);
+        if (Math.abs(Math.abs(sweep) - 2 * Math.PI) > 1e-6 || !(ratio > 0)) {
+          skipped.ELLIPSE = (skipped.ELLIPSE ?? 0) + 1;
+          break;
+        }
+        const center = at(entity, first(entity, 10), first(entity, 20));
+        const [mx, my] = [first(entity, 11) * scale * (mirrored(entity) ? -1 : 1), first(entity, 21) * scale];
+        if (Math.hypot(mx, my) <= tolerance) break;
+        builder.ellipse(builder.freePoint(...center), builder.freePoint(center[0] + mx, center[1] + my), builder.freePoint(center[0] - my * ratio, center[1] + mx * ratio));
+        imported++;
+        break;
+      }
       case 'LWPOLYLINE': {
         const vertices: { at: Point2; bulge: number }[] = [];
         for (const [code, value] of entity.codes) {

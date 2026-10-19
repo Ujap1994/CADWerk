@@ -755,7 +755,7 @@ test('shows under, fully and over defined sketches and lets conflicts be deleted
   await expect(page.locator('.tree-item[data-feature-id="over"] [data-sketch-status]')).toHaveCount(0);
 });
 
-test('draws tangent arcs, three-point circles, slots, polygons, angled rectangles and parallelograms', async () => {
+test('draws tangent arcs, three-point circles, slots, polygons, angled rectangles, parallelograms and ellipses', async () => {
   launched = await launchApp();
   const { page } = launched;
   await page.click('[data-command="sketch"]');
@@ -785,7 +785,7 @@ test('draws tangent arcs, three-point circles, slots, polygons, angled rectangle
   expect(await relations()).toContain('tangent');
 
   // Circle ▾ > 3-point circle.
-  await page.click('.split-toggle[data-variants="circle threePointCircle"]');
+  await page.click('.split-toggle[data-variants="circle threePointCircle ellipse"]');
   await page.click('.menu-item[data-tool="threePointCircle"]');
   await clickAt(40, -40);
   await clickAt(50, -30);
@@ -825,6 +825,16 @@ test('draws tangent arcs, three-point circles, slots, polygons, angled rectangle
   await clickAt(32, 6);
   expect(await count('line')).toBe(8 + 4 + 4);
   expect((await relations()).filter((type) => type === 'parallel')).toHaveLength(4);
+
+  // Circle ▾ > Ellipse: center, the end of a horizontal axis, then the width.
+  await page.click('.split-toggle[data-variants="circle threePointCircle ellipse"]');
+  await page.click('.menu-item[data-tool="ellipse"]');
+  await clickAt(8, 34);
+  await clickAt(20, 34);
+  await clickAt(8, 39);
+  expect(await count('ellipse')).toBe(1);
+  expect(await relations()).toContain('horizontalPoints');
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Under defined');
   await page.click('[data-testid="sketch-ok"]');
   expect((await state(page)).history.features).toHaveLength(1);
 });

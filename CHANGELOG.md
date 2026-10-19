@@ -30,6 +30,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
 - 3-point rectangle (at any angle, sides kept perpendicular) and parallelogram, in the rectangle menu.
+- Ellipses (in the circle menu): center and two axis points, axes kept perpendicular by the solver,
+  dimensioned from the center; points on ellipses, lines tangent to them, snapping, trimming and
+  extending other curves up to them, patterns and mirroring; DXF export as fine polylines (R12) and
+  import of full ellipses.
 - Phase 1 exit check as an end-to-end test: an L-shaped bracket profile with two holes is drawn and
   fully defined with mouse and keyboard only in the smallest window (64 clicks and key presses); the
   user guide walks through the same steps.

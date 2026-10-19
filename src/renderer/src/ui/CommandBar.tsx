@@ -15,6 +15,7 @@ import {
   ChevronDownIcon,
   CircleIcon,
   PolygonIcon,
+  EllipseIcon,
   ExtendIcon,
   SketchChamferIcon,
   TrimIcon,
@@ -58,6 +59,7 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   parallelogram: ParallelogramIcon,
   circle: CircleIcon,
   threePointCircle: ThreePointCircleIcon,
+  ellipse: EllipseIcon,
   centerArc: CenterArcIcon,
   threePointArc: ThreePointArcIcon,
   tangentArc: TangentArcIcon,
@@ -278,7 +280,7 @@ function SketchTab() {
         <ToolButton tool="line" disabled={off} />
         <ToolButton tool="centerline" disabled={off} />
         <SplitToolButton tools={['cornerRectangle', 'centerRectangle', 'threePointRectangle', 'parallelogram']} current={variants.rectangle} disabled={off} />
-        <SplitToolButton tools={['circle', 'threePointCircle']} current={variants.circle} disabled={off} />
+        <SplitToolButton tools={['circle', 'threePointCircle', 'ellipse']} current={variants.circle} disabled={off} />
         <SplitToolButton tools={['centerArc', 'threePointArc', 'tangentArc']} current={variants.arc} disabled={off} />
         <ToolButton tool="slot" disabled={off} />
         <ToolButton tool="polygon" disabled={off} />

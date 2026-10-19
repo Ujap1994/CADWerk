@@ -98,6 +98,7 @@ explains the active tool.
 | **Parallelogram** | R | Click both ends of one side, then the third corner (it snaps like any point). Opposite sides stay parallel. |
 | **Circle** | C | Click the center, then a point on the circle (or drag). |
 | **3-point circle** | C | Click three points the circle passes through. |
+| **Ellipse** | C | Click the center, then the end of one axis, then move sideways to set the other axis and click. See [Ellipses](#ellipses). |
 | **Arc** | A | Click the center and the start point, then move in the direction the arc should run and click the end point. |
 | **3-point arc** | A | Click the start and the end point, then a third point the arc passes through. |
 | **Tangent arc** | A | Click the end point of a line or arc, then where the arc should end. The arc continues the line or arc without a kink (*tangent* relation). |
@@ -143,6 +144,26 @@ Select geometry, and the **Copy and move** section of the side panel offers:
 
 The **DXF** group of the *Sketch* tab imports the geometry of a DXF file into the open sketch and exports
 the sketch as DXF – for example for laser cutting. See [Files, import and export](files.md#sketches-as-dxf).
+
+### Ellipses
+
+An ellipse has three points: its **center** and the ends of its two **axes**. ParaWerk keeps the axes
+perpendicular to each other; everything else follows from the three points:
+
+- **Size:** dimension the distance from the center to each axis point (the semi-axes). An ellipse
+  60 × 30 mm has the values 30 and 15.
+- **Direction:** an axis drawn horizontally or vertically keeps that direction (a *horizontal* or
+  *vertical* relation between the center and the axis point). Otherwise fix the axis point with
+  dimensions or relations, like any point.
+- **Position:** dimension or relate the center like any point.
+- Points can lie **on** an ellipse and lines can be **tangent** to it; snapping onto an ellipse adds the
+  on-curve relation automatically.
+- Drag an axis point to change the size, or the curve to move the whole ellipse.
+- Other curves can be trimmed and extended up to an ellipse. An ellipse itself can only be trimmed as a
+  whole (pieces of it would be elliptical arcs, which sketches do not have), and *Offset* leaves ellipses
+  out, because the curve at a constant distance from an ellipse is not an ellipse.
+
+![A fully defined ellipse with a tangent line; pointing at it shows its axes in the status bar](../images/screenshots/sketch-ellipse.png)
 
 ### Fillets and chamfers in a sketch
 
@@ -193,9 +214,9 @@ relations are added automatically while you draw; others you add yourself:
 | Two lines | Parallel, perpendicular, collinear, equal length |
 | Two points | Horizontal, vertical (aligned with each other), coincident, fix |
 | A point and a line | On curve (on the line or its extension), midpoint |
-| A point and a circle or arc | On curve |
+| A point and a circle, arc or ellipse | On curve |
 | Two circles or arcs | Equal radius, tangent, concentric |
-| A line and a circle or arc | Tangent |
+| A line and a circle, arc or ellipse | Tangent |
 | Two points and a line | Symmetric about the line |
 | Points | Fix (the point does not move anymore) |
 

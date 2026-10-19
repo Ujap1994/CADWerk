@@ -5,7 +5,7 @@
  */
 
 import { isDimension, type SketchArc, type SketchConstraint, type SketchData, type SketchEntity, type SketchLine } from '../../../shared/model/sketch.ts';
-import { arcGeometry, curvePoints, type Point2 } from './geometry.ts';
+import { arcGeometry, curvePoints, ellipseOf, ellipsePoint, type Point2 } from './geometry.ts';
 import { relationKindOf, type RelationKind } from './relations.ts';
 
 export const RELATION_SYMBOLS: Record<RelationKind, string> = {
@@ -224,6 +224,18 @@ function placeFor(
     }
     const r = radius + offset;
     return { base: [center[0] + r * Math.cos(angle), center[1] + r * Math.sin(angle)], along: [1, 0] };
+  }
+  if (entity?.type === 'ellipse') {
+    const ellipse = ellipseOf(entity, positions);
+    if (!ellipse) return null;
+    // Outside the ellipse, at 45° between its axes.
+    const t = Math.PI / 4;
+    const on = ellipsePoint(ellipse, t);
+    // The gradient of (x/a)² + (y/b)² points outwards.
+    const [gx, gy] = [Math.cos(t) / Math.max(ellipse.a, 1e-12), Math.sin(t) / Math.max(ellipse.b, 1e-12)];
+    const outward: Point2 = [gx * ellipse.axis[0] + gy * ellipse.normal[0], gx * ellipse.axis[1] + gy * ellipse.normal[1]];
+    const length = Math.hypot(...outward) || 1;
+    return { base: [on[0] + (outward[0] / length) * offset, on[1] + (outward[1] / length) * offset], along: [1, 0] };
   }
   return null;
 }

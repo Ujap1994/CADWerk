@@ -148,7 +148,7 @@ function signedArea(steps: readonly Step[], positions: Positions): number {
  */
 export function offsetSelection(sketch: SketchData, ids: readonly string[], distance: number, flip = false): OffsetResult {
   const selected = new Set(ids);
-  const curves = sketch.entities.filter((entity): entity is SketchCurve => isCurve(entity) && selected.has(entity.id));
+  const curves = sketch.entities.filter((entity): entity is SketchCurve => isCurve(entity) && entity.type !== 'ellipse' && selected.has(entity.id));
   if (curves.length === 0 || !(distance > 0)) return { ok: false, error: 'nothing-selected' };
   const positions = pointPositions(sketch);
   const builder = new SketchBuilder(sketch);
@@ -163,7 +163,8 @@ export function offsetSelection(sketch: SketchData, ids: readonly string[], dist
     builder.circle(circle.center, radius, circle.construction === true);
   }
 
-  const chained = curves.filter((curve): curve is SketchLine | SketchArc => curve.type !== 'circle');
+  // Ellipses have no ellipse at a constant distance; they are left out.
+  const chained = curves.filter((curve): curve is SketchLine | SketchArc => curve.type === 'line' || curve.type === 'arc');
   for (const chain of chainsOf(chained)) {
     // Left of a counterclockwise loop is inside: going outwards means going right.
     const side = chain.closed && signedArea(chain.steps, positions) > 0 ? -signed : signed;

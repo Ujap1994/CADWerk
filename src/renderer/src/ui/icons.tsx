@@ -323,6 +323,14 @@ export const ThreePointArcIcon = (p: P) => (
   </Icon>
 );
 
+export const EllipseIcon = (p: P) => (
+  <Icon {...p}>
+    <ellipse cx="12" cy="12" rx="9.5" ry="6" />
+    {dot(12, 12, 1.6)}
+    {dot(21.5, 12, 1.8)}
+  </Icon>
+);
+
 export const ThreePointCircleIcon = (p: P) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="8" />

@@ -77,6 +77,13 @@ export class SketchBuilder {
     return id;
   }
 
+  /** Ellipse around center with the ends of its two axes (kept perpendicular by the solver). */
+  ellipse(center: string, major: string, minor: string, construction = false): string {
+    const id = this.id('e');
+    this.entities.push({ id, type: 'ellipse', center, major, minor, ...(construction ? { construction } : {}) });
+    return id;
+  }
+
   relation(relation: RelationInput): string {
     const id = this.id('r');
     this.constraints.push({ ...relation, id } as SketchConstraint);

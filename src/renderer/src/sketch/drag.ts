@@ -10,8 +10,8 @@ export interface DragPositions {
 
 /**
  * Where the dragged geometry should go: points follow the cursor by the distance it moved
- * (no jump to the cursor), lines and arcs move as a whole, circles grabbed at their edge
- * change their radius.
+ * (no jump to the cursor), lines, arcs and ellipses move as a whole, circles grabbed at their
+ * edge change their radius (ellipses change size by dragging their axis points).
  */
 export function dragTarget(base: SketchData, hit: SketchHit, start: DragPositions, pointer: DragPositions): DragTarget | null {
   const du = pointer.u - start.u;
@@ -26,8 +26,9 @@ export function dragTarget(base: SketchData, hit: SketchHit, start: DragPosition
     case 'point':
       return { kind: 'point', ...(moved(entity.id) ?? { id: entity.id, x: pointer.u, y: pointer.v }) };
     case 'line':
-    case 'arc': {
-      const ids = entity.type === 'line' ? [entity.p1, entity.p2] : [entity.center, entity.start, entity.end];
+    case 'arc':
+    case 'ellipse': {
+      const ids = entity.type === 'line' ? [entity.p1, entity.p2] : entity.type === 'arc' ? [entity.center, entity.start, entity.end] : [entity.center, entity.major, entity.minor];
       const points = ids.map(moved).filter((point) => point !== null);
       return points.length === ids.length ? { kind: 'points', points } : null;
     }

@@ -71,7 +71,7 @@ export function analyze(
   for (const id of unsatisfied) {
     const constraint = byConstraint.get(id);
     if (constraint) for (const ref of constraintReferences(constraint)) over.add(ref);
-    else if (id.startsWith('arc:')) over.add(id.slice(4));
+    else if (id.startsWith('arc:') || id.startsWith('ellipse:')) over.add(id.slice(id.indexOf(':') + 1));
   }
   const status = new Map<string, DefinitionStatus>();
   let anyUnder = false;
@@ -86,7 +86,15 @@ export function analyze(
   for (const entity of entities) {
     if (entity.type === 'point') continue;
     if (status.get(entity.id) !== 'over') continue;
-    for (const ref of entity.type === 'line' ? [entity.p1, entity.p2] : entity.type === 'circle' ? [entity.center] : [entity.center, entity.start, entity.end]) {
+    const refs =
+      entity.type === 'line'
+        ? [entity.p1, entity.p2]
+        : entity.type === 'circle'
+          ? [entity.center]
+          : entity.type === 'ellipse'
+            ? [entity.center, entity.major, entity.minor]
+            : [entity.center, entity.start, entity.end];
+    for (const ref of refs) {
       if (status.has(ref)) status.set(ref, 'over');
     }
   }
