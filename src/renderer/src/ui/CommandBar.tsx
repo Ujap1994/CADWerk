@@ -1,11 +1,19 @@
-import type { ComponentType, SVGProps } from 'react';
+import { useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FeatureType } from '../../../shared/model/feature.ts';
 import * as commands from '../commands.ts';
+import type { SketchToolName } from '../sketch/tools.ts';
 import { useAppState, type CommandTab } from '../state/store.ts';
 import {
   BoxIcon,
+  CenterArcIcon,
+  CenterlineIcon,
+  CenterRectangleIcon,
   ChamferIcon,
+  ChevronDownIcon,
+  CircleIcon,
+  ConstructionIcon,
+  CornerRectangleIcon,
   CylinderIcon,
   ExitSketchIcon,
   ExportStepIcon,
@@ -16,14 +24,31 @@ import {
   OpenIcon,
   RedoIcon,
   SaveIcon,
+  LineIcon,
+  PointIcon,
   SettingsIcon,
   SketchIcon,
+  ThreePointArcIcon,
+  TrashIcon,
   UndoIcon,
 } from './icons.tsx';
 
+type IconType = ComponentType<SVGProps<SVGSVGElement>>;
+
+const TOOL_ICONS: Record<SketchToolName, IconType> = {
+  line: LineIcon,
+  centerline: CenterlineIcon,
+  cornerRectangle: CornerRectangleIcon,
+  centerRectangle: CenterRectangleIcon,
+  circle: CircleIcon,
+  centerArc: CenterArcIcon,
+  threePointArc: ThreePointArcIcon,
+  point: PointIcon,
+};
+
 interface CommandButtonProps {
   id: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  icon: IconType;
   label: string;
   tooltip: string;
   onClick(): void;
@@ -57,7 +82,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const FEATURE_BUTTONS: { type: FeatureType; icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
+const FEATURE_BUTTONS: { type: FeatureType; icon: IconType }[] = [
   { type: 'sketch', icon: SketchIcon },
   { type: 'box', icon: BoxIcon },
   { type: 'cylinder', icon: CylinderIcon },
@@ -92,18 +117,125 @@ function FeaturesTab() {
   );
 }
 
+function ToolButton({ tool, disabled }: { tool: SketchToolName; disabled: boolean }) {
+  const { t } = useTranslation();
+  const active = useAppState((state) => state.sketchTool === tool);
+  return (
+    <CommandButton
+      id={`tool-${tool}`}
+      icon={TOOL_ICONS[tool]}
+      label={t(`commands.sketchTools.${tool}`)}
+      tooltip={t(`commands.sketchToolTips.${tool}`)}
+      active={active}
+      disabled={disabled}
+      onClick={() => commands.setSketchTool(tool)}
+    />
+  );
+}
+
+/** A tool with variants: the button runs the last used variant, the arrow offers all of them. */
+function SplitToolButton({ tools, current, disabled }: { tools: readonly SketchToolName[]; current: SketchToolName; disabled: boolean }) {
+  const { t } = useTranslation();
+  const activeTool = useAppState((state) => state.sketchTool);
+  const [open, setOpen] = useState(false);
+  const anchor = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!anchor.current?.contains(event.target as Node)) setOpen(false);
+    };
+    window.addEventListener('pointerdown', close);
+    return () => window.removeEventListener('pointerdown', close);
+  }, [open]);
+  return (
+    <div className="split-command popover-anchor" ref={anchor}>
+      <ToolButton tool={current} disabled={disabled} />
+      <button
+        type="button"
+        className={`split-toggle${tools.includes(activeTool as SketchToolName) ? ' is-active' : ''}`}
+        title={t('commands.sketchTools.variants')}
+        aria-label={t('commands.sketchTools.variants')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        data-variants={tools.join(' ')}
+        disabled={disabled}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <ChevronDownIcon />
+      </button>
+      {open ? (
+        <div className="popover-menu is-below" role="menu">
+          {tools.map((tool) => {
+            const Icon = TOOL_ICONS[tool];
+            return (
+              <button
+                key={tool}
+                type="button"
+                role="menuitemradio"
+                aria-checked={activeTool === tool}
+                className="menu-item"
+                data-tool={tool}
+                onClick={() => {
+                  commands.setSketchTool(activeTool === tool ? null : tool);
+                  setOpen(false);
+                }}
+              >
+                <span className="menu-item-label">
+                  <Icon className="menu-item-icon" />
+                  {t(`commands.sketchTools.${tool}`)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SketchTab() {
   const { t } = useTranslation();
   const inSketch = useAppState((state) => state.sketch !== null);
   const choosing = useAppState((state) => state.choosingSketchPlane);
+  const variants = useAppState((state) => state.sketchToolVariants);
+  const selection = useAppState((state) => state.sketchSelection.length);
+  const off = !inSketch;
   return (
-    <Group label={t('commands.groups.sketch')}>
-      {inSketch ? (
-        <CommandButton id="exit-sketch" icon={ExitSketchIcon} label={t('commands.exitSketch')} tooltip={t('commands.tooltips.exitSketch')} onClick={commands.exitSketch} />
-      ) : (
-        <CommandButton id="sketch-start" icon={SketchIcon} label={t('commands.sketch')} tooltip={t('commands.tooltips.sketch')} active={choosing} onClick={commands.startSketch} />
-      )}
-    </Group>
+    <>
+      <Group label={t('commands.groups.sketch')}>
+        {inSketch ? (
+          <CommandButton id="exit-sketch" icon={ExitSketchIcon} label={t('commands.exitSketch')} tooltip={t('commands.tooltips.exitSketch')} onClick={commands.exitSketch} />
+        ) : (
+          <CommandButton id="sketch-start" icon={SketchIcon} label={t('commands.sketch')} tooltip={t('commands.tooltips.sketch')} active={choosing} onClick={commands.startSketch} />
+        )}
+      </Group>
+      <Group label={t('commands.groups.draw')}>
+        <ToolButton tool="line" disabled={off} />
+        <ToolButton tool="centerline" disabled={off} />
+        <SplitToolButton tools={['cornerRectangle', 'centerRectangle']} current={variants.rectangle} disabled={off} />
+        <ToolButton tool="circle" disabled={off} />
+        <SplitToolButton tools={['centerArc', 'threePointArc']} current={variants.arc} disabled={off} />
+        <ToolButton tool="point" disabled={off} />
+      </Group>
+      <Group label={t('commands.groups.modify')}>
+        <CommandButton
+          id="construction"
+          icon={ConstructionIcon}
+          label={t('commands.sketchTools.construction')}
+          tooltip={t('commands.sketchToolTips.construction')}
+          disabled={off || selection === 0}
+          onClick={commands.toggleConstruction}
+        />
+        <CommandButton
+          id="delete-sketch"
+          icon={TrashIcon}
+          label={t('commands.sketchTools.delete')}
+          tooltip={t('commands.sketchToolTips.delete')}
+          disabled={off || selection === 0}
+          onClick={commands.deleteSketchSelection}
+        />
+      </Group>
+    </>
   );
 }
 

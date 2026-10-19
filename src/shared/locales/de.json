@@ -53,7 +53,9 @@
       "features": "Features",
       "sketch": "Skizze",
       "export": "Export",
-      "edit": "Bearbeiten"
+      "edit": "Bearbeiten",
+      "draw": "Zeichnen",
+      "modify": "Ändern"
     },
     "new": "Neu",
     "open": "Öffnen",
@@ -91,6 +93,31 @@
       "label": "Befehlsregister",
       "features": "Features",
       "sketch": "Skizze"
+    },
+    "sketchTools": {
+      "line": "Linie",
+      "centerline": "Mittellinie",
+      "cornerRectangle": "Rechteck",
+      "centerRectangle": "Mittelpunkt-Rechteck",
+      "circle": "Kreis",
+      "centerArc": "Bogen",
+      "threePointArc": "3-Punkt-Bogen",
+      "point": "Punkt",
+      "construction": "Konstruktion",
+      "delete": "Löschen",
+      "variants": "Weitere Varianten"
+    },
+    "sketchToolTips": {
+      "line": "Verbundene Linien zeichnen (L)",
+      "centerline": "Konstruktionslinien zeichnen, z. B. Symmetrieachsen",
+      "cornerRectangle": "Rechteck aus zwei gegenüberliegenden Ecken (R)",
+      "centerRectangle": "Rechteck aus Mittelpunkt und Ecke (R)",
+      "circle": "Kreis aus Mittelpunkt und einem Punkt darauf (C)",
+      "centerArc": "Bogen aus Mittelpunkt, Start- und Endpunkt (A)",
+      "threePointArc": "Bogen durch Start-, End- und einen dritten Punkt (A)",
+      "point": "Skizzenpunkte setzen (P)",
+      "construction": "Ausgewählte Geometrie in Konstruktionsgeometrie umwandeln oder zurück",
+      "delete": "Ausgewählte Geometrie löschen (Entf)"
     }
   },
   "features": {
@@ -281,6 +308,27 @@
     "constraints_other": "{{count}} Beziehungen und Bemaßungen",
     "exitHint": "✓ übernimmt die Skizze, ✕ verwirft deine Änderungen. Rückgängig und Wiederholen arbeiten innerhalb der Skizze Schritt für Schritt.",
     "ok": "Skizze übernehmen",
-    "cancel": "Änderungen verwerfen"
+    "cancel": "Änderungen verwerfen",
+    "relations": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertikal",
+      "coincident": "Deckungsgleich",
+      "midpoint": "Mittelpunkt",
+      "onCurve": "Auf Kurve"
+    },
+    "toolHints": {
+      "select": "Geometrie ziehen, um sie zu verschieben, klicken zum Auswählen. Zeichenwerkzeuge findest du im Register Skizze.",
+      "line": "Startpunkt klicken, dann jeden weiteren Punkt. Ein Klick auf den Startpunkt schließt den Zug; Esc oder ein zweiter Klick beendet ihn.",
+      "centerline": "Wie Linien; das Ergebnis ist Konstruktionsgeometrie (gestrichelt), die nicht zum Profil gehört.",
+      "cornerRectangle": "Eine Ecke klicken, dann die gegenüberliegende (oder ziehen).",
+      "centerRectangle": "Mittelpunkt klicken, dann eine Ecke (oder ziehen).",
+      "circle": "Mittelpunkt klicken, dann einen Punkt auf dem Kreis (oder ziehen).",
+      "centerArc": "Mittelpunkt klicken, dann den Startpunkt; in Bogenrichtung bewegen und den Endpunkt klicken.",
+      "threePointArc": "Start- und Endpunkt klicken, dann einen Punkt, durch den der Bogen läuft.",
+      "point": "Klicken, um Punkte zu setzen; auf einer Linie oder einem Kreis bleiben sie darauf.",
+      "snapping": "Punkte rasten an Endpunkten, Mittelpunkten und Kurven ein und richten sich an anderen Punkten aus (gestrichelte Linien); passende Beziehungen werden automatisch hinzugefügt. Esc verlässt das Werkzeug."
+    },
+    "tool": "Werkzeug",
+    "selectTool": "Auswählen"
   }
 }

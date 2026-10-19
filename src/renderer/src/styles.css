@@ -258,6 +258,71 @@ input {
 
 .command-tab-panel {
   display: flex;
+  align-items: stretch;
+}
+
+.split-command {
+  display: flex;
+  align-items: stretch;
+}
+
+.split-command .command-button {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  padding-right: 4px;
+}
+
+.split-toggle {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 16px;
+  margin-left: -1px;
+  padding: 0 0 6px;
+  border: 1px solid transparent;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.split-toggle:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.split-toggle.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.split-toggle:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.popover-menu.is-below {
+  top: calc(100% + 4px);
+  left: 0;
+  transform: none;
+}
+
+.menu-item-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-item-icon {
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.menu-item[aria-checked='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 /* ------------------------------------------------------------ panels */
@@ -435,6 +500,11 @@ input {
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.sketch-tool-name {
+  margin: 0 0 4px;
+  font-weight: 600;
 }
 
 .sketch-count {
@@ -694,6 +764,26 @@ input {
 .viewport-canvas {
   display: block;
   outline: none;
+}
+
+.sketch-cursor-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-panel) 90%, transparent);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.sketch-cursor-info[hidden] {
+  display: none;
 }
 
 .view-toolbar {

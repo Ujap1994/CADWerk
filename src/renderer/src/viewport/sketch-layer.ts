@@ -1,11 +1,22 @@
-import { Color, DoubleSide, Group, Matrix4, Mesh, PlaneGeometry, ShaderMaterial, Vector2, type Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, Color, DoubleSide, Group, Matrix4, Mesh, PlaneGeometry, Points, ShaderMaterial, Vector2, type Vector3 } from 'three';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { toSketch, type SketchData, type SketchFrame } from '../../../shared/model/sketch.ts';
 import { gridSpacing } from './grid.ts';
 import type { ViewportPalette } from './palette.ts';
-import { frameMatrix, NO_HIGHLIGHT, SketchGraphics, type SketchHighlight, type SketchMaterials } from './sketch-graphics.ts';
+import type { Point2 } from '../sketch/geometry.ts';
+import { frameMatrix, NO_HIGHLIGHT, setSegments, SketchGraphics, type SketchHighlight, type SketchMaterials } from './sketch-graphics.ts';
+
+/** What a drawing tool shows: the shape being drawn, where the cursor snapped and inference lines. */
+export interface SketchToolDisplay {
+  geometry: SketchData;
+  /** Snap marker: a filled dot on points, a ring on midpoints and curves. */
+  marker: { u: number; v: number; ring: boolean } | null;
+  guides: readonly (readonly [Point2, Point2])[];
+}
+
+const MARKER_SIZE_PX = 12;
 
 const ORIGIN_ARROW_PX = 34;
 
@@ -87,10 +98,28 @@ export class SketchLayer {
   private readonly origin: LineSegments2;
   private readonly originMaterial: LineMaterial;
   private readonly graphics: SketchGraphics;
+  private readonly materials: SketchMaterials;
+  private readonly preview: SketchGraphics;
+  private readonly toolGroup = new Group();
+  private readonly marker: Points<BufferGeometry, ShaderMaterial>;
+  private readonly guides: LineSegments2;
   private mmPerPixel = 1;
 
   constructor(materials: SketchMaterials) {
+    this.materials = materials;
     this.graphics = new SketchGraphics(materials, 'active');
+    this.preview = new SketchGraphics(materials, 'active');
+    this.marker = new Points(new BufferGeometry(), materials.points.active);
+    this.guides = new LineSegments2(new LineSegmentsGeometry(), materials.guide);
+    for (const object of [this.marker, this.guides]) {
+      object.frustumCulled = false;
+      object.raycast = () => undefined;
+      object.visible = false;
+    }
+    this.marker.renderOrder = 40;
+    this.guides.renderOrder = 29;
+    this.toolGroup.matrixAutoUpdate = false;
+    this.toolGroup.add(this.guides, this.marker);
     this.grid = new Mesh(
       new PlaneGeometry(2, 2),
       new ShaderMaterial({
@@ -115,7 +144,7 @@ export class SketchLayer {
     this.origin.renderOrder = 20;
     this.origin.raycast = () => undefined;
 
-    this.group.add(this.grid, this.origin, this.graphics.group);
+    this.group.add(this.grid, this.origin, this.graphics.group, this.preview.group, this.toolGroup);
     this.group.visible = false;
   }
 
@@ -135,6 +164,28 @@ export class SketchLayer {
     this.grid.matrix.copy(this.basis);
     this.grid.updateMatrixWorld(true);
     this.graphics.setFrame(frame);
+    this.preview.setFrame(frame);
+    this.toolGroup.matrix.copy(this.basis);
+    this.toolGroup.updateMatrixWorld(true);
+  }
+
+  /** Shows what the active drawing tool is doing, or nothing. */
+  setToolDisplay(display: SketchToolDisplay | null): void {
+    this.preview.group.visible = display !== null && display.geometry.entities.length > 0;
+    if (display && this.preview.group.visible) this.preview.update(display.geometry, NO_HIGHLIGHT, this.mmPerPixel);
+    const marker = display?.marker ?? null;
+    this.marker.visible = marker !== null;
+    if (marker) {
+      const color = this.materials.colors.hovered;
+      const geometry = this.marker.geometry;
+      geometry.setAttribute('position', new BufferAttribute(new Float32Array([marker.u, marker.v, 0]), 3));
+      geometry.setAttribute('pointColor', new BufferAttribute(new Float32Array([color.r, color.g, color.b]), 3));
+      geometry.setAttribute('pointSize', new BufferAttribute(new Float32Array([MARKER_SIZE_PX]), 1));
+      geometry.setAttribute('pointStyle', new BufferAttribute(new Float32Array([marker.ring ? 1 : 0]), 1));
+    }
+    const guides = display?.guides ?? [];
+    setSegments(this.guides, guides.flatMap(([a, b]) => [a[0], a[1], 0, b[0], b[1], 0]));
+    if (this.guides.visible) this.guides.computeLineDistances();
   }
 
   /** Shows the geometry of the open sketch (also intermediate states while dragging). */
@@ -198,6 +249,9 @@ export class SketchLayer {
 
   dispose(): void {
     this.graphics.dispose();
+    this.preview.dispose();
+    this.marker.geometry.dispose();
+    this.guides.geometry.dispose();
     this.grid.geometry.dispose();
     this.grid.material.dispose();
     this.origin.geometry.dispose();

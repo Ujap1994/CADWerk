@@ -53,7 +53,9 @@
       "features": "Features",
       "sketch": "Sketch",
       "export": "Export",
-      "edit": "Edit"
+      "edit": "Edit",
+      "draw": "Draw",
+      "modify": "Modify"
     },
     "new": "New",
     "open": "Open",
@@ -91,6 +93,31 @@
       "label": "Command tabs",
       "features": "Features",
       "sketch": "Sketch"
+    },
+    "sketchTools": {
+      "line": "Line",
+      "centerline": "Centerline",
+      "cornerRectangle": "Rectangle",
+      "centerRectangle": "Center rectangle",
+      "circle": "Circle",
+      "centerArc": "Arc",
+      "threePointArc": "3-point arc",
+      "point": "Point",
+      "construction": "Construction",
+      "delete": "Delete",
+      "variants": "More variants"
+    },
+    "sketchToolTips": {
+      "line": "Draw connected lines (L)",
+      "centerline": "Draw construction lines, e.g. symmetry axes",
+      "cornerRectangle": "Rectangle from two opposite corners (R)",
+      "centerRectangle": "Rectangle from its center and a corner (R)",
+      "circle": "Circle from its center and a point on it (C)",
+      "centerArc": "Arc from its center, start and end point (A)",
+      "threePointArc": "Arc through start, end and a third point (A)",
+      "point": "Place sketch points (P)",
+      "construction": "Turn the selected geometry into construction geometry or back",
+      "delete": "Delete the selected geometry (Delete)"
     }
   },
   "features": {
@@ -281,6 +308,27 @@
     "constraints_other": "{{count}} relations and dimensions",
     "exitHint": "✓ keeps the sketch, ✕ discards your changes. Undo and redo work step by step inside the sketch.",
     "ok": "Keep sketch",
-    "cancel": "Discard changes"
+    "cancel": "Discard changes",
+    "relations": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "coincident": "Coincident",
+      "midpoint": "Midpoint",
+      "onCurve": "On curve"
+    },
+    "toolHints": {
+      "select": "Drag geometry to move it, click to select. Choose a drawing tool in the Sketch tab.",
+      "line": "Click the start point, then each next point. Clicking the start point closes the chain; Esc or a second click ends it.",
+      "centerline": "Like lines; the result is construction geometry (dashed) that does not become part of the profile.",
+      "cornerRectangle": "Click one corner, then the opposite corner (or drag).",
+      "centerRectangle": "Click the center, then a corner (or drag).",
+      "circle": "Click the center, then a point on the circle (or drag).",
+      "centerArc": "Click the center, then the start point; move in the direction of the arc and click the end point.",
+      "threePointArc": "Click the start point and the end point, then a point the arc passes through.",
+      "point": "Click to place points; on a line or circle they stay on it.",
+      "snapping": "Points snap to end points, midpoints and curves and align with other points (dashed lines); the matching relations are added automatically. Esc leaves the tool."
+    },
+    "tool": "Tool",
+    "selectTool": "Select"
   }
 }

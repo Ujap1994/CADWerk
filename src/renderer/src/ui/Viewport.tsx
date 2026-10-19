@@ -8,7 +8,7 @@ import { sketchSolver } from '../sketch/solver.ts';
 import { setState, store, type AppState, type Pick } from '../state/store.ts';
 import { ViewportEngine, type InactiveSketch, type PickFilter } from '../viewport/engine.ts';
 import type { PlaneDisplay } from '../viewport/reference-planes.ts';
-import { registerViewport } from '../viewport/registry.ts';
+import { registerSketchControl, registerViewport } from '../viewport/registry.ts';
 import type { CubeFace } from '../viewport/view-cube.ts';
 import { ViewToolbar } from './ViewToolbar.tsx';
 
@@ -61,6 +61,7 @@ function planeDisplay(state: AppState): PlaneDisplay {
 export function Viewport() {
   const { t, i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const cursorInfoRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<ViewportEngine | null>(null);
 
   useEffect(() => {
@@ -77,7 +78,17 @@ export function Viewport() {
     );
     engineRef.current = engine;
     registerViewport(engine);
-    engine.setSketchInput(new SketchController(engine, sketchSolver));
+    // The measurement next to the cursor follows every mouse move, so it bypasses React.
+    const controller = new SketchController(engine, sketchSolver, (info) => {
+      const element = cursorInfoRef.current;
+      if (!element) return;
+      element.hidden = info === null;
+      if (!info) return;
+      element.textContent = info.text;
+      element.style.transform = `translate(${Math.round(info.x + 18)}px, ${Math.round(info.y + 20)}px)`;
+    });
+    engine.setSketchInput(controller);
+    registerSketchControl(controller);
 
     const sync = (state: AppState, previous: AppState | null) => {
       if (!previous || state.display !== previous.display) {
@@ -135,6 +146,8 @@ export function Viewport() {
 
     return () => {
       unsubscribe();
+      controller.dispose();
+      registerSketchControl(null);
       registerViewport(null);
       engineRef.current = null;
       engine.dispose();
@@ -148,6 +161,7 @@ export function Viewport() {
   return (
     <div className="viewport" data-testid="viewport">
       <div ref={containerRef} className="viewport-surface" />
+      <div ref={cursorInfoRef} className="sketch-cursor-info" data-testid="sketch-cursor-info" hidden />
       <ViewToolbar />
     </div>
   );

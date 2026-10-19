@@ -17,6 +17,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   geometry, other sketches on their planes; hover with exact sizes in the status bar, click selection,
   dragging with live solving in the background (about 7 ms per step with 2,000 entities), deleting with
   dependent relations.
+- Drawing tools: line chains, centerline, corner and center rectangle, circle, center and 3-point arc,
+  point; snapping to points, midpoints and curves, inference lines, automatic coincident, midpoint,
+  on-curve, horizontal and vertical relations; measurements next to the cursor; drawing by clicking or
+  dragging; keyboard shortcuts; construction geometry toggle.
 - Command bar tabs *Features* and *Sketch*.
 - Own sparse 2D constraint solver running in a worker (the basis for relations and dimensions).
 

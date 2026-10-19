@@ -19,7 +19,8 @@ import {
 import { applyEdit, commit, emptyHistory, hasBodyBefore, redo as redoHistory, undo as undoHistory } from './state/document.ts';
 import { kernel, whenIdle } from './state/rebuild.ts';
 import { getState, setHistory, setState, showToast, type AppState, type CommandTab, type Pick } from './state/store.ts';
-import { viewport } from './viewport/registry.ts';
+import type { SketchToolName } from './sketch/tools.ts';
+import { sketchToolControl, viewport } from './viewport/registry.ts';
 import type { StandardView } from './viewport/views.ts';
 
 const api = () => window.parawerk;
@@ -31,7 +32,17 @@ function baseName(path: string): string {
 
 /** State that leaves every mode (feature edit, sketch) without storing anything. */
 function closedModes(): Partial<AppState> {
-  return { activeEdit: null, sketch: null, choosingSketchPlane: false, selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'features' };
+  return {
+    activeEdit: null,
+    sketch: null,
+    choosingSketchPlane: false,
+    selection: [],
+    hover: null,
+    sketchSelection: [],
+    sketchHover: null,
+    sketchTool: null,
+    commandTab: 'features',
+  };
 }
 
 function documentName(): string {
@@ -298,7 +309,16 @@ export function chooseSketchPlane(plane: SketchPlaneRef): void {
 }
 
 function enterSketch(session: SketchSession): void {
-  updateSketch(session, { activeEdit: null, choosingSketchPlane: false, selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'sketch' });
+  updateSketch(session, {
+    activeEdit: null,
+    choosingSketchPlane: false,
+    selection: [],
+    hover: null,
+    sketchSelection: [],
+    sketchHover: null,
+    sketchTool: null,
+    commandTab: 'sketch',
+  });
 }
 
 /** Replaces the sketch session and keeps the dirty flag in sync with unsaved sketch work. */
@@ -324,7 +344,7 @@ export function exitSketch(): void {
     if (state.choosingSketchPlane) setState({ choosingSketchPlane: false, commandTab: 'features' });
     return;
   }
-  const leave: Partial<AppState> = { selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'features' };
+  const leave: Partial<AppState> = { selection: [], hover: null, sketchSelection: [], sketchHover: null, sketchTool: null, commandTab: 'features' };
   const features = applySketchSession(state.history.features, session);
   if (features) setHistory(commit(state.history, features), { ...leave, sketch: null });
   else updateSketch(null, leave);
@@ -347,7 +367,34 @@ export async function cancelSketch(): Promise<void> {
     });
     if (!confirmed || getState().sketch !== session) return;
   }
-  updateSketch(null, { selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'features' });
+  updateSketch(null, { selection: [], hover: null, sketchSelection: [], sketchHover: null, sketchTool: null, commandTab: 'features' });
+}
+
+/** Activates a drawing tool (null: select and drag). Choosing the active tool again leaves it. */
+export function setSketchTool(tool: SketchToolName | null): void {
+  const state = getState();
+  if (!state.sketch) return;
+  const next = tool === state.sketchTool ? null : tool;
+  const variants = { ...state.sketchToolVariants };
+  if (next === 'cornerRectangle' || next === 'centerRectangle') variants.rectangle = next;
+  if (next === 'centerArc' || next === 'threePointArc') variants.arc = next;
+  setState({ sketchTool: next, sketchToolVariants: variants, sketchSelection: next ? [] : state.sketchSelection, sketchHover: null, commandTab: 'sketch' });
+}
+
+/** Turns the selected curves into construction geometry, or back if all of them already are. */
+export function toggleConstruction(): void {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch || sketchSelection.length === 0) return;
+  const selected = new Set(sketchSelection);
+  const curves = sketch.draft.sketch.entities.filter((entity) => selected.has(entity.id) && entity.type !== 'point');
+  if (curves.length === 0) return;
+  const construction = !curves.every((curve) => curve.construction);
+  const entities = sketch.draft.sketch.entities.map((entity) => {
+    if (!selected.has(entity.id) || entity.type === 'point') return entity;
+    const { construction: _old, ...rest } = entity;
+    return construction ? { ...rest, construction: true } : rest;
+  });
+  recordSketchChange({ ...sketch.draft.sketch, entities });
 }
 
 /** Clicking sketch geometry: select it, add or remove it (additive), or clear the selection (null). */
@@ -417,7 +464,9 @@ export function handlePick(pick: Pick | null, additive: boolean): void {
 export function escape(): void {
   const state = getState();
   if (state.choosingSketchPlane) void cancelSketch();
-  else if (state.sketch) setState({ sketchSelection: [] });
+  else if (state.sketch) {
+    if (!sketchToolControl()?.escape()) setState({ sketchSelection: [] });
+  }
   else if (state.activeEdit) cancelEdit();
   else setState({ selection: [] });
 }

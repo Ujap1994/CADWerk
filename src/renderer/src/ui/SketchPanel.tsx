@@ -50,6 +50,7 @@ function PlaneChoice() {
 function OpenSketch() {
   const { t } = useTranslation();
   const session = useAppState((state) => state.sketch);
+  const tool = useAppState((state) => state.sketchTool);
   const features = useAppState((state) => state.history.features);
   const nameOf = useFeatureName();
   const planeName = usePlaneName();
@@ -81,6 +82,12 @@ function OpenSketch() {
           <PlaneIcon className="plane-choice-icon" />
           {planeName(session.draft.plane)}
         </div>
+      </fieldset>
+      <fieldset className="panel-section" data-testid="sketch-tool">
+        <legend className="panel-section-title">{t('sketch.tool')}</legend>
+        <p className="sketch-tool-name">{tool ? t(`commands.sketchTools.${tool}`) : t('sketch.selectTool')}</p>
+        <p className="panel-hint is-flush">{t(`sketch.toolHints.${tool ?? 'select'}`)}</p>
+        {tool ? <p className="panel-hint is-flush">{t('sketch.toolHints.snapping')}</p> : null}
       </fieldset>
       <fieldset className="panel-section">
         <legend className="panel-section-title">{t('sketch.contents')}</legend>

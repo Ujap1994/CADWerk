@@ -217,6 +217,86 @@ export const ExitSketchIcon = (p: P) => (
   </Icon>
 );
 
+const dot = (cx: number, cy: number, r = 1.5) => <circle cx={cx} cy={cy} r={r} fill="currentColor" stroke="none" />;
+
+export const LineIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M5 19 19 5" />
+    {dot(5, 19)}
+    {dot(19, 5)}
+  </Icon>
+);
+
+/** Long-short dashes, as centerlines are drawn on technical drawings. */
+export const CenterlineIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 20 20 4" strokeDasharray="5 2.5 1.2 2.5" />
+  </Icon>
+);
+
+export const CornerRectangleIcon = (p: P) => (
+  <Icon {...p}>
+    <rect x="4" y="6" width="16" height="12" />
+    {dot(4, 18, 1.8)}
+    {dot(20, 6, 1.8)}
+  </Icon>
+);
+
+export const CenterRectangleIcon = (p: P) => (
+  <Icon {...p}>
+    <rect x="4" y="6" width="16" height="12" />
+    <path d="M4 18 20 6" strokeDasharray="2 2" strokeWidth={1.2} />
+    {dot(12, 12, 1.8)}
+    {dot(20, 6, 1.8)}
+  </Icon>
+);
+
+export const CircleIcon = (p: P) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="8" />
+    <path d="M12 12h8" strokeDasharray="2 2" strokeWidth={1.2} />
+    {dot(12, 12)}
+  </Icon>
+);
+
+export const CenterArcIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 16a8 8 0 0 1 16 0" />
+    <path d="M4 16h16" strokeDasharray="2 2" strokeWidth={1.2} />
+    {dot(12, 16)}
+  </Icon>
+);
+
+export const ThreePointArcIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 18a9.2 9.2 0 0 1 16 0" />
+    {dot(4, 18, 1.8)}
+    {dot(12, 9.3, 1.8)}
+    {dot(20, 18, 1.8)}
+  </Icon>
+);
+
+export const PointIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 3.5v4.5M12 16v4.5M3.5 12H8M16 12h4.5" />
+    {dot(12, 12, 2.4)}
+  </Icon>
+);
+
+/** Construction geometry is drawn dashed. */
+export const ConstructionIcon = (p: P) => (
+  <Icon {...p}>
+    <rect x="4" y="6" width="16" height="12" strokeDasharray="3 2.4" />
+    <path d="M4 18 20 6" strokeDasharray="3 2.4" />
+  </Icon>
+);
+
+export const ChevronDownIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="m7 10 5 5 5-5" />
+  </Icon>
+);
+
 /** A reference plane seen at an angle. */
 export const PlaneIcon = (p: P) => (
   <Icon {...p}>

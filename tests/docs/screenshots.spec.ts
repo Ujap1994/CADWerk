@@ -106,6 +106,25 @@ test('README and user guide screenshots', async () => {
   if (canvas) await page.mouse.move(canvas.x + lineMiddle.x, canvas.y + lineMiddle.y);
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('sketch-geometry.png') });
+
+  // Drawing a line from a corner: preview, measurement, horizontal relation and an inference line.
+  const sketchPoint = (u: number, v: number) =>
+    page.evaluate(
+      ([x, y, z]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(x, y, z),
+      [u, v, 20] as const,
+    );
+  await page.keyboard.press('l');
+  const corner = await sketchPoint(-10, 32);
+  const target = await sketchPoint(41.6, 32.4);
+  if (canvas) {
+    await page.mouse.move(canvas.x + corner.x, canvas.y + corner.y, { steps: 4 });
+    await page.mouse.click(canvas.x + corner.x, canvas.y + corner.y);
+    await page.mouse.move(canvas.x + target.x, canvas.y + target.y, { steps: 6 });
+  }
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-drawing.png') });
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
   await page.click('[data-testid="sketch-ok"]');
   await page.evaluate(() => (window as unknown as { __parawerk: { commands: { setView(v: string): void } } }).__parawerk.commands.setView('isometric'));
   await idle(page);

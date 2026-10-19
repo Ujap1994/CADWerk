@@ -6,6 +6,7 @@ import type { Feature } from '../../../shared/model/feature.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../../../shared/settings.ts';
 import type { FeatureResult, MassProperties, MeshPayload } from '../../../kernel/protocol.ts';
 import type { SketchSession } from '../sketch/session.ts';
+import type { SketchToolName } from '../sketch/tools.ts';
 import { emptyHistory, type ActiveEdit, type History } from './document.ts';
 
 /** A picked body face or edge (topological index), or a standard plane (index into STANDARD_PLANES). */
@@ -66,6 +67,10 @@ export interface AppState {
   sketchSelection: string[];
   /** Entity of the open sketch under the cursor. */
   sketchHover: string | null;
+  /** Active drawing tool in sketch mode; null selects and drags. */
+  sketchTool: SketchToolName | null;
+  /** Last used variant of the tools with variants, offered first in the command bar. */
+  sketchToolVariants: { rectangle: 'cornerRectangle' | 'centerRectangle'; arc: 'centerArc' | 'threePointArc' };
   selection: Pick[];
   hover: Pick | null;
 
@@ -94,6 +99,8 @@ export const initialState: AppState = {
   sketch: null,
   sketchSelection: [],
   sketchHover: null,
+  sketchTool: null,
+  sketchToolVariants: { rectangle: 'cornerRectangle', arc: 'centerArc' },
   selection: [],
   hover: null,
   kernelStatus: 'loading',

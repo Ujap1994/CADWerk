@@ -24,6 +24,8 @@
 | Apply / cancel the property panel | Enter / Esc | Enter / Esc |
 | Clear the selection; cancel the plane choice of the sketch command | Esc | Esc |
 | Delete the selected sketch geometry (in sketch mode) | Delete / Backspace | Delete / ⌫ |
+| Drawing tools in sketch mode: line, rectangle, circle, arc, point | L, R, C, A, P | L, R, C, A, P |
+| End the current shape, then leave the drawing tool | Esc | Esc |
 | Settings | Ctrl+, | ⌘, |
 
 ## Selecting

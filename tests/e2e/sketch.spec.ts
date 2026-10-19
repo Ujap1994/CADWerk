@@ -344,3 +344,83 @@ test('drags under-defined geometry with live solving, selects and deletes it', a
   await page.keyboard.press('Escape');
   expect((await state(page)).sketchSelection).toEqual([]);
 });
+
+test('draws with the tools: snapping, automatic relations, drag drawing, Esc and undo', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const screen = async (u: number, v: number) => {
+    const p = await project(page, [u, v, 0]);
+    return { x: canvas.x + p.x, y: canvas.y + p.y };
+  };
+  const clickAt = async (u: number, v: number) => {
+    const p = await screen(u, v);
+    await page.mouse.move(p.x, p.y, { steps: 3 });
+    await page.mouse.click(p.x, p.y);
+  };
+  const sketch = async () => (await state(page)).sketch?.draft.sketch;
+  const count = async (type: string) => (await sketch())?.entities.filter((e) => e.type === type).length;
+  const relations = async () => (await sketch())?.constraints.map((c) => (c as unknown as { type: string }).type).sort();
+
+  // A closed chain of lines, starting at the origin, slightly off the ideal positions.
+  await page.click('[data-command="tool-line"]');
+  await expect(page.locator('[data-testid="sketch-tool"]')).toContainText('Line');
+  await clickAt(0.3, 0.2);
+  await clickAt(50, 0.5);
+  await clickAt(50, 30);
+  const preview = await screen(0.4, 29.6);
+  await page.mouse.move(preview.x, preview.y, { steps: 3 });
+  await expect(page.locator('[data-testid="sketch-cursor-info"]')).toHaveText('50 mm · 180° · Horizontal');
+  await page.mouse.click(preview.x, preview.y);
+  await clickAt(0, 0);
+  expect(await count('line')).toBe(4);
+  expect(await count('point')).toBe(3);
+  expect(await relations()).toEqual(['horizontal', 'horizontal', 'vertical', 'vertical']);
+
+  // Undo removes the last line; Esc ends a chain first, then leaves the tool.
+  await page.click('[data-command="undo"]');
+  expect(await count('line')).toBe(3);
+  await clickAt(70, 10);
+  await clickAt(90, 10);
+  await page.keyboard.press('Escape');
+  expect((await state(page) as unknown as { sketchTool: string | null }).sketchTool).toBe('line');
+  await page.keyboard.press('Escape');
+  expect((await state(page) as unknown as { sketchTool: string | null }).sketchTool).toBeNull();
+
+  // Keyboard shortcut and drag drawing: a circle around the midpoint of the bottom line.
+  await page.keyboard.press('c');
+  const center = await screen(25, 0.3);
+  const rim = await screen(25, 8);
+  await page.mouse.move(center.x, center.y, { steps: 3 });
+  await page.mouse.down();
+  await page.mouse.move(rim.x, rim.y, { steps: 8 });
+  await page.mouse.up();
+  const circle = (await sketch())?.entities.find((e) => e.type === 'circle');
+  expect(circle?.radius).toBeCloseTo(8, 0);
+  expect(await relations()).toContain('midpoint');
+
+  // Center rectangle from the variants menu, then turned into construction geometry.
+  await page.click('.split-toggle[data-variants="cornerRectangle centerRectangle"]');
+  await page.click('.menu-item[data-tool="centerRectangle"]');
+  await clickAt(-40, 40);
+  await clickAt(-30, 46);
+  expect(await count('line')).toBe(4 + 6);
+  await page.keyboard.press('Escape');
+  const corner = await screen(-50, 34);
+  await page.mouse.click(corner.x + 40, corner.y);
+  const selected = (await state(page)).sketchSelection;
+  expect(selected).toHaveLength(1);
+  await page.click('[data-command="construction"]');
+  const line = (await sketch())?.entities.find((e) => e.id === selected[0]) as { construction?: boolean } | undefined;
+  expect(line?.construction).toBe(true);
+
+  // The finished sketch is valid and keeps all of it.
+  await page.click('[data-testid="sketch-ok"]');
+  const feature = (await state(page)).history.features[0];
+  expect(feature?.type).toBe('sketch');
+  expect(feature?.sketch?.entities.length).toBeGreaterThan(15);
+});

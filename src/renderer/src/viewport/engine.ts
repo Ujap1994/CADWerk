@@ -35,7 +35,7 @@ import { palettes, type ViewportPalette } from './palette.ts';
 import { disposeOverlay, PartModel } from './part-model.ts';
 import { ReferencePlanes, type PlaneDisplay } from './reference-planes.ts';
 import { NO_HIGHLIGHT, SketchGraphics, SketchMaterials, type SketchHighlight } from './sketch-graphics.ts';
-import { SketchLayer } from './sketch-layer.ts';
+import { SketchLayer, type SketchToolDisplay } from './sketch-layer.ts';
 import { createSyntheticAssembly, type SyntheticAssembly } from './synthetic-scene.ts';
 import { ViewCube, type CubeFace } from './view-cube.ts';
 import { VIEW_DIRECTIONS, viewQuaternion, type StandardView } from './views.ts';
@@ -326,6 +326,11 @@ export class ViewportEngine {
   setActiveSketch(sketch: SketchData, highlight: SketchHighlight): void {
     this.sketchLayer.setSketch(sketch, highlight);
     this.updateBounds();
+    this.requestRender();
+  }
+
+  setSketchToolDisplay(display: SketchToolDisplay | null): void {
+    this.sketchLayer.setToolDisplay(display);
     this.requestRender();
   }
 

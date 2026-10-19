@@ -173,6 +173,8 @@ export function deleteEntities(sketch: SketchData, ids: Iterable<string>): Sketc
     for (const id of curvePoints(entity)) (deleted.has(entity.id) ? orphanCandidates : stillUsed).add(id);
   }
   for (const id of orphanCandidates) if (!stillUsed.has(id)) deleted.add(id);
+  // Curves may end at the sketch origin; it is not an entity and never goes away.
+  deleted.delete(ORIGIN_ID);
 
   const entities = sketch.entities.filter((entity) => !deleted.has(entity.id));
   const constraints = sketch.constraints.filter(

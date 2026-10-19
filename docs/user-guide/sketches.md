@@ -2,9 +2,9 @@
 
 > [!NOTE]
 > The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane
-> or planar face, sketch mode with its grid and its own undo history, showing, selecting, dragging and
-> deleting sketch geometry, and editing existing sketches. Drawing tools, relations and dimensions follow
-> in the next updates; the page grows with them.
+> or planar face, sketch mode with its grid and its own undo history, the drawing tools with snapping and
+> automatic relations, selecting, dragging and deleting sketch geometry, and editing existing sketches.
+> Relation and dimension tools follow in the next updates; the page grows with them.
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or
@@ -80,6 +80,44 @@ the right and its y axis up. The command bar switches to the *Sketch* tab.
   features below the sketch appear faded in the feature tree and are rebuilt when you leave sketch mode.
 - **Side panel:** shows the sketch's name, its plane and what it contains. The feature tree stays visible
   below it, but other features cannot be edited, suppressed or deleted until you leave the sketch.
+
+## Drawing
+
+The drawing tools are in the **Sketch** tab of the command bar (and on the keyboard). A tool stays active
+until you press **Esc** or choose it again, so you can draw several shapes in a row. The side panel always
+explains the active tool.
+
+| Tool | Key | How to draw |
+|---|---|---|
+| **Line** | L | Click the start point, then each next point: the lines form a connected chain. Clicking the chain's start point closes it; **Esc** or a second click on the last point ends it. Pressing, dragging and releasing draws a single line. |
+| **Centerline** | | Like a line, but the result is construction geometry (dashed), for example a symmetry axis. |
+| **Rectangle** | R | Click one corner, then the opposite corner (or drag). The sides get horizontal and vertical relations. |
+| **Center rectangle** | R | Click the center, then a corner. Dashed diagonals keep the center in the middle. |
+| **Circle** | C | Click the center, then a point on the circle (or drag). |
+| **Arc** | A | Click the center and the start point, then move in the direction the arc should run and click the end point. |
+| **3-point arc** | A | Click the start and the end point, then a third point the arc passes through. |
+| **Point** | P | Click to place sketch points, for example for hole positions. |
+
+**R** and **A** start the variant you used last; the small arrow next to *Rectangle* and *Arc* offers all
+variants.
+
+![Drawing a line from a corner: preview, measurement and a horizontal relation](../images/screenshots/sketch-drawing.png)
+
+### Snapping and automatic relations
+
+While you draw, the cursor snaps to what is nearby, and the new geometry gets the matching relation, so
+your intent is kept when you later change dimensions:
+
+| The cursor snaps to | Marker | Relation of the new point |
+|---|---|---|
+| An end point, a center or the sketch origin | filled orange dot | the point is shared (*coincident*) |
+| The midpoint of a line | orange ring | *midpoint* |
+| A line, circle or arc | orange ring | *on curve* |
+| Horizontal or vertical from the previous point | dashed line | the new line is *horizontal* or *vertical* |
+| Level with or above another point | dashed line | none – it only helps to line things up |
+
+Next to the cursor, ParaWerk shows the size of what you are drawing (length and angle, width × height,
+radius and sweep) and the relations it will add.
 
 ## Working with sketch geometry
 

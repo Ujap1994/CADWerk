@@ -26,22 +26,27 @@ const RETESSELLATE_FACTOR = 1.6;
 const POINT_VERTEX = /* glsl */ `
 attribute vec3 pointColor;
 attribute float pointSize;
+attribute float pointStyle;
 uniform float uPixelRatio;
 varying vec3 vColor;
+varying float vStyle;
 void main() {
   vColor = pointColor;
+  vStyle = pointStyle;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   gl_PointSize = pointSize * uPixelRatio;
 }
 `;
 
-// Round, anti-aliased dots.
+// Round, anti-aliased dots (style 0) or rings (style 1, snap markers).
 const POINT_FRAGMENT = /* glsl */ `
 varying vec3 vColor;
+varying float vStyle;
 void main() {
   vec2 c = gl_PointCoord * 2.0 - 1.0;
   float r = length(c);
   float alpha = 1.0 - smoothstep(0.7, 1.0, r);
+  if (vStyle > 0.5) alpha *= smoothstep(0.4, 0.6, r);
   if (alpha <= 0.0) discard;
   gl_FragColor = vec4(vColor, alpha);
 }
@@ -52,8 +57,10 @@ export class SketchMaterials {
   readonly lines: Record<SketchLook, LineMaterial>;
   readonly construction: Record<SketchLook, LineMaterial>;
   readonly highlight: LineMaterial;
+  /** Inference lines while drawing. */
+  readonly guide: LineMaterial;
   readonly points: Record<SketchLook, ShaderMaterial>;
-  readonly colors = { active: new Color(), inactive: new Color(), hovered: new Color(), selected: new Color() };
+  readonly colors = { active: new Color(), inactive: new Color(), hovered: new Color(), selected: new Color(), guide: new Color() };
 
   constructor() {
     const line = (look: SketchLook, dashed: boolean) =>
@@ -67,6 +74,7 @@ export class SketchMaterials {
     this.lines = { active: line('active', false), inactive: line('inactive', false) };
     this.construction = { active: line('active', true), inactive: line('inactive', true) };
     this.highlight = new LineMaterial({ linewidth: 3.2, worldUnits: false, vertexColors: true, depthTest: false, transparent: true });
+    this.guide = new LineMaterial({ linewidth: 1, worldUnits: false, dashed: true, depthTest: false, transparent: true, opacity: 0.85 });
     const points = (look: SketchLook) =>
       new ShaderMaterial({
         vertexShader: POINT_VERTEX,
@@ -84,6 +92,8 @@ export class SketchMaterials {
     this.colors.inactive.setHex(palette.sketchInactive);
     this.colors.hovered.setHex(palette.hover);
     this.colors.selected.setHex(palette.selected);
+    this.colors.guide.setHex(palette.guide);
+    this.guide.color.copy(this.colors.guide);
     for (const look of ['active', 'inactive'] as const) {
       this.lines[look].color.copy(this.colors[look]);
       this.construction[look].color.copy(this.colors[look]);
@@ -91,7 +101,7 @@ export class SketchMaterials {
   }
 
   setResolution(resolution: Vector2, pixelRatio: number): void {
-    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight]) material.resolution.copy(resolution);
+    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide]) material.resolution.copy(resolution);
     for (const material of Object.values(this.points)) (material.uniforms.uPixelRatio as { value: number }).value = pixelRatio;
   }
 
@@ -101,10 +111,12 @@ export class SketchMaterials {
       material.dashSize = DASH_PX * mmPerPixel;
       material.gapSize = GAP_PX * mmPerPixel;
     }
+    this.guide.dashSize = 3 * mmPerPixel;
+    this.guide.gapSize = 4 * mmPerPixel;
   }
 
   dispose(): void {
-    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, ...Object.values(this.points)]) material.dispose();
+    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, ...Object.values(this.points)]) material.dispose();
   }
 }
 
@@ -248,11 +260,12 @@ export class SketchGraphics {
     geometry.setAttribute('position', new BufferAttribute(new Float32Array(pointPositionsOut), 3));
     geometry.setAttribute('pointColor', new BufferAttribute(new Float32Array(pointColors), 3));
     geometry.setAttribute('pointSize', new BufferAttribute(new Float32Array(pointSizes), 1));
+    geometry.setAttribute('pointStyle', new BufferAttribute(new Float32Array(pointSizes.length), 1));
     this.points.visible = pointPositionsOut.length > 0;
   }
 }
 
-function setSegments(object: LineSegments2, positions: number[], colors?: number[]): void {
+export function setSegments(object: LineSegments2, positions: number[], colors?: number[]): void {
   object.visible = positions.length > 0;
   if (!object.visible) return;
   // A fresh geometry per update: LineSegmentsGeometry cannot shrink its instanced buffers in place.
