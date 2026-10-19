@@ -387,7 +387,10 @@
       "trimNotACurve": "Click on a line, circle or arc.",
       "extendNoTarget": "There is no curve to extend to in this direction.",
       "extendConnected": "This end is connected to other geometry and cannot be extended.",
-      "extendConstrained": "Relations or dimensions hold this end in place; delete them to extend it."
+      "extendConstrained": "Relations or dimensions hold this end in place; delete them to extend it.",
+      "transformNothing": "Select geometry first.",
+      "transformNoAxis": "Select a line as mirror axis as well: a construction line, or select the axis last.",
+      "moveBlocked": "The selection cannot move there: relations or dimensions hold it in place."
     },
     "dimensionsSelected_one": "{{count}} dimension selected",
     "dimensionsSelected_other": "{{count}} dimensions selected",
@@ -415,6 +418,27 @@
     },
     "polygonSides": "Sides",
     "filletRadius": "Radius",
-    "chamferDistance": "Distance"
+    "chamferDistance": "Distance",
+    "transform": {
+      "title": "Copy and move",
+      "mirror": "Mirror",
+      "linear": "Linear",
+      "circular": "Circular",
+      "move": "Move",
+      "count": "Instances",
+      "stepX": "Step X",
+      "stepY": "Step Y",
+      "totalAngle": "Total angle",
+      "dx": "Shift X",
+      "dy": "Shift Y",
+      "rotation": "Rotation",
+      "aroundOrigin": "Around the sketch origin.",
+      "aroundPoint": "Around the selected point.",
+      "mirrorHint": "Mirrors the selection about the selected construction line (or the line selected last). Mirrored points stay symmetric.",
+      "mirrorAction": "Mirror",
+      "patternAction": "Create pattern",
+      "moveAction": "Move",
+      "copyAction": "Copy"
+    }
   }
 }

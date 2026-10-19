@@ -387,7 +387,10 @@
       "trimNotACurve": "Klicke auf eine Linie, einen Kreis oder Bogen.",
       "extendNoTarget": "In dieser Richtung gibt es keine Kurve, bis zu der verlängert werden kann.",
       "extendConnected": "Dieses Ende ist mit anderer Geometrie verbunden und kann nicht verlängert werden.",
-      "extendConstrained": "Beziehungen oder Bemaßungen halten dieses Ende fest; lösche sie, um es zu verlängern."
+      "extendConstrained": "Beziehungen oder Bemaßungen halten dieses Ende fest; lösche sie, um es zu verlängern.",
+      "transformNothing": "Wähle zuerst Geometrie aus.",
+      "transformNoAxis": "Wähle zusätzlich eine Linie als Spiegelachse: eine Konstruktionslinie, oder wähle die Achse zuletzt.",
+      "moveBlocked": "Die Auswahl lässt sich nicht dorthin verschieben: Beziehungen oder Bemaßungen halten sie fest."
     },
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
     "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",
@@ -415,6 +418,27 @@
     },
     "polygonSides": "Seiten",
     "filletRadius": "Radius",
-    "chamferDistance": "Abstand"
+    "chamferDistance": "Abstand",
+    "transform": {
+      "title": "Kopieren und verschieben",
+      "mirror": "Spiegeln",
+      "linear": "Linear",
+      "circular": "Kreisförmig",
+      "move": "Verschieben",
+      "count": "Anzahl",
+      "stepX": "Abstand X",
+      "stepY": "Abstand Y",
+      "totalAngle": "Gesamtwinkel",
+      "dx": "Versatz X",
+      "dy": "Versatz Y",
+      "rotation": "Drehung",
+      "aroundOrigin": "Um den Skizzenursprung.",
+      "aroundPoint": "Um den ausgewählten Punkt.",
+      "mirrorHint": "Spiegelt die Auswahl an der ausgewählten Konstruktionslinie (oder der zuletzt ausgewählten Linie). Gespiegelte Punkte bleiben symmetrisch.",
+      "mirrorAction": "Spiegeln",
+      "patternAction": "Muster erzeugen",
+      "moveAction": "Verschieben",
+      "copyAction": "Kopieren"
+    }
   }
 }

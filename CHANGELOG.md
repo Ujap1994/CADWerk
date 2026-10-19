@@ -29,6 +29,8 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- Mirror (with symmetric relations), linear and circular patterns (equal radii for copied circles and
+  arcs), move (keeping relations, like a drag) and copy of selected sketch geometry, from the side panel.
 - Trim and extend: remove the piece of a curve between its crossings (red preview under the cursor;
   middle pieces leave collinear lines or equal arcs, circles become arcs) or lengthen a line or arc up to
   the next curve (dashed preview), keeping new ends on the crossing curve.

@@ -11,6 +11,9 @@ import { storedAngle, type DimensionDraft } from './sketch/dimensions.ts';
 import { deleteEntities } from './sketch/geometry.ts';
 import { applicableRelations, type RelationKind } from './sketch/relations.ts';
 import { sketchSolver } from './sketch/solver.ts';
+import { circularPattern, copySelection, linearPattern, mirrorSelection, movedPoints, type TransformResult } from './sketch/transform.ts';
+import { sameGeometry } from './sketch/drag.ts';
+import type { Point2 } from './sketch/geometry.ts';
 import {
   applySketchSession,
   hasSketchChanges,
@@ -528,6 +531,78 @@ export async function setSketchDimensionValue(id: string, typed: number): Promis
     if (getState().sketch?.draft.sketch !== base) return;
     if (solution.converged) recordSketchChange(solution.sketch);
     else showToast('error', t('sketch.messages.dimensionNotApplied'));
+  } catch (error) {
+    showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
+  }
+}
+
+const TRANSFORM_MESSAGES = { 'nothing-selected': 'transformNothing', 'no-axis': 'transformNoAxis' } as const;
+
+function applyTransform(result: TransformResult): void {
+  if (result.ok) recordSketchChange(result.sketch);
+  else showToast('info', t(`sketch.messages.${TRANSFORM_MESSAGES[result.error]}`));
+}
+
+/**
+ * The pivot of the selection for rotations and circular patterns: a selected stand-alone point
+ * (which is then not copied), or the sketch origin.
+ */
+export function selectionPivot(): { at: Point2; point: string | null } {
+  const { sketch, sketchSelection } = getState();
+  const data = sketch?.draft.sketch;
+  if (!data) return { at: [0, 0], point: null };
+  const selected = new Set(sketchSelection);
+  const curvePoints = new Set(
+    data.entities.flatMap((entity) =>
+      selected.has(entity.id) ? (entity.type === 'line' ? [entity.p1, entity.p2] : entity.type === 'circle' ? [entity.center] : entity.type === 'arc' ? [entity.center, entity.start, entity.end] : []) : [],
+    ),
+  );
+  const points = data.entities.filter((entity) => entity.type === 'point' && selected.has(entity.id) && !curvePoints.has(entity.id));
+  const [only] = points;
+  return points.length === 1 && only?.type === 'point' && sketchSelection.length > 1 ? { at: [only.x, only.y], point: only.id } : { at: [0, 0], point: null };
+}
+
+export function mirrorSketchSelection(): void {
+  const { sketch, sketchSelection } = getState();
+  if (sketch) applyTransform(mirrorSelection(sketch.draft.sketch, sketchSelection));
+}
+
+export function patternSketchSelection(pattern: { kind: 'linear'; step: Point2; count: number } | { kind: 'circular'; count: number; angle: number }): void {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  if (pattern.kind === 'linear') {
+    applyTransform(linearPattern(sketch.draft.sketch, sketchSelection, pattern.step, pattern.count));
+    return;
+  }
+  const pivot = selectionPivot();
+  const ids = sketchSelection.filter((id) => id !== pivot.point);
+  applyTransform(circularPattern(sketch.draft.sketch, ids, pivot.at, pattern.count, (pattern.angle * Math.PI) / 180));
+}
+
+/** Copies the selection shifted by `offset` and rotated by `angle` (degrees) around the pivot. */
+export function copySketchSelection(offset: Point2, angle: number): void {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  const pivot = selectionPivot();
+  applyTransform(copySelection(sketch.draft.sketch, sketchSelection.filter((id) => id !== pivot.point), offset, (angle * Math.PI) / 180, pivot.at));
+}
+
+/** Moves the selection like a drag would: relations and dimensions are kept, held geometry stays. */
+export async function moveSketchSelection(offset: Point2, angle: number): Promise<void> {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  const base = sketch.draft.sketch;
+  const pivot = selectionPivot();
+  const points = movedPoints(base, sketchSelection.filter((id) => id !== pivot.point), offset, (angle * Math.PI) / 180, pivot.at);
+  if (points.length === 0) {
+    showToast('info', t('sketch.messages.transformNothing'));
+    return;
+  }
+  try {
+    const solution = await sketchSolver().solve(base, { drag: { kind: 'points', points }, analyze: false });
+    if (getState().sketch?.draft.sketch !== base) return;
+    if (solution.converged && !sameGeometry(solution.sketch, base)) recordSketchChange(solution.sketch);
+    else showToast('info', t('sketch.messages.moveBlocked'));
   } catch (error) {
     showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
   }

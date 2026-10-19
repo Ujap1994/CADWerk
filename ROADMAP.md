@@ -109,7 +109,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | More tools: tangent arc, 3-point circle, slot, polygon | ✅ done |
 | Sketch fillet and chamfer | ✅ done |
 | Trim and extend | ✅ done |
-| Offset, mirror, linear and circular patterns, move / rotate / copy | ⏳ next |
+| Mirror, linear and circular patterns, move / rotate / copy | ✅ done |
+| Offset entities | ⏳ next |
 | 3-point and parallelogram rectangles, ellipse, spline | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |

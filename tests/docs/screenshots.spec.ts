@@ -254,6 +254,20 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('sketch-trim.png') });
   await page.keyboard.press('Escape');
+
+  // A row of holes: one circle, then a linear pattern from the side panel.
+  await page.keyboard.press('c');
+  await front(-125, 52);
+  await front(-122, 52);
+  await page.keyboard.press('Escape');
+  await front(-122, 52);
+  await page.click('[data-transform="linear"]');
+  await page.locator('[data-testid="pattern-count"]').fill('4');
+  await page.locator('[data-testid="pattern-step-x"]').fill('11');
+  await page.click('[data-testid="sketch-transform"] .transform-action');
+  if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: out('sketch-pattern.png') });
   await page.click('[data-testid="sketch-cancel"]');
   await idle(page);
 

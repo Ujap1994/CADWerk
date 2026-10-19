@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { STANDARD_PLANES, type SketchPlaneRef } from '../../../shared/model/sketch.ts';
 import * as commands from '../commands.ts';
 import { isDimension, type SketchConstraint } from '../../../shared/model/sketch.ts';
 import { applicableRelations, relationKindOf, relationsOf } from '../sketch/relations.ts';
+import { mirrorAxis } from '../sketch/transform.ts';
 import type { SketchToolName } from '../sketch/tools.ts';
 import { useAppState } from '../state/store.ts';
 import { useFeatureName } from './FeatureTree.tsx';
@@ -86,6 +88,15 @@ function PolygonSides() {
   );
 }
 
+/** The transform section, for selections that contain geometry (not only dimensions). */
+function SelectionTransforms() {
+  const sketch = useAppState((state) => state.sketch?.draft.sketch);
+  const selection = useAppState((state) => state.sketchSelection);
+  if (!sketch) return null;
+  const entities = new Set(sketch.entities.map((entity) => entity.id));
+  return selection.some((id) => entities.has(id)) ? <TransformSection /> : null;
+}
+
 /** Under, fully or over defined, with what to do about it; conflicting constraints can be deleted. */
 function DefinitionSection() {
   const { t } = useTranslation();
@@ -121,6 +132,93 @@ function DefinitionSection() {
               </li>
             ))}
           </ul>
+        </>
+      ) : null}
+    </fieldset>
+  );
+}
+
+type TransformKind = 'mirror' | 'linear' | 'circular' | 'move';
+
+/** Mirror, patterns, move and copy for the selected geometry, with their numbers. */
+function TransformSection() {
+  const { t } = useTranslation();
+  const sketch = useAppState((state) => state.sketch?.draft.sketch);
+  const selection = useAppState((state) => state.sketchSelection);
+  const [kind, setKind] = useState<TransformKind>('mirror');
+  const [count, setCount] = useState(3);
+  const [step, setStep] = useState<[number, number]>([10, 0]);
+  const [circularCount, setCircularCount] = useState(6);
+  const [totalAngle, setTotalAngle] = useState(360);
+  const [shift, setShift] = useState<[number, number]>([10, 0]);
+  const [rotation, setRotation] = useState(0);
+  if (!sketch) return null;
+  const aroundPoint = commands.selectionPivot().point !== null;
+  const kinds: TransformKind[] = ['mirror', 'linear', 'circular', 'move'];
+  return (
+    <fieldset className="panel-section" data-testid="sketch-transform">
+      <legend className="panel-section-title">{t('sketch.transform.title')}</legend>
+      <div className="segmented transform-kinds" role="radiogroup" aria-label={t('sketch.transform.title')}>
+        {kinds.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={kind === option}
+            data-transform={option}
+            className={`segmented-option${kind === option ? ' is-selected' : ''}`}
+            onClick={() => setKind(option)}
+          >
+            {t(`sketch.transform.${option}`)}
+          </button>
+        ))}
+      </div>
+      {kind === 'mirror' ? (
+        <>
+          <p className="panel-hint is-flush">{t('sketch.transform.mirrorHint')}</p>
+          <button type="button" className="text-button transform-action" disabled={!mirrorAxis(sketch, selection)} onClick={commands.mirrorSketchSelection}>
+            {t('sketch.transform.mirrorAction')}
+          </button>
+        </>
+      ) : null}
+      {kind === 'linear' ? (
+        <>
+          <NumberField label={t('sketch.transform.count')} value={count} unit="" testId="pattern-count" onChange={(value) => setCount(Math.max(2, Math.round(value)))} />
+          <div className="field-row is-two">
+            <NumberField label={t('sketch.transform.stepX')} value={step[0]} signed testId="pattern-step-x" onChange={(value) => setStep([value, step[1]])} />
+            <NumberField label={t('sketch.transform.stepY')} value={step[1]} signed testId="pattern-step-y" onChange={(value) => setStep([step[0], value])} />
+          </div>
+          <button type="button" className="text-button transform-action" onClick={() => commands.patternSketchSelection({ kind: 'linear', step, count })}>
+            {t('sketch.transform.patternAction')}
+          </button>
+        </>
+      ) : null}
+      {kind === 'circular' ? (
+        <>
+          <NumberField label={t('sketch.transform.count')} value={circularCount} unit="" testId="pattern-circular-count" onChange={(value) => setCircularCount(Math.max(2, Math.round(value)))} />
+          <NumberField label={t('sketch.transform.totalAngle')} value={totalAngle} unit="°" testId="pattern-angle" onChange={(value) => setTotalAngle(Math.min(360, value))} />
+          <p className="panel-hint is-flush">{t(aroundPoint ? 'sketch.transform.aroundPoint' : 'sketch.transform.aroundOrigin')}</p>
+          <button type="button" className="text-button transform-action" onClick={() => commands.patternSketchSelection({ kind: 'circular', count: circularCount, angle: totalAngle })}>
+            {t('sketch.transform.patternAction')}
+          </button>
+        </>
+      ) : null}
+      {kind === 'move' ? (
+        <>
+          <div className="field-row is-two">
+            <NumberField label={t('sketch.transform.dx')} value={shift[0]} signed testId="move-dx" onChange={(value) => setShift([value, shift[1]])} />
+            <NumberField label={t('sketch.transform.dy')} value={shift[1]} signed testId="move-dy" onChange={(value) => setShift([shift[0], value])} />
+          </div>
+          <NumberField label={t('sketch.transform.rotation')} value={rotation} unit="°" signed testId="move-rotation" onChange={setRotation} />
+          <p className="panel-hint is-flush">{t(aroundPoint ? 'sketch.transform.aroundPoint' : 'sketch.transform.aroundOrigin')}</p>
+          <div className="transform-buttons">
+            <button type="button" className="text-button transform-action" onClick={() => void commands.moveSketchSelection(shift, rotation)}>
+              {t('sketch.transform.moveAction')}
+            </button>
+            <button type="button" className="text-button transform-action" onClick={() => commands.copySketchSelection(shift, rotation)}>
+              {t('sketch.transform.copyAction')}
+            </button>
+          </div>
         </>
       ) : null}
     </fieldset>
@@ -235,6 +333,7 @@ function OpenSketch() {
         {tool && !EDITING_TOOLS.has(tool) ? <p className="panel-hint is-flush">{t('sketch.toolHints.snapping')}</p> : null}
       </fieldset>
       {tool ? null : <SelectionSection />}
+      {tool ? null : <SelectionTransforms />}
       <fieldset className="panel-section">
         <legend className="panel-section-title">{t('sketch.contents')}</legend>
         <p className="sketch-count">{t('sketch.entities', { count: entities.length })}</p>

@@ -848,3 +848,70 @@ test('trims pieces between crossings and extends lines up to the next curve', as
   await page.mouse.click(otherEnd.x, otherEnd.y);
   await expect(page.locator('.toast')).toContainText('no curve');
 });
+
+test('mirrors, patterns, moves and copies the selection', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('c1', 0, -40), P('c2', 0, 40), { id: 'axis', type: 'line', p1: 'c1', p2: 'c2', construction: true },
+        P('a', 0, 20), P('b', 30, 20), { id: 'l1', type: 'line', p1: 'a', p2: 'b' },
+        P('m', 20, -20), { id: 'k', type: 'circle', center: 'm', radius: 4 },
+      ],
+      constraints: [],
+    };
+    const features = [{ id: 's', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await page.dblclick('.tree-item[data-feature-id="s"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const click = async (u: number, v: number, shift = false) => {
+    const p = await project(page, [u, v, 0]);
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y);
+    if (shift) await page.keyboard.down('Shift');
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+    if (shift) await page.keyboard.up('Shift');
+  };
+  const entities = async () => (await state(page)).sketch?.draft.sketch.entities ?? [];
+  const count = async (type: string) => (await entities()).filter((e) => e.type === type && !(e as { construction?: boolean }).construction).length;
+
+  // Mirror the line about the centerline.
+  await click(15, 20);
+  await click(0, -30, true);
+  await expect(page.locator('[data-testid="sketch-transform"]')).toBeVisible();
+  await page.click('[data-testid="sketch-transform"] .transform-action');
+  expect(await count('line')).toBe(2);
+  expect(((await state(page)).sketch?.draft.sketch.constraints ?? []).filter((c) => (c as unknown as { type: string }).type === 'symmetric')).toHaveLength(1);
+
+  // A linear pattern of the circle: 4 instances, 12 mm apart.
+  await page.keyboard.press('Escape');
+  await click(24, -20);
+  await page.click('[data-transform="linear"]');
+  // The fields fit the side panel; nothing makes it scroll sideways.
+  expect(await page.evaluate(() => {
+    const sidebar = document.querySelector('.sidebar') as HTMLElement;
+    return sidebar.scrollWidth - sidebar.clientWidth;
+  })).toBeLessThanOrEqual(0);
+  await page.locator('[data-testid="pattern-count"]').fill('4');
+  await page.locator('[data-testid="pattern-step-x"]').fill('12');
+  await page.click('[data-testid="sketch-transform"] .transform-action');
+  const centers = (await entities()).filter((e) => e.type === 'circle');
+  expect(centers).toHaveLength(4);
+
+  // Move the original circle down by 5: it moves, the copies stay.
+  await page.click('[data-transform="move"]');
+  await page.locator('[data-testid="move-dx"]').fill('0');
+  await page.locator('[data-testid="move-dy"]').fill('-5');
+  await page.click('[data-testid="sketch-transform"] .transform-action >> nth=0');
+  await expect.poll(async () => ((await entities()).find((e) => e.id === 'm') as { y: number } | undefined)?.y).toBeCloseTo(-25, 6);
+
+  // Copy it 30 mm to the left.
+  await page.locator('[data-testid="move-dx"]').fill('-30');
+  await page.locator('[data-testid="move-dy"]').fill('0');
+  await page.click('[data-testid="sketch-transform"] .transform-action >> nth=1');
+  expect(await count('circle')).toBe(5);
+});
