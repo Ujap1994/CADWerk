@@ -799,6 +799,30 @@ export class ViewportEngine {
     return null;
   }
 
+  /** The model edge under a canvas position (CSS pixels), unless a face hides it; for sketch tools. */
+  modelEdgeAt(x: number, y: number): number | null {
+    const body = this.body;
+    if (!body) return null;
+    const camera = this.camera();
+    this.controller.apply(this.ortho, this.perspective, this.aspect(), this.bounds);
+    camera.updateMatrixWorld();
+    this.raycaster.setFromCamera(this.ndc(x, y), camera);
+    this.raycaster.params.Line2 = { threshold: EDGE_PICK_THRESHOLD_PX };
+    (this.raycaster as Raycaster & { firstHitOnly?: boolean }).firstHitOnly = true;
+    body.ensureBvh();
+    const faceHit = this.raycaster.intersectObject(body.mesh, false)[0];
+    const edgeHit = this.raycaster.intersectObject(body.edges, false)[0];
+    const tolerance = (this.controller.state.height / this.height) * 8;
+    if (!edgeHit || edgeHit.faceIndex === undefined || edgeHit.faceIndex === null) return null;
+    if (faceHit && edgeHit.distance > faceHit.distance + tolerance) return null;
+    return body.edgeOfSegment(edgeHit.faceIndex);
+  }
+
+  /** Highlights the model edge a sketch tool aims at (null: none). */
+  setModelEdgeHover(edge: number | null): void {
+    this.setHoverPick(edge === null ? null : { kind: 'edge', index: edge });
+  }
+
   /** Where the cursor meets the sketch plane, in sketch coordinates. */
   private sketchPointer(x: number, y: number, additive: boolean): SketchPointer | null {
     const frame = this.sketchLayer.sketchFrame;

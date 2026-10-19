@@ -26,6 +26,7 @@ import {
   ThreePointCircleIcon,
   ThreePointRectangleIcon,
   ConstructionIcon,
+  ConvertIcon,
   CornerRectangleIcon,
   CylinderIcon,
   DimensionIcon,
@@ -72,6 +73,7 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   extend: ExtendIcon,
   point: PointIcon,
   spline: SplineIcon,
+  convert: ConvertIcon,
   dimension: DimensionIcon,
 };
 
@@ -274,6 +276,7 @@ function SketchTab() {
         ) : (
           <CommandButton id="sketch-start" icon={SketchIcon} label={t('commands.sketch')} tooltip={t('commands.tooltips.sketch')} active={choosing} onClick={commands.startSketch} />
         )}
+        <ToolButton tool="convert" disabled={off} />
       </Group>
       <Group label={t('commands.groups.define')}>
         <ToolButton tool="dimension" disabled={off} />

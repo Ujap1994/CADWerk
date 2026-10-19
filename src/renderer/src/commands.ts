@@ -3,11 +3,12 @@ import type { MenuCommand } from '../../shared/ipc.ts';
 import { PART_FILE_EXTENSION } from '../../shared/app-info.ts';
 import { defaultFeature, isEdgeFeature, type EdgeRef, type Feature, type FeatureType, type SketchFeature } from '../../shared/model/feature.ts';
 import { decodePartFile, encodePartFile, PartFileError } from '../../shared/model/part-file.ts';
-import { frameOnPlane, isDimension, ORIGIN_ID, STANDARD_PLANES, type SketchData, type SketchDimension, type SketchPlaneRef } from '../../shared/model/sketch.ts';
+import { frameOf, frameOnPlane, isDimension, ORIGIN_ID, STANDARD_PLANES, type SketchData, type SketchDimension, type SketchPlaneRef } from '../../shared/model/sketch.ts';
 import type { Settings } from '../../shared/settings.ts';
 import { changeLanguage, t } from './i18n.ts';
 import { SketchBuilder } from './sketch/builder.ts';
 import { storedAngle, type DimensionDraft } from './sketch/dimensions.ts';
+import { convertEdges } from './sketch/convert.ts';
 import { curvePoints, deleteEntities, isCurve } from './sketch/geometry.ts';
 import { applicableRelations, type RelationKind } from './sketch/relations.ts';
 import { sketchSolver } from './sketch/solver.ts';
@@ -603,6 +604,20 @@ export async function exportSketchDxf(): Promise<void> {
   });
   if (result.status === 'saved') showToast('success', t('toasts.exported', { name: result.path.split(/[\\/]/).pop() ?? result.path }));
   else if (result.status === 'error') showToast('error', t('toasts.exportFailed', { message: result.message }));
+}
+
+/** Converts a model edge into sketch geometry on the open sketch's plane (Convert entities). */
+export function convertModelEdge(edge: number): void {
+  const { sketch, display } = getState();
+  const body = display.body;
+  const info = body?.edgeInfo[edge];
+  if (!sketch || !body || !info) return;
+  const start = body.edgeRanges[edge * 2] ?? 0;
+  const count = body.edgeRanges[edge * 2 + 1] ?? 0;
+  const polyline = body.edgePositions.subarray(start * 3, (start + count) * 3);
+  const result = convertEdges(sketch.draft.sketch, frameOf(sketch.draft.plane), [{ info, polyline }]);
+  if (result.ok) recordSketchChange(result.sketch);
+  else showToast('info', t(`sketch.messages.${result.error === 'already-converted' ? 'convertRepeated' : 'convertNothing'}`));
 }
 
 /** Offsets the selected curves; closed outlines grow outwards unless `flip`. */

@@ -15,6 +15,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 - Scale the selection by a factor around the origin or a selected point, in place (dimensions within the
   selection scale along) or as a scaled copy.
 
+- Convert entities: edges of the part become fixed sketch geometry on the sketch plane (lines, circles
+  and arcs; tilted circles become ellipses, other curves splines); touching edges stay connected. The
+  geometry kernel now reports the exact end points, centers and axes of edges.
+
 ### Changed
 - *Line* and *Centerline* share one button with a variant menu (**L** starts the last one used), which
   makes room for *Spline* in the command bar.

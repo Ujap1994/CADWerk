@@ -574,6 +574,46 @@ test('variant menus of the command bar are fully visible above the view, also in
   }
 });
 
+test('converts model edges into fixed sketch geometry', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const features = [
+      { id: 'b', type: 'box', operation: 'add', width: 100, depth: 60, height: 40, position: [0, 0, 0] },
+      { id: 'c', type: 'cylinder', operation: 'add', radius: 10, height: 30, axis: 'z', position: [30, 0, 40] },
+    ];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await idle(page);
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const clickModel = async (point: [number, number, number]) => {
+    const p = await project(page, point);
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+  };
+  const entities = async () => (await state(page)).sketch?.draft.sketch.entities ?? [];
+
+  await page.click('[data-command="tool-convert"]');
+  // The front edge of the box top (40 mm above the sketch plane) becomes a line on it.
+  await clickModel([20, -30, 40]);
+  await expect.poll(async () => (await entities()).filter((e) => e.type === 'line').length).toBe(1);
+  // The top circle of the cylinder becomes a circle with the same radius.
+  await clickModel([40, 0, 70]);
+  await expect.poll(async () => (await entities()).find((e) => e.type === 'circle')?.radius).toBe(10);
+  // Clicking beside the model converts nothing.
+  await clickModel([-80, 50, 0]);
+  await expect(page.locator('.toast')).toContainText('Click an edge of the model');
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
+  const line = (await entities()).find((e) => e.type === 'line') as unknown as { p1: string; p2: string };
+  const ends = [line.p1, line.p2].map((id) => (async () => (await entities()).find((e) => e.id === id))());
+  const ys = (await Promise.all(ends)).map((p) => p?.y);
+  expect(ys).toEqual([-30, -30]);
+});
+
 test('fits the smallest window in sketch mode: nothing overflows, the whole view is reachable', async () => {
   launched = await launchApp({ width: 960, height: 600 });
   const { page } = launched;
@@ -595,7 +635,7 @@ test('fits the smallest window in sketch mode: nothing overflows, the whole view
   expect(layout.barOverflow).toBeLessThanOrEqual(1);
   expect(layout.canvasRight).toBeLessThanOrEqual(layout.innerWidth);
   // Every command of the sketch tab is on screen.
-  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'tool-trim', 'tool-sketchFillet', 'import-dxf', 'export-dxf', 'construction', 'delete-sketch', 'settings', 'about']) {
+  for (const command of ['exit-sketch', 'tool-convert', 'tool-dimension', 'tool-line', 'tool-spline', 'tool-slot', 'tool-polygon', 'tool-point', 'tool-trim', 'tool-sketchFillet', 'import-dxf', 'export-dxf', 'construction', 'delete-sketch', 'settings', 'about']) {
     const box = await page.locator(`[data-command="${command}"]`).boundingBox();
     expect(box && box.x + box.width <= layout.innerWidth).toBe(true);
   }

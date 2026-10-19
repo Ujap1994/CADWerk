@@ -1,8 +1,8 @@
 # Sketches
 
 > [!NOTE]
-> This page describes the current sketcher. Projecting model edges into a sketch and equations follow,
-> and so do the features that turn sketches into solids (extrude, revolve; Phase 2).
+> This page describes the current sketcher. Equations follow, and so do the features that turn sketches
+> into solids (extrude, revolve; Phase 2).
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or
@@ -178,6 +178,22 @@ passes through every point, bends continuously (no kinks inside) and runs straig
 - DXF export writes splines as polylines within 0.005 mm; DXF import reads splines defined by fit points.
 
 ![A profile with a spline between two lines; pointing at it shows its points and length](../images/screenshots/sketch-spline.png)
+
+### Converting model edges
+
+**Convert** (in the *Sketch* group of the command bar) takes edges of the part into the sketch, so a
+new profile can follow the existing model – for example to sketch on a face along its outline.
+
+1. Choose **Convert**. The edge under the cursor is highlighted in the model.
+2. Click edges one by one. Each one is projected onto the sketch plane: lines stay lines, circles and
+   arcs parallel to the sketch stay circles and arcs, tilted circles become ellipses, and other curves
+   become splines through points of the edge. Edges perpendicular to the sketch plane have no extent
+   there and are skipped.
+3. Converted geometry is **fixed** (it does not follow later changes of the model yet), so it is fully
+   defined right away. Touching edges share their end points, so a face outline becomes a closed
+   profile; converting an edge twice does not add it twice.
+
+![Three edges of the box top and the circle of the boss converted; the fourth edge is highlighted](../images/screenshots/sketch-convert.png)
 
 ### Fillets and chamfers in a sketch
 

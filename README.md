@@ -107,6 +107,7 @@ Preview 0.2 adds the 2D sketcher (Phase 1) to the foundation of Phase 0:
   - *Definition status:* under-defined geometry is blue, fully defined dark, conflicts red and listed.
   - *Editing:* trim, extend, sketch fillet and chamfer, offset, mirror, linear and circular patterns,
     move, copy and scale; dragging with live constraint solving (about 7 ms per step at 2,000 entities).
+  - *Model edges:* convert edges of the part into the sketch.
   - *DXF:* import into a sketch and export for laser cutting and CNC.
 - **Files:** native `.pwpart` files, STEP and binary STL export.
 - **Interface:** English and German (switchable at runtime, system language by default), light and dark
@@ -128,7 +129,6 @@ See the [user guide](docs/user-guide/README.md) for details.
 
 ### 2D sketcher (rest of Phase 1)
 - Points on splines, trimming at splines
-- Project and convert model edges into a sketch
 - Global variables and equations
 
 ### Part modeling

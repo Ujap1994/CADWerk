@@ -34,6 +34,7 @@ export type SketchToolName =
   | 'sketchChamfer'
   | 'trim'
   | 'extend'
+  | 'convert'
   | 'dimension';
 
 export const SKETCH_TOOLS: readonly SketchToolName[] = [
@@ -57,6 +58,7 @@ export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'sketchChamfer',
   'trim',
   'extend',
+  'convert',
   'dimension',
 ];
 
@@ -1307,6 +1309,27 @@ export class ExtendTool implements SketchTool {
   }
 }
 
+/**
+ * Convert entities: picks model edges, not sketch geometry. The sketch controller asks the 3D view
+ * for the edge under the cursor; this tool only keeps the sketch tool protocol.
+ */
+export class ConvertTool implements SketchTool {
+  readonly name = 'convert' as const;
+  readonly busy = false;
+
+  hover(_sketch: SketchData, event: ToolEvent): ToolPreview {
+    return { geometry: EMPTY, snap: { u: event.u, v: event.v, target: { kind: 'none' }, alignments: [] }, info: null };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    return { commit: null, preview: this.hover(sketch, event) };
+  }
+
+  cancel(): boolean {
+    return false;
+  }
+}
+
 export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_TOOL_OPTIONS): SketchTool {
   switch (name) {
     case 'line':
@@ -1348,5 +1371,7 @@ export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_
       return new ExtendTool();
     case 'dimension':
       return new DimensionTool();
+    case 'convert':
+      return new ConvertTool();
   }
 }

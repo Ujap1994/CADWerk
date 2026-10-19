@@ -64,7 +64,7 @@ function useConstraintName() {
 }
 
 /** Tools that change existing geometry; the snapping hint is about drawing new geometry. */
-const EDITING_TOOLS: ReadonlySet<SketchToolName> = new Set(['trim', 'extend', 'sketchFillet', 'sketchChamfer', 'dimension']);
+const EDITING_TOOLS: ReadonlySet<SketchToolName> = new Set(['trim', 'extend', 'sketchFillet', 'sketchChamfer', 'dimension', 'convert']);
 
 function CornerSize({ tool }: { tool: 'sketchFillet' | 'sketchChamfer' }) {
   const { t } = useTranslation();

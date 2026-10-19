@@ -175,7 +175,8 @@ export class SketchController implements SketchInput, SketchToolControl {
       hit: tool || dimension || relation ? null : this.hitAt(sketch, pointer),
       base: sketch,
       session: null,
-      drawing: tool !== null && !tool.busy,
+      // Converting model edges is click only; a drag would convert twice.
+      drawing: tool !== null && !tool.busy && tool.name !== 'convert',
       dimension,
       moved: null,
       relation,
@@ -308,6 +309,7 @@ export class SketchController implements SketchInput, SketchToolControl {
     const { polygonSides, filletRadius, chamferDistance } = getState();
     this.tool = name ? createTool(name, { polygonSides, filletRadius, chamferDistance }) : null;
     this.toolSketch = getState().sketch?.draft.sketch ?? null;
+    this.engine.setModelEdgeHover(null);
     if (!this.tool) {
       this.engine.setSketchToolDisplay(null);
       this.showCursorInfo(null);
@@ -327,7 +329,15 @@ export class SketchController implements SketchInput, SketchToolControl {
     const sketch = getState().sketch?.draft.sketch;
     if (!this.tool || !sketch || !pointer) {
       this.engine.setSketchToolDisplay(null);
+      this.engine.setModelEdgeHover(null);
       this.showCursorInfo(null);
+      return;
+    }
+    if (this.tool.name === 'convert') {
+      // Aims at model edges: the 3D view highlights the one under the cursor.
+      this.engine.setSketchToolDisplay(null);
+      this.showCursorInfo(null);
+      this.engine.setModelEdgeHover(this.engine.modelEdgeAt(pointer.x, pointer.y));
       return;
     }
     this.showPreview(this.tool.hover(sketch, toolEvent(pointer)), pointer);
@@ -336,6 +346,12 @@ export class SketchController implements SketchInput, SketchToolControl {
   private toolClick(pointer: SketchPointer): void {
     const sketch = getState().sketch?.draft.sketch;
     if (!this.tool || !sketch) return;
+    if (this.tool.name === 'convert') {
+      const edge = this.engine.modelEdgeAt(pointer.x, pointer.y);
+      if (edge !== null) commands.convertModelEdge(edge);
+      else showToast('info', t('sketch.messages.convertMissed'));
+      return;
+    }
     const step = this.tool.click(sketch, toolEvent(pointer));
     if (step.commit && step.commit !== sketch) {
       this.toolSketch = step.commit;

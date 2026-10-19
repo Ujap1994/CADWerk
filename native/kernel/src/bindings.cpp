@@ -69,6 +69,7 @@ val meshResult(const parawerk::MeshData& mesh) {
   result.set("edgeKinds", typedArray("Uint8Array", mesh.edgeKinds));
   result.set("edgeLengths", typedArray("Float64Array", mesh.edgeLengths));
   result.set("edgeRadii", typedArray("Float64Array", mesh.edgeRadii));
+  result.set("edgeGeometry", typedArray("Float64Array", mesh.edgeGeometry));
   return result;
 }
 

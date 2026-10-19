@@ -26,6 +26,7 @@ interface RawMesh {
   edgeKinds: Uint8Array;
   edgeLengths: Float64Array;
   edgeRadii: Float64Array;
+  edgeGeometry: Float64Array;
 }
 
 /** Must match SurfaceKindCode / CurveKindCode in native/kernel/src/kernel.cpp. */
@@ -158,6 +159,17 @@ export class ParaWerkBackend implements GeometryBackend {
       const info: EdgeInfo = { kind: CURVE_KINDS[kind] ?? 'other', length: raw.edgeLengths[i] ?? 0 };
       const radius = raw.edgeRadii[i];
       if (radius !== undefined && !Number.isNaN(radius)) info.radius = radius;
+      const g = Array.from(raw.edgeGeometry.subarray(i * 12, i * 12 + 12));
+      const vec = (k: number): Vec3 | null => (g.slice(k, k + 3).every(Number.isFinite) ? (g.slice(k, k + 3) as Vec3) : null);
+      const [start, end, center, axis] = [vec(0), vec(3), vec(6), vec(9)];
+      if (start && end) {
+        info.start = start;
+        info.end = end;
+      }
+      if (center && axis) {
+        info.center = center;
+        info.axis = axis;
+      }
       return info;
     });
     return {

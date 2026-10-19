@@ -399,6 +399,43 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('sketch-spline.png') });
   await page.click('[data-testid="sketch-ok"]');
+
+  // Convert entities: the outline of a box top and the circle of a boss, projected onto the top plane.
+  await page.evaluate(() => {
+    const features = [
+      { id: 'b', type: 'box', operation: 'add', width: 100, depth: 60, height: 40, position: [0, 0, 0] },
+      { id: 'c', type: 'cylinder', operation: 'add', radius: 12, height: 25, axis: 'z', position: [25, 0, 40] },
+    ];
+    (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
+  });
+  await idle(page);
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  await idle(page);
+  await page.waitForTimeout(700);
+  const onModel = async (x: number, y: number, z: number) =>
+    page.evaluate(
+      ([px, py, pz]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(px, py, pz),
+      [x, y, z] as const,
+    );
+  await page.click('[data-command="tool-convert"]');
+  for (const [x, y, z] of [[-20, -30, 40], [50, 10, 40], [-20, 30, 40], [37, 0, 65]] as const) {
+    const p = await onModel(x, y, z);
+    if (canvas) {
+      await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+      await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+    }
+  }
+  // Pointing at the last edge of the outline highlights it in the model.
+  {
+    const p = await onModel(-50, 10, 40);
+    if (canvas) await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+  }
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-convert.png') });
+  await page.keyboard.press('Escape');
+  await page.click('[data-testid="sketch-ok"]');
+  await idle(page);
   await page.evaluate((features) => {
     (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
   }, model);

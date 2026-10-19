@@ -58,6 +58,9 @@ struct MeshData {
   std::vector<uint8_t> edgeKinds;
   std::vector<double> edgeLengths;
   std::vector<double> edgeRadii;  // NaN when not applicable
+  // Per edge: start and end point of the curve's own parameter range, then circle center and axis
+  // (12 values per edge; center and axis NaN for other curves, everything NaN for degenerate edges).
+  std::vector<double> edgeGeometry;
 };
 
 int makeBox(double x, double y, double z, double dx, double dy, double dz);

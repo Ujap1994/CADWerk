@@ -123,7 +123,8 @@
       "sketchFillet": "Verrundung",
       "sketchChamfer": "Fase",
       "trim": "Trimmen",
-      "extend": "Verlängern"
+      "extend": "Verlängern",
+      "convert": "Übernehmen"
     },
     "sketchToolTips": {
       "line": "Verbundene Linien zeichnen (L)",
@@ -148,7 +149,8 @@
       "sketchFillet": "Ecke zwischen zwei Linien abrunden",
       "sketchChamfer": "Ecke zwischen zwei Linien anfasen",
       "trim": "Das Stück einer Kurve zwischen ihren Schnittpunkten entfernen (T)",
-      "extend": "Linie oder Bogen bis zur nächsten Kurve verlängern (T)"
+      "extend": "Linie oder Bogen bis zur nächsten Kurve verlängern (T)",
+      "convert": "Kanten des Modells als Skizzengeometrie auf die Skizzenebene übernehmen"
     },
     "importDxf": "Import",
     "exportDxf": "Export"
@@ -377,7 +379,8 @@
       "sketchFillet": "Radius einstellen, dann Ecken anklicken, an denen sich zwei Linien treffen. Die Linien werden gekürzt und durch einen tangentialen Bogen mit Radiusmaß verbunden.",
       "sketchChamfer": "Abstand einstellen, dann Ecken anklicken, an denen sich zwei Linien treffen. Beide Linien werden um den Abstand gekürzt und durch eine Linie verbunden.",
       "trim": "Über eine Kurve fahren: Das Stück bis zu den benachbarten Schnittpunkten wird rot; Klicken entfernt es. Eine Kurve ohne Schnittpunkte wird ganz entfernt.",
-      "extend": "In die Nähe des Endes einer Linie oder eines Bogens fahren: Eine gestrichelte Vorschau zeigt die Verlängerung; Klicken verlängert bis zur nächsten Kurve."
+      "extend": "In die Nähe des Endes einer Linie oder eines Bogens fahren: Eine gestrichelte Vorschau zeigt die Verlängerung; Klicken verlängert bis zur nächsten Kurve.",
+      "convert": "Klicke Kanten des Modells: Sie werden auf die Skizzenebene projiziert und zu fixierter Skizzengeometrie (Linien, Kreise, Bögen, Ellipsen oder Splines). Berührende Kanten bleiben verbunden."
     },
     "tool": "Werkzeug",
     "selectTool": "Auswählen",
@@ -421,7 +424,10 @@
       "transformNoAxis": "Wähle zusätzlich eine Linie als Spiegelachse: eine Konstruktionslinie, oder wähle die Achse zuletzt.",
       "moveBlocked": "Die Auswahl lässt sich nicht dorthin verschieben: Beziehungen oder Bemaßungen halten sie fest.",
       "scaleBlocked": "Die Auswahl lässt sich nicht skalieren: Beziehungen oder Bemaßungen zu anderer Geometrie halten ihre Größe fest.",
-      "offsetTooLarge": "Der Abstand ist für die ausgewählten Kurven zu groß."
+      "offsetTooLarge": "Der Abstand ist für die ausgewählten Kurven zu groß.",
+      "convertNothing": "Diese Kante hat auf der Skizzenebene keine Ausdehnung (sie steht senkrecht darauf).",
+      "convertMissed": "Klicke auf eine Kante des Modells.",
+      "convertRepeated": "Diese Kante ist bereits in der Skizze."
     },
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
     "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",

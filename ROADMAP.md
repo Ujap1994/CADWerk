@@ -119,8 +119,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Ellipse | ✅ done |
 | Spline (fit points; points on splines and trimming at splines later) | ✅ done |
 | Scale of the selection | ✅ done |
-| Project and convert model edges into the sketch | ⏳ next |
-| Global variables and equations (basic) | ⏳ planned |
+| Convert model edges into the sketch (fixed; associative later) | ✅ done |
+| Global variables and equations (basic) | ⏳ next |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |
 | Status colors, conflict diagnosis | ✅ done |

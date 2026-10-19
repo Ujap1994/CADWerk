@@ -21,6 +21,15 @@ export interface EdgeInfo {
   length: number;
   /** Circles and arcs. */
   radius?: number;
+  /**
+   * Start and end of the curve's own parameter range (equal for closed curves); an arc runs
+   * counterclockwise around `axis` from start to end.
+   */
+  start?: Vec3;
+  end?: Vec3;
+  /** Circles and arcs: center and unit axis. */
+  center?: Vec3;
+  axis?: Vec3;
 }
 
 /** Triangulated body ready for rendering. All buffers are transferable. */

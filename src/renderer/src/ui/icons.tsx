@@ -323,6 +323,15 @@ export const ThreePointArcIcon = (p: P) => (
   </Icon>
 );
 
+/** A model edge projected down onto the sketch plane. */
+export const ConvertIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3 19.5 7.5 15h13.5L16.5 19.5z" />
+    <path d="M7 4.5h10" strokeWidth={2.2} />
+    <path d="M12 7v6.5M9.5 11l2.5 2.5 2.5-2.5" />
+  </Icon>
+);
+
 export const SplineIcon = (p: P) => (
   <Icon {...p}>
     <path d="M3 18c2.5-7 6-8.5 9-6s6.5 1 9-6" />

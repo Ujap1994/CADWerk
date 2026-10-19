@@ -123,7 +123,8 @@
       "sketchFillet": "Fillet",
       "sketchChamfer": "Chamfer",
       "trim": "Trim",
-      "extend": "Extend"
+      "extend": "Extend",
+      "convert": "Convert"
     },
     "sketchToolTips": {
       "line": "Draw connected lines (L)",
@@ -148,7 +149,8 @@
       "sketchFillet": "Round the corner where two lines meet",
       "sketchChamfer": "Bevel the corner where two lines meet",
       "trim": "Remove the piece of a curve between its crossings (T)",
-      "extend": "Lengthen a line or arc up to the next curve (T)"
+      "extend": "Lengthen a line or arc up to the next curve (T)",
+      "convert": "Convert edges of the model into sketch geometry on the sketch plane"
     },
     "importDxf": "Import",
     "exportDxf": "Export"
@@ -377,7 +379,8 @@
       "sketchFillet": "Set the radius, then click corners where two lines meet. The lines are shortened and joined by a tangent arc with a radius dimension.",
       "sketchChamfer": "Set the distance, then click corners where two lines meet. Both lines are shortened by the distance and joined by a line.",
       "trim": "Move over a curve: the piece up to the neighboring crossings turns red; click to remove it. A curve that nothing crosses is removed completely.",
-      "extend": "Move near the end of a line or arc: a dashed preview shows how far it grows; click to extend it up to the next curve."
+      "extend": "Move near the end of a line or arc: a dashed preview shows how far it grows; click to extend it up to the next curve.",
+      "convert": "Click edges of the model: they are projected onto the sketch plane and become fixed sketch geometry (lines, circles, arcs, ellipses or splines). Touching edges stay connected."
     },
     "tool": "Tool",
     "selectTool": "Select",
@@ -421,7 +424,10 @@
       "transformNoAxis": "Select a line as mirror axis as well: a construction line, or select the axis last.",
       "moveBlocked": "The selection cannot move there: relations or dimensions hold it in place.",
       "scaleBlocked": "The selection cannot be scaled: relations or dimensions to other geometry hold its size.",
-      "offsetTooLarge": "The distance is too large for the selected curves."
+      "offsetTooLarge": "The distance is too large for the selected curves.",
+      "convertNothing": "This edge has no extent on the sketch plane (it is perpendicular to it).",
+      "convertMissed": "Click an edge of the model.",
+      "convertRepeated": "This edge is already in the sketch."
     },
     "dimensionsSelected_one": "{{count}} dimension selected",
     "dimensionsSelected_other": "{{count}} dimensions selected",

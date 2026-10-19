@@ -23,11 +23,11 @@
 | Area | Available now |
 |---|---|
 | Modeling | Box and cylinder (add or remove material), fillet and chamfer on edges picked in the 3D view |
-| Sketching | Sketches on the front, top and right plane and on planar faces, with their own undo history; lines, rectangles (corner, center, 3-point, parallelogram), circles, ellipses, arcs (center, 3-point, tangent), splines, slots, polygons and points, with snapping and automatic relations; relations checked by the solver and shown as symbols next to the geometry; smart dimensions with reference dimensions; status colors and conflict diagnosis; trim, extend, sketch fillet and chamfer, offset, mirror, patterns, move and copy; dragging with live solving; DXF import and export |
+| Sketching | Sketches on the front, top and right plane and on planar faces, with their own undo history; lines, rectangles (corner, center, 3-point, parallelogram), circles, ellipses, arcs (center, 3-point, tangent), splines, slots, polygons and points, with snapping and automatic relations; relations checked by the solver and shown as symbols next to the geometry; smart dimensions with reference dimensions; status colors and conflict diagnosis; trim, extend, sketch fillet and chamfer, offset, mirror, patterns, move, copy and scale; converting model edges; dragging with live solving; DXF import and export |
 | Feature tree | Edit, suppress and delete features; rollback while editing; undo and redo |
 | Evaluation | Exact volume and surface area, face and edge information under the cursor |
 | Files | Save and open `.pwpart`, export STEP (AP214) and binary STL |
 | Interface | English and German, light and dark theme, mouse and trackpad navigation |
 
-Projected model edges and equations complete the sketcher; sketch-based features such as
+Equations complete the sketcher; sketch-based features such as
 extrude and revolve follow in Phase 2. See the [roadmap](../../ROADMAP.md).

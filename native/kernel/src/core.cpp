@@ -282,6 +282,7 @@ void appendEdges(const TopoDS_Shape& shape, double linear, double angular, MeshD
       out.edgeKinds.push_back(OtherCurve);
       out.edgeLengths.push_back(0);
       out.edgeRadii.push_back(kNaN);
+      out.edgeGeometry.insert(out.edgeGeometry.end(), 12, kNaN);
     } else {
       BRepAdaptor_Curve curve(edge);
       const uint8_t kind = curveKind(curve.GetType());
@@ -290,6 +291,19 @@ void appendEdges(const TopoDS_Shape& shape, double linear, double angular, MeshD
       out.edgeKinds.push_back(kind);
       out.edgeLengths.push_back(props.Mass());
       out.edgeRadii.push_back(kind == Circle ? curve.Circle().Radius() : kNaN);
+      // Start and end follow the curve's parameters (not the edge orientation), so an arc runs
+      // counterclockwise around its axis from start to end.
+      const gp_Pnt first = curve.Value(curve.FirstParameter());
+      const gp_Pnt last = curve.Value(curve.LastParameter());
+      out.edgeGeometry.insert(out.edgeGeometry.end(), {first.X(), first.Y(), first.Z(), last.X(), last.Y(), last.Z()});
+      if (kind == Circle) {
+        const gp_Circ circle = curve.Circle();
+        const gp_Pnt center = circle.Location();
+        const gp_Dir axis = circle.Axis().Direction();
+        out.edgeGeometry.insert(out.edgeGeometry.end(), {center.X(), center.Y(), center.Z(), axis.X(), axis.Y(), axis.Z()});
+      } else {
+        out.edgeGeometry.insert(out.edgeGeometry.end(), 6, kNaN);
+      }
     }
   }
 }
