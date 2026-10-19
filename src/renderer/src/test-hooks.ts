@@ -54,6 +54,36 @@ export function installTestHooks(): void {
         await session.end();
         return { total, solve, graphics };
       },
+      /**
+       * Draws a line in the open sketch like the mouse would: the first point is clicked, then the
+       * pointer moves along the sketch in `steps` steps. Each step is measured: snapping and the tool
+       * preview, then a GPU-synchronized frame.
+       */
+      drawBenchmark: (steps: number) => {
+        const sketch = getState().sketch?.draft.sketch;
+        const engine = viewport();
+        if (!sketch || !engine) throw new Error('no open sketch');
+        const points = sketch.entities.flatMap((entity) => (entity.type === 'point' ? [[entity.x, entity.y] as const] : []));
+        const [minU, minV] = [Math.min(...points.map((p) => p[0])), Math.min(...points.map((p) => p[1]))];
+        const [maxU, maxV] = [Math.max(...points.map((p) => p[0])), Math.max(...points.map((p) => p[1]))];
+        // Along the sketch, slightly off its diagonal so the pointer passes geometry without sitting on it.
+        const at = (t: number): [number, number] => [minU + (maxU - minU) * t + 1.3, minV + (maxV - minV) * t - 0.7];
+        commands.setSketchTool('line');
+        engine.simulateSketchPointer(...at(0.02), 'click');
+        const total: number[] = [];
+        const tool: number[] = [];
+        for (let i = 0; i < steps; i++) {
+          const start = performance.now();
+          engine.simulateSketchPointer(...at(0.05 + (0.9 * i) / steps), 'hover');
+          const previewed = performance.now();
+          engine.renderSynchronously();
+          total.push(performance.now() - start);
+          tool.push(previewed - start);
+        }
+        // The line was never finished, so the sketch is unchanged.
+        commands.setSketchTool(null);
+        return { total, tool };
+      },
     },
   };
   (window as unknown as { __parawerk: typeof hooks }).__parawerk = hooks;

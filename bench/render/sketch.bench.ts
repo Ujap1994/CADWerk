@@ -6,9 +6,10 @@ import { meta, resultFile, summarize, type BenchReport, type CaseResult } from '
 import { rectangleChain } from '../solver/parawerk.ts';
 
 /**
- * Sketch interaction benchmarks: drag a point of growing sketches in the app and measure each
- * step (solver round trip in the worker + sketch graphics update + GPU-synchronized frame).
- * Phase 1 target: 60 fps (16.7 ms per step) with 500 entities.
+ * Sketch interaction benchmarks in sketches of growing size, measured per mouse movement:
+ * - drag: a point is dragged (solver round trip in the worker + sketch graphics update + frame);
+ * - draw: a line is drawn across the sketch (snapping and tool preview + frame).
+ * Every step ends with a GPU-synchronized frame. Phase 1 target: 60 fps (16.7 ms per step) with 500 entities.
  * Run: npm run bench:render   Results: bench/results/sketch-<platform>-<arch>.json
  */
 const LADDER = [50, 500, 2_000];
@@ -19,7 +20,12 @@ interface DragResult {
   graphics: number[];
 }
 
-test('drag points in sketches of growing size', async () => {
+interface DrawResult {
+  total: number[];
+  tool: number[];
+}
+
+test('drag points and draw lines in sketches of growing size', async () => {
   const quick = process.env.BENCH_QUICK === '1';
   const steps = quick ? 40 : 120;
   const { app, page } = await launchApp({ width: 1600, height: 1000, env: { PARAWERK_BENCH: '1' } });
@@ -49,6 +55,18 @@ test('drag points in sketches of growing size', async () => {
     const graphics = summarize(result.graphics);
     cases[name] = summarize(result.total, { entities: sketch.entities.length, solveMs: solve.medianMs, graphicsMs: graphics.medianMs, fps: Math.round(1000 / Math.max(1e-3, summarize(result.total).medianMs)) });
     console.log(`${name}: median ${cases[name].medianMs} ms per step (solve ${solve.medianMs}, graphics ${graphics.medianMs}), p95 ${cases[name].p95Ms} ms`);
+
+    const drawn = await page.evaluate(
+      async (count) => {
+        const hooks = (window as unknown as { __parawerk: { sketch: { drawBenchmark(n: number): DrawResult } } }).__parawerk;
+        return hooks.sketch.drawBenchmark(count);
+      },
+      steps,
+    );
+    const drawName = `draw.${entities}`;
+    const tool = summarize(drawn.tool);
+    cases[drawName] = summarize(drawn.total, { entities: sketch.entities.length, toolMs: tool.medianMs, fps: Math.round(1000 / Math.max(1e-3, summarize(drawn.total).medianMs)) });
+    console.log(`${drawName}: median ${cases[drawName].medianMs} ms per step (snapping and preview ${tool.medianMs}), p95 ${cases[drawName].p95Ms} ms`);
     await page.evaluate(() => (window as unknown as { __parawerk: { commands: { cancelSketch(): Promise<void> } } }).__parawerk.commands.cancelSketch());
   }
   await app.close();

@@ -113,7 +113,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Offset entities | ✅ done |
 | DXF import and export of sketches | ✅ done |
 | Relation symbols in the view (hover, select, delete, show/hide) | ✅ done |
-| Drawing benchmarks, exit check with a bracket profile | ⏳ next |
+| Drawing benchmarks (snapping and preview: 1.3 ms per mouse movement at 2,000 entities) | ✅ done |
+| Exit check: drawing and fully defining a bracket profile | ⏳ next |
 | 3-point and parallelogram rectangles, ellipse, spline | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |

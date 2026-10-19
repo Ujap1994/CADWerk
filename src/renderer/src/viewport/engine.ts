@@ -442,6 +442,19 @@ export class ViewportEngine {
     this.sketchInput = input;
   }
 
+  /** Benchmarks: the mouse moves to (or clicks at) a point of the open sketch, given in sketch coordinates. */
+  simulateSketchPointer(u: number, v: number, action: 'hover' | 'click'): void {
+    const screen = this.sketchToScreen(u, v);
+    const pointer = screen ? this.sketchPointer(screen.x, screen.y, false) : null;
+    if (!pointer || !this.sketchInput) return;
+    if (action === 'hover') {
+      this.sketchInput.hover(pointer);
+    } else {
+      this.sketchInput.down(pointer);
+      this.sketchInput.up(pointer, false);
+    }
+  }
+
   setCursor(cursor: string): void {
     this.canvas.style.cursor = cursor;
   }

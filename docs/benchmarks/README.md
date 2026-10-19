@@ -9,7 +9,7 @@ suite as regression tests.
 ```bash
 npm run bench:kernel   # geometry kernel (Node, OCCT WebAssembly)
 npm run bench:solver   # 2D constraint solver: ParaWerk's sparse solver and PlaneGCS for comparison
-npm run build && npm run bench:render   # 3D view (orbiting synthetic assemblies) and dragging in sketches (uses your GPU)
+npm run build && npm run bench:render   # 3D view (orbiting synthetic assemblies), dragging and drawing in sketches (uses your GPU)
 npm run bench:compare  # compare bench/results with bench/baselines
 ```
 
@@ -86,6 +86,18 @@ of linked rectangles without dimensions, so the dragged point can move; a corner
 
 The Phase 1 target (60 fps with 500 entities) is met with a wide margin; most of each step is the frame
 itself. Solver-only numbers are in [ADR 0005](../adr/0005-sketch-solver.md).
+
+### Drawing in sketches (same sketches and window)
+
+A line is started near the first rectangle, then the pointer moves along the whole chain. Each step is
+snapping (points, midpoints, curves, alignments), the tool preview with its measurement, and a
+GPU-synchronized frame.
+
+| Sketch entities | Step (median) | Snapping and preview | Steps per second |
+|---|---|---|---|
+| 50 | 2.9 ms | 0.10 ms | 350 |
+| 500 | 3.6 ms | 0.51 ms | 276 |
+| 2,000 | 4.5 ms | 1.27 ms | 220 |
 
 ## CI runners – Phase 0 baselines
 
