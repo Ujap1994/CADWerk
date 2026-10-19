@@ -1,14 +1,13 @@
 import type { Language } from '../../shared/i18n.ts';
+import { evaluate } from './expression.ts';
 
 /**
- * Parses a length typed by the user. Accepts both decimal separators
- * ("2.5" and "2,5") because German users naturally type a comma.
+ * Parses a number typed by the user: a plain number with either decimal separator ("2.5" and "2,5",
+ * because German users naturally type a comma) or a calculation such as "60/3 + 2" or "1in"
+ * (see expression.ts).
  */
 export function parseNumber(text: string): number | null {
-  const normalized = text.trim().replace(/\s+/g, '').replace(',', '.');
-  if (!/^[-+]?(\d+\.?\d*|\.\d+)$/.test(normalized)) return null;
-  const value = Number(normalized);
-  return Number.isFinite(value) ? value : null;
+  return evaluate(text);
 }
 
 export function formatNumber(value: number, language: Language, maximumFractionDigits = 3): string {

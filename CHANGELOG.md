@@ -19,6 +19,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   and arcs; tilted circles become ellipses, other curves splines); touching edges stay connected. The
   geometry kernel now reports the exact end points, centers and axes of edges.
 
+- Calculations in number fields and dimension values: + − × ÷, powers, brackets, π, sqrt, abs and
+  sin/cos/tan in degrees, and lengths with units (mm, cm, m, in); evaluated by an own parser, never as
+  code.
+
 ### Changed
 - *Line* and *Centerline* share one button with a variant menu (**L** starts the last one used), which
   makes room for *Spline* in the command bar.

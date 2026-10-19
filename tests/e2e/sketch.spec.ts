@@ -686,10 +686,10 @@ test('dimensions: placing with a value, reference dimensions, editing, moving an
   await expect.poll(async () => (await entity('r2'))?.x).toBeCloseTo(50, 6);
   await expect(page.locator('.dimension-label')).toHaveText(['50']);
 
-  // The height, placed beside the right line.
+  // The height, placed beside the right line; values can be typed as calculations.
   await click(50, 13);
   await click(62, 13);
-  await editor.fill('30');
+  await editor.fill('60/2');
   await editor.press('Enter');
   await expect.poll(async () => (await entity('r3'))?.y).toBeCloseTo(30, 6);
 

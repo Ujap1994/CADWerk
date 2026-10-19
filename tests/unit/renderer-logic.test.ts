@@ -69,7 +69,31 @@ describe('number input', () => {
     ['abc', null],
     ['', null],
     ['1,2,3', null],
+    ['60/3 + 2', 22],
+    ['2*(15+4,5)', 39],
+    ['2 × 3 − 1', 5],
+    ['-(2+3)^2', -25],
+    ['2^-1', 0.5],
+    ['1in', 25.4],
+    ['2"', 50.8],
+    ['1,5 cm + 3mm', 18],
+    ['0.1m', 100],
+    ['sqrt(16) + abs(-1)', 5],
+    ['10/0', null],
+    ['2 +', null],
+    ['(1+2', null],
+    ['1 2', null],
+    ['alert(1)', null],
+    ['2**3', null],
   ])('parses %j', (text, expected) => {
     expect(parseNumber(text)).toBe(expected);
+  });
+
+  it('knows π and the trigonometric functions in degrees', () => {
+    expect(parseNumber('2*pi')).toBeCloseTo(2 * Math.PI, 12);
+    expect(parseNumber('π/2')).toBeCloseTo(Math.PI / 2, 12);
+    expect(parseNumber('sin(30)')).toBeCloseTo(0.5, 12);
+    expect(parseNumber('40 * cos(60)')).toBeCloseTo(20, 12);
+    expect(parseNumber('tan(45)')).toBeCloseTo(1, 12);
   });
 });

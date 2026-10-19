@@ -284,6 +284,10 @@ group of the *Sketch* tab); what it measures follows from what you pick and from
 3. Type the value and press **Enter**. The geometry changes so the dimension holds. **Esc** keeps the
    measured value.
 
+Values can be typed as calculations, here and in every number field: `60/3 + 2`, `2*(15+4,5)`,
+`40*cos(30)` (angles in degrees), `pi*10`, or with a unit: `1in`, `2,5cm`, `0.1m` (converted to
+millimeters). Both `.` and `,` work as decimal separator.
+
 ![Placing a dimension: the value is typed right at the dimension](../images/screenshots/sketch-dimension-value.png)
 
 | You pick | Value placed | Dimension |
