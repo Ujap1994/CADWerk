@@ -265,7 +265,7 @@
   "sketch": {
     "title": "Sketch",
     "choosePlane": "Choose a plane",
-    "choosePlaneHint": "Click a plane in the view or in the feature tree, or choose one here.",
+    "choosePlaneHint": "Click a plane or a planar face of the part in the view, a plane in the feature tree, or choose one here.",
     "creating": "New {{name}}",
     "editing": "Edit {{name}}",
     "plane": "Plane",

@@ -22,6 +22,7 @@ interface RawMesh {
   faceKinds: Uint8Array;
   faceAreas: Float64Array;
   faceRadii: Float64Array;
+  facePlanes: Float64Array;
   edgeKinds: Uint8Array;
   edgeLengths: Float64Array;
   edgeRadii: Float64Array;
@@ -147,6 +148,10 @@ export class ParaWerkBackend implements GeometryBackend {
       const info: FaceInfo = { kind: SURFACE_KINDS[kind] ?? 'other', area: raw.faceAreas[i] ?? 0 };
       const radius = raw.faceRadii[i];
       if (radius !== undefined && !Number.isNaN(radius)) info.radius = radius;
+      const plane = Array.from(raw.facePlanes.subarray(i * 6, i * 6 + 6));
+      if (plane.length === 6 && plane.every(Number.isFinite)) {
+        info.plane = { point: [plane[0], plane[1], plane[2]] as Vec3, normal: [plane[3], plane[4], plane[5]] as Vec3 };
+      }
       return info;
     });
     const edgeInfo: EdgeInfo[] = Array.from(raw.edgeKinds, (kind, i) => {

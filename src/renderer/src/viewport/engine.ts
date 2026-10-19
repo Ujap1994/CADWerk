@@ -38,7 +38,7 @@ import { createSyntheticAssembly, type SyntheticAssembly } from './synthetic-sce
 import { ViewCube, type CubeFace } from './view-cube.ts';
 import { VIEW_DIRECTIONS, viewQuaternion, type StandardView } from './views.ts';
 
-/** What a click can pick: everything, only edges (fillet, chamfer), only planes (choosing a sketch plane) or nothing. */
+/** What a click can pick: everything, only edges (fillet, chamfer), planes and planar faces (choosing a sketch plane) or nothing. */
 export type PickFilter = 'all' | 'edges' | 'planes' | 'none';
 
 export interface ViewportCallbacks {
@@ -578,10 +578,13 @@ export class ViewportEngine {
     if (body && edgeHit && edgeHit.faceIndex !== undefined && edgeHit.faceIndex !== null && (!faceHit || edgeHit.distance <= faceHit.distance + tolerance)) {
       return { kind: 'edge', index: body.edgeOfSegment(edgeHit.faceIndex) };
     }
-    if (planeHit && (!faceHit || planeHit.distance < faceHit.distance)) return { kind: 'plane', index: planeHit.index };
-    if (body && faceHit && faceHit.faceIndex !== undefined && faceHit.faceIndex !== null && this.pickFilter === 'all') {
-      return { kind: 'face', index: body.faceOfTriangle(faceHit.faceIndex) };
+    // A pickable face wins over a translucent plane in front of it: the face is what one sees and aims at,
+    // and planes stay pickable where they extend beyond the part (and in the feature tree).
+    if (body && faceHit && faceHit.faceIndex !== undefined && faceHit.faceIndex !== null) {
+      const face = body.faceOfTriangle(faceHit.faceIndex);
+      if (this.pickFilter === 'all' || (this.pickFilter === 'planes' && body.isPlanarFace(face))) return { kind: 'face', index: face };
     }
+    if (planeHit && (!faceHit || planeHit.distance < faceHit.distance)) return { kind: 'plane', index: planeHit.index };
     return null;
   }
 

@@ -1,8 +1,8 @@
 # Sketches
 
 > [!NOTE]
-> The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane,
-> sketch mode with its grid and its own undo history, and editing existing sketches. Drawing tools,
+> The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane
+> or planar face, sketch mode with its grid and its own undo history, and editing existing sketches. Drawing tools,
 > relations and dimensions follow in the next updates; the page grows with them.
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
@@ -23,20 +23,42 @@ Every part has three standard planes through the origin. They are listed in the 
 Hover over a plane in the feature tree to show it in the 3D view. Click it to select it; it stays visible
 while it is selected. Planes are hidden otherwise, so they never get in the way.
 
+## Planar faces
+
+Any flat face of the part can carry a sketch, for example the top of a plate or the bottom of a pocket.
+The sketch lies exactly in the face's plane (ParaWerk takes the plane from the exact B-Rep geometry, not
+from the triangles of the display), and you look at it from outside the material.
+
+- **Sketch origin on a face:** the part origin projected onto the face's plane, as for any plane through
+  the part.
+- **Sketch axes on a face:** chosen like the standard views, so a face parallel to the front, top or right
+  plane gets the same axes as that plane, and on all other faces the sketch's y axis points as close to
+  upwards (+Z) as the face allows.
+- In this preview a sketch keeps the position of the face at the time it was created; it does not yet
+  move along when the face moves because earlier features change. Following the face is part of the
+  persistent naming work ([ADR 0002](../adr/0002-persistent-naming.md)).
+
 ## Starting a sketch
 
 There are several ways to start a sketch; use whichever fits your hand:
 
 - Click **Sketch** (in the *Features* or the *Sketch* tab of the command bar). The three planes appear in
-  the 3D view and the side panel asks for a plane. Click a plane in the 3D view, in the feature tree or in
-  the panel. The plane under the cursor is highlighted in orange and named in the status bar.
-- Select a plane in the feature tree first, then click **Sketch**: the sketch opens on that plane at
-  once.
+  the 3D view and the side panel asks for a plane. Click a plane or a planar face in the 3D view, a plane
+  in the feature tree or one of the buttons in the panel. What is under the cursor is highlighted in
+  orange and named in the status bar; curved faces cannot be picked.
+- Select a plane (in the feature tree) or a planar face (in the 3D view) first, then click **Sketch**:
+  the sketch opens there at once.
 - Hover over a plane in the feature tree and click its **Sketch on this plane** button.
+
+When a translucent plane lies in front of a face, a click picks the face: you see the face through the
+plane, so that is what you aim at. Click a plane where it extends beyond the part, or pick it in the
+feature tree or the panel.
 
 **Esc** or **✕** cancels the plane choice.
 
-![Choosing a sketch plane](../images/screenshots/sketch-choose-plane.png)
+| Choosing a standard plane | Choosing a planar face |
+|---|---|
+| ![Choosing a sketch plane](../images/screenshots/sketch-choose-plane.png) | ![Choosing a planar face](../images/screenshots/sketch-choose-face.png) |
 
 ## Sketch mode
 

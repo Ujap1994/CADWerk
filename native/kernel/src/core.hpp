@@ -53,6 +53,8 @@ struct MeshData {
   std::vector<uint8_t> faceKinds;
   std::vector<double> faceAreas;
   std::vector<double> faceRadii;  // NaN when not applicable
+  // Planar faces: point on the plane and outward unit normal (6 values per face, NaN otherwise).
+  std::vector<double> facePlanes;
   std::vector<uint8_t> edgeKinds;
   std::vector<double> edgeLengths;
   std::vector<double> edgeRadii;  // NaN when not applicable

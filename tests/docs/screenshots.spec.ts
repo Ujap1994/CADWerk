@@ -58,6 +58,13 @@ test('README and user guide screenshots', async () => {
   await page.hover('.plane-choice[data-plane="front"]');
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('sketch-choose-plane.png') });
+  const topFace = await page.evaluate(
+    ([x, y, z]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(x, y, z),
+    [45, -28, 20] as const,
+  );
+  if (canvas) await page.mouse.move(canvas.x + topFace.x, canvas.y + topFace.y);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-choose-face.png') });
   await page.click('.plane-choice[data-plane="front"]');
   await idle(page);
   await page.waitForTimeout(700);

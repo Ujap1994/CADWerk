@@ -245,5 +245,17 @@ describe.each(['parawerk', 'replicad'] as BackendName[])('%s backend', (backendN
       expect(mesh.faceInfo.every((f) => f.kind === 'plane')).toBe(true);
       expect(mesh.edgeInfo.map((e) => Math.round(e.length)).sort((a, b) => a - b)).toEqual([40, 40, 40, 40, 60, 60, 60, 60, 100, 100, 100, 100]);
     });
+
+    it.runIf(backendName === 'parawerk')('gives planar faces their exact plane with the normal pointing out of the material', () => {
+      const hole: CylinderFeature = { id: 'h', type: 'cylinder', operation: 'cut', radius: 10, height: 40, axis: 'z', position: [0, 0, 20] };
+      const mesh = finalState([box, hole]).state.mesh!;
+      const planes = mesh.faceInfo.flatMap((f) => (f.plane ? [f.plane] : []));
+      expect(planes).toHaveLength(mesh.faceInfo.filter((f) => f.kind === 'plane').length);
+      expect(mesh.faceInfo.find((f) => f.kind === 'cylinder')?.plane).toBeUndefined();
+      // Normal and signed distance from the origin of each planar face.
+      const describe = planes.map(({ point, normal }) => [...normal.map((v) => Math.round(v) + 0), Math.round(point[0] * normal[0] + point[1] * normal[1] + point[2] * normal[2])].join(' '));
+      expect(describe.sort()).toEqual(['-1 0 0 50', '0 -1 0 30', '0 0 -1 0', '0 0 1 20', '0 0 1 40', '0 1 0 30', '1 0 0 50'].sort());
+      for (const { normal } of planes) expect(Math.hypot(...normal)).toBeCloseTo(1, 12);
+    });
   });
 });

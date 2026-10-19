@@ -3,7 +3,7 @@ import type { MenuCommand } from '../../shared/ipc.ts';
 import { PART_FILE_EXTENSION } from '../../shared/app-info.ts';
 import { defaultFeature, isEdgeFeature, type EdgeRef, type Feature, type FeatureType, type SketchFeature } from '../../shared/model/feature.ts';
 import { decodePartFile, encodePartFile, PartFileError } from '../../shared/model/part-file.ts';
-import { STANDARD_PLANES, type SketchData, type SketchPlaneRef } from '../../shared/model/sketch.ts';
+import { frameOnPlane, STANDARD_PLANES, type SketchData, type SketchPlaneRef } from '../../shared/model/sketch.ts';
 import type { Settings } from '../../shared/settings.ts';
 import { changeLanguage, t } from './i18n.ts';
 import {
@@ -267,13 +267,25 @@ export function redo(): void {
 
 // ------------------------------------------------------------------ sketches
 
-/** Sketch command: sketches on a selected plane right away, otherwise asks for a plane. */
+/** Where a picked plane or planar face lies, or null if a sketch cannot be placed on the pick. */
+function sketchPlaneOf(pick: Pick): SketchPlaneRef | null {
+  if (pick.kind === 'plane') {
+    const plane = STANDARD_PLANES[pick.index];
+    return plane ? { kind: 'standard', plane } : null;
+  }
+  if (pick.kind !== 'face') return null;
+  const face = getState().display.body?.faceInfo[pick.index]?.plane;
+  return face ? { kind: 'face', face: pick.index, frame: frameOnPlane(face.point, face.normal) } : null;
+}
+
+/** Sketch command: sketches on a selected plane or planar face right away, otherwise asks for one. */
 export function startSketch(): void {
   const state = getState();
   if (state.sketch) return;
   if (state.activeEdit) commitEdit();
-  const plane = STANDARD_PLANES[getState().selection.find((pick) => pick.kind === 'plane')?.index ?? -1];
-  if (plane) chooseSketchPlane({ kind: 'standard', plane });
+  const selected = getState().selection;
+  const plane = selected.length === 1 && selected[0] ? sketchPlaneOf(selected[0]) : null;
+  if (plane) chooseSketchPlane(plane);
   else setState({ choosingSketchPlane: true, selection: [], hover: null, commandTab: 'sketch' });
 }
 
@@ -354,8 +366,8 @@ export function setCommandTab(commandTab: CommandTab): void {
 export function handlePick(pick: Pick | null, additive: boolean): void {
   const state = getState();
   if (state.choosingSketchPlane) {
-    const plane = pick?.kind === 'plane' ? STANDARD_PLANES[pick.index] : undefined;
-    if (plane) chooseSketchPlane({ kind: 'standard', plane });
+    const plane = pick ? sketchPlaneOf(pick) : null;
+    if (plane) chooseSketchPlane(plane);
     return;
   }
   // Sketch geometry is picked by the sketch layer, not here.

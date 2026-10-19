@@ -3,7 +3,8 @@ import { applySketchSession, hasSketchChanges, openSketchSession, recordSketch, 
 import { HISTORY_LIMIT, rebuildPlan } from '../../src/renderer/src/state/document.ts';
 import { FULL_GRID_PX, gridSpacing, MIN_GRID_PX } from '../../src/renderer/src/viewport/grid.ts';
 import { defaultFeature, type Feature, type SketchFeature } from '../../src/shared/model/feature.ts';
-import type { SketchData } from '../../src/shared/model/sketch.ts';
+import { frameOnPlane, STANDARD_FRAMES, type SketchData, type SketchFrame } from '../../src/shared/model/sketch.ts';
+import type { Vec3 } from '../../src/shared/model/feature.ts';
 
 const box = defaultFeature('box', 'b');
 const cylinder = defaultFeature('cylinder', 'c');
@@ -99,5 +100,41 @@ describe('sketch grid', () => {
     expect(gridSpacing(1 / FULL_GRID_PX).minorStrength).toBeCloseTo(1, 6);
     const strengths = [12.5, 16, 20, 25, 30, 35].map((px) => gridSpacing(1 / px).minorStrength);
     for (let i = 1; i < strengths.length; i++) expect(strengths[i]).toBeGreaterThan(strengths[i - 1] as number);
+  });
+});
+
+describe('sketch frames on faces', () => {
+  const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+  function expectOrthonormal(frame: SketchFrame): void {
+    for (const axis of [frame.xDir, frame.yDir, frame.normal]) expect(Math.hypot(...axis)).toBeCloseTo(1, 12);
+    expect(dot(frame.xDir, frame.yDir)).toBeCloseTo(0, 12);
+    cross(frame.xDir, frame.yDir).forEach((v, i) => expect(v).toBeCloseTo(frame.normal[i] as number, 12));
+  }
+
+  it('gives faces parallel to a standard plane the axes of that plane', () => {
+    expect(frameOnPlane([5, 0, 40], [0, 0, 1])).toEqual({ ...STANDARD_FRAMES.top, origin: [0, 0, 40] });
+    expect(frameOnPlane([7, -30, 2], [0, -1, 0])).toEqual({ ...STANDARD_FRAMES.front, origin: [0, -30, 0] });
+    expect(frameOnPlane([50, 3, 9], [1, 0, 0])).toEqual({ ...STANDARD_FRAMES.right, origin: [50, 0, 0] });
+  });
+
+  it('looks at back, left and bottom faces from outside, like the standard views', () => {
+    expect(frameOnPlane([0, 30, 0], [0, 1, 0])).toMatchObject({ xDir: [-1, 0, 0], yDir: [0, 0, 1] });
+    expect(frameOnPlane([-50, 0, 0], [-1, 0, 0])).toMatchObject({ xDir: [0, -1, 0], yDir: [0, 0, 1] });
+    expect(frameOnPlane([0, 0, 0], [0, 0, -1])).toMatchObject({ xDir: [1, 0, 0], yDir: [0, -1, 0] });
+  });
+
+  it('builds an orthonormal right-handed frame with the projected part origin on inclined faces', () => {
+    const normal: Vec3 = [1, -2, 0.5];
+    const frame = frameOnPlane([10, 4, -3], normal);
+    expectOrthonormal(frame);
+    // The origin lies on the plane and is the point of the plane closest to the part origin.
+    expect(dot(frame.origin, frame.normal)).toBeCloseTo(dot([10, 4, -3], frame.normal), 12);
+    const along = cross(frame.origin, frame.normal);
+    for (const v of along) expect(v).toBeCloseTo(0, 12);
+    // Up on screen stays as close to +Z as the plane allows.
+    expect(frame.xDir[2]).toBeCloseTo(0, 12);
+    expect(frame.yDir[2]).toBeGreaterThan(0);
   });
 });

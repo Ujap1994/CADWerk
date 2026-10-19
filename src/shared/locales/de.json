@@ -265,7 +265,7 @@
   "sketch": {
     "title": "Skizze",
     "choosePlane": "Ebene wählen",
-    "choosePlaneHint": "Klicke eine Ebene in der Ansicht oder im Featurebaum an oder wähle sie hier.",
+    "choosePlaneHint": "Klicke eine Ebene oder eine ebene Fläche des Teils in der Ansicht oder eine Ebene im Featurebaum an, oder wähle sie hier.",
     "creating": "{{name}} erstellen",
     "editing": "{{name}} bearbeiten",
     "plane": "Ebene",

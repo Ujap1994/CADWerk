@@ -103,8 +103,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Sketch feature in the document model and file format | ✅ done |
 | Solver worker with latest-wins dragging | ✅ done |
 | Sketch mode: plane choice, normal view, grid, sketch undo, edit from the tree | ✅ done |
-| Sketching on planar faces | ⏳ next |
-| Sketch geometry in the 3D view, drawing tools, inference and snapping | ⏳ planned |
+| Sketching on planar faces (exact B-Rep planes from the kernel) | ✅ done |
+| Sketch geometry in the 3D view, drawing tools, inference and snapping | ⏳ next |
 | Relations, dimension tool, status colors, conflict diagnosis | ⏳ planned |
 | Editing tools (trim, extend, offset, mirror, patterns, fillet, chamfer) | ⏳ planned |
 | DXF import and export; benchmarks at 50 → 500 → 2,000 entities | ⏳ planned |

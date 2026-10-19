@@ -40,6 +40,7 @@
 #include <gp_Circ.hxx>
 #include <gp_Cylinder.hxx>
 #include <gp_Dir.hxx>
+#include <gp_Pln.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Sphere.hxx>
 
@@ -208,6 +209,16 @@ void appendFaces(const TopoDS_Shape& shape, MeshData& out, bool withInfo) {
       out.faceKinds.push_back(kind);
       out.faceAreas.push_back(props.Mass());
       out.faceRadii.push_back(radius);
+      if (kind == Plane) {
+        // The adaptor applies the face location; the face orientation decides which side is outside.
+        const gp_Pln plane = surface.Plane();
+        gp_Dir normal = plane.Axis().Direction();
+        if (face.Orientation() == TopAbs_REVERSED) normal.Reverse();
+        const gp_Pnt origin = plane.Location();
+        out.facePlanes.insert(out.facePlanes.end(), {origin.X(), origin.Y(), origin.Z(), normal.X(), normal.Y(), normal.Z()});
+      } else {
+        out.facePlanes.insert(out.facePlanes.end(), 6, kNaN);
+      }
     }
   }
 }

@@ -116,6 +116,32 @@ export const STANDARD_FRAMES: Record<StandardPlane, SketchFrame> = {
   right: { origin: [0, 0, 0], xDir: [0, 1, 0], yDir: [0, 0, 1], normal: [1, 0, 0] },
 };
 
+function cross(a: Vec3, b: Vec3): Vec3 {
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+
+function normalize(v: Vec3): Vec3 {
+  const length = Math.hypot(v[0], v[1], v[2]);
+  return [v[0] / length, v[1] / length, v[2] / length];
+}
+
+/**
+ * Sketch frame on an arbitrary plane (e.g. a planar face), given a point on it and the
+ * normal pointing out of the material. The origin is the part origin projected onto the
+ * plane; the axes follow the standard views: up is +Z, or ±Y when looking along Z, so a
+ * face parallel to a standard plane gets the same axes as that plane.
+ */
+export function frameOnPlane(point: Vec3, normal: Vec3): SketchFrame {
+  const n = normalize(normal);
+  const up: Vec3 = Math.abs(n[2]) > 0.999 ? [0, n[2] > 0 ? 1 : -1, 0] : [0, 0, 1];
+  const xDir = normalize(cross(up, n));
+  const yDir = cross(n, xDir);
+  const offset = point[0] * n[0] + point[1] * n[1] + point[2] * n[2];
+  // Avoid -0 in stored files.
+  const clean = (v: Vec3): Vec3 => [v[0] + 0, v[1] + 0, v[2] + 0];
+  return { origin: clean([n[0] * offset, n[1] * offset, n[2] * offset]), xDir: clean(xDir), yDir: clean(yDir), normal: clean(n) };
+}
+
 export function frameOf(plane: SketchPlaneRef): SketchFrame {
   return plane.kind === 'standard' ? STANDARD_FRAMES[plane.plane] : plane.frame;
 }

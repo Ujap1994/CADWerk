@@ -65,6 +65,7 @@ val meshResult(const parawerk::MeshData& mesh) {
   result.set("faceKinds", typedArray("Uint8Array", mesh.faceKinds));
   result.set("faceAreas", typedArray("Float64Array", mesh.faceAreas));
   result.set("faceRadii", typedArray("Float64Array", mesh.faceRadii));
+  result.set("facePlanes", typedArray("Float64Array", mesh.facePlanes));
   result.set("edgeKinds", typedArray("Uint8Array", mesh.edgeKinds));
   result.set("edgeLengths", typedArray("Float64Array", mesh.edgeLengths));
   result.set("edgeRadii", typedArray("Float64Array", mesh.edgeRadii));

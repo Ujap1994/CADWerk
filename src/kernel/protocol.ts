@@ -10,6 +10,8 @@ export interface FaceInfo {
   area: number;
   /** Cylinders and spheres. */
   radius?: number;
+  /** Planar faces: a point on the plane and the unit normal pointing out of the material. */
+  plane?: { point: Vec3; normal: Vec3 };
 }
 
 /** Exact geometry of a B-Rep edge. */

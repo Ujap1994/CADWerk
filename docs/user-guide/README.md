@@ -22,7 +22,7 @@
 | Area | Available now |
 |---|---|
 | Modeling | Box and cylinder (add or remove material), fillet and chamfer on edges picked in the 3D view |
-| Sketching (in progress) | Front, top and right plane; sketch mode with view normal to the plane, adaptive grid and its own undo history |
+| Sketching (in progress) | Sketches on the front, top and right plane and on planar faces; sketch mode with view normal to the plane, adaptive grid and its own undo history |
 | Feature tree | Edit, suppress and delete features; rollback while editing; undo and redo |
 | Evaluation | Exact volume and surface area, face and edge information under the cursor |
 | Files | Save and open `.pwpart`, export STEP (AP214) and binary STL |

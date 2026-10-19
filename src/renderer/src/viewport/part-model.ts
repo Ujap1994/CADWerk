@@ -66,6 +66,11 @@ export class PartModel {
     this.bvhReady = true;
   }
 
+  /** Whether a face is planar (a sketch can be placed on it). */
+  isPlanarFace(face: number): boolean {
+    return this.payload.faceInfo[face]?.plane !== undefined;
+  }
+
   faceOfTriangle(triangle: number): number {
     return rangeIndexOf(this.payload.faceRanges, triangle * 3);
   }

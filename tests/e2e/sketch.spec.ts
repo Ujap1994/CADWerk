@@ -105,6 +105,51 @@ test('a plane clicked in the view or in the feature tree becomes the sketch plan
   await expectNormalView(page, [0, 1, 0], [0, 0, 1]);
 });
 
+test('a planar face of the part becomes the sketch plane, curved faces do not', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const features = [
+      { id: 'b', type: 'box', operation: 'add', width: 100, depth: 60, height: 40, position: [0, 0, 0] },
+      { id: 'c', type: 'cylinder', operation: 'add', radius: 10, height: 30, axis: 'z', position: [30, 0, 40] },
+    ];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await idle(page);
+  await page.click('[data-command="sketch"]');
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+
+  // The side of the cylinder is not planar: hovering it picks nothing.
+  const side = await project(page, [30, -10, 55]);
+  await page.mouse.move(canvas.x + side.x, canvas.y + side.y);
+  await page.waitForTimeout(150);
+  await expect(page.locator('[data-testid="pick-info"]')).toHaveText('');
+
+  // The top face of the box, beside the cylinder and outside all standard planes.
+  const top = await project(page, [-35, -20, 40]);
+  await page.mouse.move(canvas.x + top.x, canvas.y + top.y);
+  await expect(page.locator('[data-testid="pick-info"]')).toContainText('Plane');
+  await page.mouse.click(canvas.x + top.x, canvas.y + top.y);
+  await expect(page.locator('[data-testid="sketch-plane"]')).toHaveText(/^Face \d+$/);
+  const plane = (await state(page)).sketch?.draft.plane as unknown as { kind: string; frame: { origin: number[]; xDir: number[]; yDir: number[]; normal: number[] } };
+  expect(plane.kind).toBe('face');
+  expect(plane.frame).toEqual({ origin: [0, 0, 40], xDir: [1, 0, 0], yDir: [0, 1, 0], normal: [0, 0, 1] });
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  await drawPoint(page, 'p', 0, 0);
+  await page.click('[data-testid="sketch-ok"]');
+
+  // Select a face first, then start the sketch: the front face of the box.
+  await page.evaluate(() => (window as unknown as { __parawerk: { commands: { setView(view: string): void } } }).__parawerk.commands.setView('isometric'));
+  await page.waitForTimeout(500);
+  const front = await project(page, [-30, -30, 10]);
+  await page.mouse.click(canvas.x + front.x, canvas.y + front.y);
+  await page.click('[data-command="sketch"]');
+  const frontPlane = (await state(page)).sketch?.draft.plane as unknown as { frame: { origin: number[]; normal: number[] } };
+  expect(frontPlane.frame.origin).toEqual([0, -30, 0]);
+  expect(frontPlane.frame.normal).toEqual([0, -1, 0]);
+});
+
 test('sketch mode has its own undo and becomes one document step', async () => {
   launched = await launchApp();
   const { page } = launched;
