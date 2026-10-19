@@ -2,7 +2,7 @@ import { Box3, BufferAttribute, BufferGeometry, Color, Group, Matrix4, Points, S
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import type { SketchData, SketchFrame } from '../../../shared/model/sketch.ts';
+import { ORIGIN_ID, type SketchData, type SketchFrame } from '../../../shared/model/sketch.ts';
 import { curvePointIds, curvePolyline, isCurve, pointPositions, type Point2 } from '../sketch/geometry.ts';
 import type { ViewportPalette } from './palette.ts';
 
@@ -255,6 +255,13 @@ export class SketchGraphics {
       pointPositionsOut.push(entity.x, entity.y, 0);
       pointColors.push(color.r, color.g, color.b);
       pointSizes.push(emphasized ? HIGHLIGHT_POINT_SIZE_PX : POINT_SIZE_PX);
+    }
+    // The origin is shown by its arrows; it only gets a dot while hovered or selected.
+    const origin = hovered === ORIGIN_ID ? this.materials.colors.hovered : selectedSet.has(ORIGIN_ID) ? this.materials.colors.selected : null;
+    if (origin && this.look === 'active') {
+      pointPositionsOut.push(0, 0, 0);
+      pointColors.push(origin.r, origin.g, origin.b);
+      pointSizes.push(HIGHLIGHT_POINT_SIZE_PX);
     }
     const geometry = this.points.geometry;
     geometry.setAttribute('position', new BufferAttribute(new Float32Array(pointPositionsOut), 3));

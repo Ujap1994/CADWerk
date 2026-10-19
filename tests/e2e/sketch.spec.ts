@@ -424,3 +424,56 @@ test('draws with the tools: snapping, automatic relations, drag drawing, Esc and
   expect(feature?.type).toBe('sketch');
   expect(feature?.sketch?.entities.length).toBeGreaterThan(15);
 });
+
+test('adds relations to selected geometry, refuses over-defining ones and deletes them', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [P('a', 0, 0), P('b', 40, 6), { id: 'l1', type: 'line', p1: 'a', p2: 'b' }, P('c', 0, 30), P('d', 40, 40), { id: 'l2', type: 'line', p1: 'c', p2: 'd' }],
+      constraints: [],
+    };
+    const features = [{ id: 's', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await page.dblclick('.tree-item[data-feature-id="s"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const click = async (u: number, v: number, modifiers: ('Shift' | 'Meta' | 'Control')[] = []) => {
+    const p = await project(page, [u, v, 0]);
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y);
+    for (const key of modifiers) await page.keyboard.down(key);
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+    for (const key of modifiers) await page.keyboard.up(key);
+  };
+  const constraints = async () => ((await state(page)).sketch?.draft.sketch.constraints ?? []).map((c) => (c as unknown as { type: string }).type);
+  const y = async (id: string) => (await state(page)).sketch?.draft.sketch.entities.find((e) => e.id === id)?.y as number;
+
+  // One line: horizontal and vertical are offered; horizontal straightens it.
+  await click(20, 3);
+  await expect(page.locator('[data-testid="sketch-selection"] .relation-button')).toHaveText(['Horizontal', 'Vertical']);
+  await page.click('.relation-button[data-relation="horizontal"]');
+  await expect.poll(constraints).toEqual(['horizontal']);
+  expect(await y('b')).toBeCloseTo(await y('a'), 6);
+  await expect(page.locator('.relation-item')).toHaveText(['Horizontal']);
+
+  // Two lines: parallel makes the second one horizontal too ...
+  await click(20, 35, ['Shift']);
+  expect((await state(page)).sketchSelection).toHaveLength(2);
+  await page.click('.relation-button[data-relation="parallel"]');
+  await expect.poll(constraints).toEqual(['horizontal', 'parallel']);
+  expect(await y('d')).toBeCloseTo(await y('c'), 6);
+
+  // ... so making it horizontal as well would over-define the sketch: refused with a message.
+  const second = (await y('c')) as number;
+  await click(20, second);
+  await page.click('.relation-button[data-relation="horizontal"]');
+  await expect(page.locator('.toast')).toContainText('over-define');
+  expect(await constraints()).toEqual(['horizontal', 'parallel']);
+
+  // Relations of the selection can be deleted from the list.
+  await page.click('.relation-item[data-constraint] .icon-button');
+  expect(await constraints()).toEqual(['horizontal']);
+});

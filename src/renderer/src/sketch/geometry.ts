@@ -133,7 +133,9 @@ export interface SketchHit {
  * curve. Points win so that end points and centers stay grabbable on top of their curves.
  */
 export function hitTest(sketch: SketchData, positions: ReadonlyMap<string, Point2>, u: number, v: number, tolerance: number): SketchHit | null {
-  let point: SketchHit | null = null;
+  // The sketch origin can be picked (for relations and dimensions) but is not an entity.
+  const fromOrigin = Math.hypot(u, v);
+  let point: SketchHit | null = fromOrigin <= tolerance ? { id: ORIGIN_ID, type: 'point', distance: fromOrigin } : null;
   let curve: SketchHit | null = null;
   for (const entity of sketch.entities) {
     if (entity.type === 'point') {

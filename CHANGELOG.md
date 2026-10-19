@@ -21,6 +21,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   point; snapping to points, midpoints and curves, inference lines, automatic coincident, midpoint,
   on-curve, horizontal and vertical relations; measurements next to the cursor; drawing by clicking or
   dragging; keyboard shortcuts; construction geometry toggle.
+- Relations for selected sketch geometry (horizontal, vertical, coincident, on curve, midpoint, parallel,
+  perpendicular, collinear, equal, tangent, concentric, symmetric, fix), offered according to the
+  selection and checked by the solver: over-defining or conflicting relations are refused with a
+  message; existing relations of the selection are listed and can be deleted.
 - Command bar tabs *Features* and *Sketch*.
 - Own sparse 2D constraint solver running in a worker (the basis for relations and dimensions).
 

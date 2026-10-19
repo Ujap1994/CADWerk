@@ -6,7 +6,10 @@ import { decodePartFile, encodePartFile, PartFileError } from '../../shared/mode
 import { frameOnPlane, STANDARD_PLANES, type SketchData, type SketchPlaneRef } from '../../shared/model/sketch.ts';
 import type { Settings } from '../../shared/settings.ts';
 import { changeLanguage, t } from './i18n.ts';
+import { SketchBuilder } from './sketch/builder.ts';
 import { deleteEntities } from './sketch/geometry.ts';
+import { applicableRelations, type RelationKind } from './sketch/relations.ts';
+import { sketchSolver } from './sketch/solver.ts';
 import {
   applySketchSession,
   hasSketchChanges,
@@ -408,6 +411,48 @@ export function selectSketchEntity(id: string | null, additive: boolean): void {
   const selected = sketchSelection.includes(id);
   if (additive) setState({ sketchSelection: selected ? sketchSelection.filter((other) => other !== id) : [...sketchSelection, id] });
   else setState({ sketchSelection: selected && sketchSelection.length === 1 ? [] : [id] });
+}
+
+/**
+ * Adds a relation to the selected geometry. The solver checks it first: a relation that already
+ * follows from others (it would over-define the sketch) or contradicts them is refused with a message.
+ */
+export async function addSketchRelation(kind: RelationKind): Promise<void> {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  const base = sketch.draft.sketch;
+  const option = applicableRelations(base, sketchSelection).find((candidate) => candidate.kind === kind);
+  if (!option) return;
+  const builder = new SketchBuilder(base);
+  for (const relation of option.relations) builder.relation(relation);
+  const next = builder.build();
+  const added = next.constraints.slice(base.constraints.length);
+  try {
+    const solver = sketchSolver();
+    for (const [i, candidate] of added.entries()) {
+      const before = { entities: base.entities, constraints: [...base.constraints, ...added.slice(0, i)] };
+      if (await solver.isRedundant(before, candidate)) {
+        showToast('info', t('sketch.messages.redundantRelation'));
+        return;
+      }
+    }
+    const solution = await solver.solve(next, { analyze: false });
+    if (!solution.converged) {
+      showToast('error', t('sketch.messages.conflictingRelation'));
+      return;
+    }
+    // The sketch changed while the solver worked (undo, another edit): do not apply on top of it.
+    if (getState().sketch?.draft.sketch !== base) return;
+    recordSketchChange(solution.sketch);
+  } catch (error) {
+    showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
+  }
+}
+
+/** Removes one relation or dimension of the open sketch. */
+export function deleteSketchConstraint(id: string): void {
+  const sketch = getState().sketch;
+  if (sketch) recordSketchChange(deleteEntities(sketch.draft.sketch, [id]));
 }
 
 /** Deletes the selected sketch geometry with everything that depends on it. */

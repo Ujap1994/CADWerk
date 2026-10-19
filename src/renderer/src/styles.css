@@ -502,6 +502,42 @@ input {
   margin-bottom: 10px;
 }
 
+.relation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.relation-button {
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.relation-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.relation-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.relation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1px 0 1px 2px;
+  font-size: 12.5px;
+}
+
 .sketch-tool-name {
   margin: 0 0 4px;
   font-weight: 600;

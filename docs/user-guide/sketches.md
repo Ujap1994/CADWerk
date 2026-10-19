@@ -3,8 +3,8 @@
 > [!NOTE]
 > The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane
 > or planar face, sketch mode with its grid and its own undo history, the drawing tools with snapping and
-> automatic relations, selecting, dragging and deleting sketch geometry, and editing existing sketches.
-> Relation and dimension tools follow in the next updates; the page grows with them.
+> automatic relations, adding and removing relations, selecting, dragging and deleting sketch geometry,
+> and editing existing sketches. Dimensions follow in the next update; the page grows with them.
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or
@@ -118,6 +118,36 @@ your intent is kept when you later change dimensions:
 
 Next to the cursor, ParaWerk shows the size of what you are drawing (length and angle, width × height,
 radius and sweep) and the relations it will add.
+
+## Relations
+
+Relations are the geometric rules of a sketch: this line stays horizontal, these two lines stay
+parallel, this point stays on that circle. They keep your design intent when dimensions change. Many
+relations are added automatically while you draw; others you add yourself:
+
+1. Select the geometry (click, and **Shift**/**Ctrl**/**⌘**-click for more). The sketch origin can be
+   selected too.
+2. The **Selection** section of the side panel shows the relations that fit the selection. Click one to
+   add it; the geometry moves just as much as needed to follow it.
+3. Below, the relations the selected geometry already has are listed; the trash button removes one.
+
+![Two lines selected: the relations that fit, and the existing ones](../images/screenshots/sketch-relations.png)
+
+| Selection | Relations offered |
+|---|---|
+| One or more lines | Horizontal, vertical (for each line); with two or more lines also equal length |
+| Two lines | Parallel, perpendicular, collinear, equal length |
+| Two points | Horizontal, vertical (aligned with each other), coincident, fix |
+| A point and a line | On curve (on the line or its extension), midpoint |
+| A point and a circle or arc | On curve |
+| Two circles or arcs | Equal radius, tangent, concentric |
+| A line and a circle or arc | Tangent |
+| Two points and a line | Symmetric about the line |
+| Points | Fix (the point does not move anymore) |
+
+ParaWerk checks every new relation with the solver first. A relation that already follows from the
+existing relations and dimensions (it would *over-define* the sketch) or contradicts them is refused
+with a message, so a sketch never ends up in a state it cannot solve.
 
 ## Working with sketch geometry
 

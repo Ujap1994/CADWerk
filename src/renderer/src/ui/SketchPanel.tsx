@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { STANDARD_PLANES, type SketchPlaneRef } from '../../../shared/model/sketch.ts';
 import * as commands from '../commands.ts';
+import { applicableRelations, relationKindOf, relationsOf } from '../sketch/relations.ts';
 import { useAppState } from '../state/store.ts';
 import { useFeatureName } from './FeatureTree.tsx';
-import { CheckIcon, CloseIcon, PlaneIcon, SketchIcon } from './icons.tsx';
+import { CheckIcon, CloseIcon, PlaneIcon, SketchIcon, TrashIcon } from './icons.tsx';
 
 function usePlaneName() {
   const { t } = useTranslation();
@@ -44,6 +45,58 @@ function PlaneChoice() {
         </div>
       </fieldset>
     </section>
+  );
+}
+
+/** Relations to add to the selected geometry, and the relations it already has. */
+function SelectionSection() {
+  const { t } = useTranslation();
+  const sketch = useAppState((state) => state.sketch?.draft.sketch);
+  const selection = useAppState((state) => state.sketchSelection);
+  if (!sketch || selection.length === 0) return null;
+  const options = applicableRelations(sketch, selection);
+  const existing = relationsOf(sketch, selection);
+  return (
+    <fieldset className="panel-section" data-testid="sketch-selection">
+      <legend className="panel-section-title">{t('sketch.selection')}</legend>
+      <p className="sketch-count">{t('status.selected', { count: selection.length })}</p>
+      <span className="field-label">{t('sketch.addRelation')}</span>
+      {options.length > 0 ? (
+        <div className="relation-buttons">
+          {options.map((option) => (
+            <button key={option.kind} type="button" className="relation-button" data-relation={option.kind} onClick={() => void commands.addSketchRelation(option.kind)}>
+              {t(`sketch.relationNames.${option.kind}`)}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="panel-hint is-flush">{t('sketch.noApplicableRelation')}</p>
+      )}
+      <span className="field-label">{t('sketch.existingRelations')}</span>
+      {existing.length > 0 ? (
+        <ul className="relation-list">
+          {existing.map((constraint) => {
+            const kind = relationKindOf(constraint);
+            return (
+              <li key={constraint.id} className="relation-item" data-constraint={constraint.id}>
+                <span>{kind ? t(`sketch.relationNames.${kind}`) : constraint.type}</span>
+                <button
+                  type="button"
+                  className="icon-button is-danger"
+                  title={t('sketch.deleteRelation')}
+                  aria-label={t('sketch.deleteRelation')}
+                  onClick={() => commands.deleteSketchConstraint(constraint.id)}
+                >
+                  <TrashIcon />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="panel-hint is-flush">{t('sketch.noRelations')}</p>
+      )}
+    </fieldset>
   );
 }
 
@@ -89,6 +142,7 @@ function OpenSketch() {
         <p className="panel-hint is-flush">{t(`sketch.toolHints.${tool ?? 'select'}`)}</p>
         {tool ? <p className="panel-hint is-flush">{t('sketch.toolHints.snapping')}</p> : null}
       </fieldset>
+      {tool ? null : <SelectionSection />}
       <fieldset className="panel-section">
         <legend className="panel-section-title">{t('sketch.contents')}</legend>
         <p className="sketch-count">{t('sketch.entities', { count: entities.length })}</p>

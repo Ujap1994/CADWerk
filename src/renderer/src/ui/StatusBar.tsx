@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Language } from '../../../shared/i18n.ts';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
-import { STANDARD_PLANES, type SketchData } from '../../../shared/model/sketch.ts';
+import { ORIGIN_ID, STANDARD_PLANES, type SketchData } from '../../../shared/model/sketch.ts';
 import { formatNumber, formatQuantity } from '../format.ts';
 import { arcGeometry, pointPositions } from '../sketch/geometry.ts';
 import { useAppState, type Pick } from '../state/store.ts';
@@ -10,6 +10,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 /** "Line · 42.5 mm", "Circle · Ø 20 mm", ... for the sketch entity under the cursor. */
 function describeSketchEntity(sketch: SketchData, id: string, t: Translate, language: Language): string | null {
+  if (id === ORIGIN_ID) return t('features.origin');
   const entity = sketch.entities.find((candidate) => candidate.id === id);
   if (!entity) return null;
   const positions = pointPositions(sketch);

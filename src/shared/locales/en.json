@@ -309,13 +309,6 @@
     "exitHint": "✓ keeps the sketch, ✕ discards your changes. Undo and redo work step by step inside the sketch.",
     "ok": "Keep sketch",
     "cancel": "Discard changes",
-    "relations": {
-      "horizontal": "Horizontal",
-      "vertical": "Vertical",
-      "coincident": "Coincident",
-      "midpoint": "Midpoint",
-      "onCurve": "On curve"
-    },
     "toolHints": {
       "select": "Drag geometry to move it, click to select. Choose a drawing tool in the Sketch tab.",
       "line": "Click the start point, then each next point. Clicking the start point closes the chain; Esc or a second click ends it.",
@@ -329,6 +322,31 @@
       "snapping": "Points snap to end points, midpoints and curves and align with other points (dashed lines); the matching relations are added automatically. Esc leaves the tool."
     },
     "tool": "Tool",
-    "selectTool": "Select"
+    "selectTool": "Select",
+    "selection": "Selection",
+    "addRelation": "Add relation",
+    "noApplicableRelation": "No relation fits this selection.",
+    "existingRelations": "Relations",
+    "noRelations": "The selected geometry has no relations yet.",
+    "deleteRelation": "Delete relation",
+    "relationNames": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "coincident": "Coincident",
+      "onCurve": "On curve",
+      "midpoint": "Midpoint",
+      "parallel": "Parallel",
+      "perpendicular": "Perpendicular",
+      "collinear": "Collinear",
+      "equal": "Equal",
+      "tangent": "Tangent",
+      "concentric": "Concentric",
+      "symmetric": "Symmetric",
+      "fix": "Fix"
+    },
+    "messages": {
+      "redundantRelation": "This relation already follows from the existing relations and dimensions, so it would over-define the sketch.",
+      "conflictingRelation": "This relation contradicts the existing relations and dimensions."
+    }
   }
 }

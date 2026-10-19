@@ -125,6 +125,20 @@ test('README and user guide screenshots', async () => {
   await page.screenshot({ path: out('sketch-drawing.png') });
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
+
+  // Two selected lines: the side panel offers the relations that fit and lists the existing ones.
+  const bottom = await sketchPoint(-31, -32);
+  const top = await sketchPoint(-31, 32);
+  if (canvas) {
+    await page.mouse.click(canvas.x + bottom.x, canvas.y + bottom.y);
+    await page.keyboard.down('Shift');
+    await page.mouse.click(canvas.x + top.x, canvas.y + top.y);
+    await page.keyboard.up('Shift');
+    await page.mouse.move(canvas.x + 40, canvas.y + 40);
+  }
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-relations.png') });
+  await page.keyboard.press('Escape');
   await page.click('[data-testid="sketch-ok"]');
   await page.evaluate(() => (window as unknown as { __parawerk: { commands: { setView(v: string): void } } }).__parawerk.commands.setView('isometric'));
   await idle(page);

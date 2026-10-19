@@ -54,7 +54,7 @@ export function describeToolInfo(info: ToolInfo, language: string): string {
   if (info.width !== undefined && info.height !== undefined) parts.push(`${number(info.width)} × ${number(info.height)} mm`);
   if (info.radius !== undefined) parts.push(`R ${number(info.radius)} mm`);
   if (info.angle !== undefined) parts.push(`${number(info.angle)}°`);
-  for (const relation of info.relations) parts.push(t(`sketch.relations.${relation}`));
+  for (const relation of info.relations) parts.push(t(`sketch.relationNames.${relation}`));
   return parts.join(' · ');
 }
 

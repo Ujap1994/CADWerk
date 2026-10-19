@@ -309,13 +309,6 @@
     "exitHint": "✓ übernimmt die Skizze, ✕ verwirft deine Änderungen. Rückgängig und Wiederholen arbeiten innerhalb der Skizze Schritt für Schritt.",
     "ok": "Skizze übernehmen",
     "cancel": "Änderungen verwerfen",
-    "relations": {
-      "horizontal": "Horizontal",
-      "vertical": "Vertikal",
-      "coincident": "Deckungsgleich",
-      "midpoint": "Mittelpunkt",
-      "onCurve": "Auf Kurve"
-    },
     "toolHints": {
       "select": "Geometrie ziehen, um sie zu verschieben, klicken zum Auswählen. Zeichenwerkzeuge findest du im Register Skizze.",
       "line": "Startpunkt klicken, dann jeden weiteren Punkt. Ein Klick auf den Startpunkt schließt den Zug; Esc oder ein zweiter Klick beendet ihn.",
@@ -329,6 +322,31 @@
       "snapping": "Punkte rasten an Endpunkten, Mittelpunkten und Kurven ein und richten sich an anderen Punkten aus (gestrichelte Linien); passende Beziehungen werden automatisch hinzugefügt. Esc verlässt das Werkzeug."
     },
     "tool": "Werkzeug",
-    "selectTool": "Auswählen"
+    "selectTool": "Auswählen",
+    "selection": "Auswahl",
+    "addRelation": "Beziehung hinzufügen",
+    "noApplicableRelation": "Für diese Auswahl passt keine Beziehung.",
+    "existingRelations": "Beziehungen",
+    "noRelations": "Die ausgewählte Geometrie hat noch keine Beziehungen.",
+    "deleteRelation": "Beziehung löschen",
+    "relationNames": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertikal",
+      "coincident": "Deckungsgleich",
+      "onCurve": "Auf Kurve",
+      "midpoint": "Mittelpunkt",
+      "parallel": "Parallel",
+      "perpendicular": "Senkrecht",
+      "collinear": "Kollinear",
+      "equal": "Gleich",
+      "tangent": "Tangential",
+      "concentric": "Konzentrisch",
+      "symmetric": "Symmetrisch",
+      "fix": "Fixiert"
+    },
+    "messages": {
+      "redundantRelation": "Diese Beziehung ergibt sich bereits aus den vorhandenen Beziehungen und Bemaßungen und würde die Skizze überbestimmen.",
+      "conflictingRelation": "Diese Beziehung widerspricht den vorhandenen Beziehungen und Bemaßungen."
+    }
   }
 }
