@@ -95,12 +95,18 @@ explains the active tool.
 | **Rectangle** | R | Click one corner, then the opposite corner (or drag). The sides get horizontal and vertical relations. |
 | **Center rectangle** | R | Click the center, then a corner. Dashed diagonals keep the center in the middle. |
 | **Circle** | C | Click the center, then a point on the circle (or drag). |
+| **3-point circle** | C | Click three points the circle passes through. |
 | **Arc** | A | Click the center and the start point, then move in the direction the arc should run and click the end point. |
 | **3-point arc** | A | Click the start and the end point, then a third point the arc passes through. |
+| **Tangent arc** | A | Click the end point of a line or arc, then where the arc should end. The arc continues the line or arc without a kink (*tangent* relation). |
+| **Slot** | | Click the centers of both rounded ends, then move sideways to set the width. Both straight sides are tangent to the equal end arcs. |
+| **Polygon** | | Set the number of sides in the side panel (3 to 64), click the center, then a corner. All sides stay equal; the corners lie on a construction circle, which you can dimension. |
 | **Point** | P | Click to place sketch points, for example for hole positions. |
 
-**R** and **A** start the variant you used last; the small arrow next to *Rectangle* and *Arc* offers all
-variants.
+**R**, **C** and **A** start the variant you used last; the small arrow next to *Rectangle*, *Circle* and
+*Arc* offers all variants.
+
+![A line continued by a tangent arc, a slot and a hexagon](../images/screenshots/sketch-tools.png)
 
 ![Drawing a line from a corner: preview, measurement and a horizontal relation](../images/screenshots/sketch-drawing.png)
 

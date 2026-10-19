@@ -19,7 +19,7 @@ function sketchToolForKey(key: string): SketchToolName | null {
     case 'r':
       return variants.rectangle;
     case 'c':
-      return 'circle';
+      return variants.circle;
     case 'a':
       return variants.arc;
     case 'p':

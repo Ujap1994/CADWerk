@@ -114,7 +114,9 @@ export class SketchController implements SketchInput, SketchToolControl {
     this.showCursorInfo = showCursorInfo;
     this.editorHost = editorHost;
     this.unsubscribe = store.subscribe((state, previous) => {
-      if (state.sketchTool !== previous.sketchTool || (state.sketch === null && previous.sketch !== null)) this.selectTool(state.sketchTool);
+      if (state.sketchTool !== previous.sketchTool || (state.sketch === null && previous.sketch !== null) || state.polygonSides !== previous.polygonSides) {
+        this.selectTool(state.sketchTool);
+      }
       else if (this.tool && state.sketch && state.sketch.draft.sketch !== this.toolSketch) {
         // Undo, redo or another change: the shape in progress may refer to geometry that is gone.
         this.tool.cancel();
@@ -291,7 +293,7 @@ export class SketchController implements SketchInput, SketchToolControl {
     this.tool?.cancel();
     const sketch = getState().sketch?.draft.sketch;
     if (sketch && !this.editor) this.showDraft(sketch, undefined);
-    this.tool = name ? createTool(name) : null;
+    this.tool = name ? createTool(name, { polygonSides: getState().polygonSides }) : null;
     this.toolSketch = getState().sketch?.draft.sketch ?? null;
     if (!this.tool) {
       this.engine.setSketchToolDisplay(null);

@@ -208,3 +208,64 @@ describe('point tool', () => {
     expectConsistent(onLine);
   });
 });
+
+describe('tangent arcs', () => {
+  it('continue a line tangentially from its end point', () => {
+    const line = draw(createTool('line'), [[0, 0], [30, 0]]);
+    const sketch = draw(createTool('tangentArc'), [[30, 0], [40, 10]], line);
+    const arc = sketch.entities.find((e) => e.type === 'arc');
+    if (arc?.type !== 'arc') throw new Error('no arc');
+    const center = sketch.entities.find((e) => e.id === arc.center) as { x: number; y: number };
+    // Leaving (30, 0) to the right and ending up at (40, 10): a quarter circle around (30, 10).
+    expect(center.x).toBeCloseTo(30, 9);
+    expect(center.y).toBeCloseTo(10, 9);
+    expect(sketch.constraints.find((c) => c.type === 'tangent')).toMatchObject({ a: 'l1', b: arc.id });
+    expectConsistent(sketch);
+  });
+
+  it('only start at the end of a curve, and mark arcs that touch from inside', () => {
+    const tool = createTool('tangentArc');
+    tool.click(EMPTY, event(5, 5));
+    expect(tool.busy).toBe(false);
+    // An arc from (10, 0) around the origin to (0, 10), continued by a smaller arc curving the same way.
+    const base = draw(createTool('centerArc'), [[0, 0], [10, 0], [0, 10]]);
+    const tangent = draw(createTool('tangentArc'), [[0, 10], [-5, 5]], base);
+    const relation = tangent.constraints.find((c) => c.type === 'tangent');
+    expect(relation).toMatchObject({ inner: true });
+    expectConsistent(tangent);
+  });
+});
+
+describe('three-point circles, slots and polygons', () => {
+  it('draws a circle through three points, keeping existing points on it', () => {
+    const base = draw(createTool('point'), [[10, 0]]);
+    const sketch = draw(createTool('threePointCircle'), [[10, 0], [0, 10], [-10, 0]], base);
+    expect(sketch.entities.find((e) => e.type === 'circle')).toMatchObject({ radius: 10 });
+    expect(types(sketch)).toEqual(['pointOnCircle']);
+    expectConsistent(sketch);
+  });
+
+  it('draws a slot of tangent lines and equal arcs around a construction axis', () => {
+    const sketch = draw(createTool('slot'), [[0, 0], [40, 0.2], [20, 8]]);
+    expect(sketch.entities.filter((e) => e.type === 'line' && !e.construction)).toHaveLength(2);
+    expect(sketch.entities.filter((e) => e.type === 'arc')).toHaveLength(2);
+    expect(types(sketch)).toEqual(['equal', 'horizontal', 'tangent', 'tangent', 'tangent', 'tangent']);
+    const arc = sketch.entities.find((e) => e.type === 'arc');
+    if (arc?.type !== 'arc') throw new Error('no arc');
+    const [center, start] = [arc.center, arc.start].map((id) => sketch.entities.find((e) => e.id === id) as { x: number; y: number });
+    expect(Math.hypot((start?.x ?? 0) - (center?.x ?? 0), (start?.y ?? 0) - (center?.y ?? 0))).toBeCloseTo(8, 9);
+    expectConsistent(sketch);
+  });
+
+  it('draws regular polygons with the chosen number of sides', () => {
+    const sketch = draw(createTool('polygon', { polygonSides: 6 }), [[0, 0], [20, 0.3]]);
+    const sides = sketch.entities.filter((e) => e.type === 'line');
+    expect(sides).toHaveLength(6);
+    expect(sketch.entities.find((e) => e.type === 'circle')).toMatchObject({ construction: true, radius: 20 });
+    expect(types(sketch).filter((t) => t === 'equal')).toHaveLength(5);
+    expect(types(sketch).filter((t) => t === 'pointOnCircle')).toHaveLength(6);
+    expect(types(sketch)).toContain('horizontalPoints');
+    expectConsistent(sketch);
+    expect(draw(createTool('polygon', { polygonSides: 1 }), [[0, 0], [10, 3]]).entities.filter((e) => e.type === 'line')).toHaveLength(3);
+  });
+});

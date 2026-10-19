@@ -6,6 +6,7 @@ import { applicableRelations, relationKindOf, relationsOf } from '../sketch/rela
 import { useAppState } from '../state/store.ts';
 import { useFeatureName } from './FeatureTree.tsx';
 import { CheckIcon, CloseIcon, PlaneIcon, SketchIcon, TrashIcon } from './icons.tsx';
+import { NumberField } from './NumberField.tsx';
 
 function usePlaneName() {
   const { t } = useTranslation();
@@ -57,6 +58,14 @@ function useConstraintName() {
     const kind = relationKindOf(constraint);
     return kind ? t(`sketch.relationNames.${kind}`) : constraint.type;
   };
+}
+
+function PolygonSides() {
+  const { t } = useTranslation();
+  const sides = useAppState((state) => state.polygonSides);
+  return (
+    <NumberField label={t('sketch.polygonSides')} value={sides} unit="" step={1} testId="polygon-sides" onChange={(value) => commands.setPolygonSides(value)} />
+  );
 }
 
 /** Under, fully or over defined, with what to do about it; conflicting constraints can be deleted. */
@@ -203,6 +212,7 @@ function OpenSketch() {
         <legend className="panel-section-title">{t('sketch.tool')}</legend>
         <p className="sketch-tool-name">{tool ? t(`commands.sketchTools.${tool}`) : t('sketch.selectTool')}</p>
         <p className="panel-hint is-flush">{t(`sketch.toolHints.${tool ?? 'select'}`)}</p>
+        {tool === 'polygon' ? <PolygonSides /> : null}
         {tool ? <p className="panel-hint is-flush">{t('sketch.toolHints.snapping')}</p> : null}
       </fieldset>
       {tool ? null : <SelectionSection />}

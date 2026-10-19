@@ -75,7 +75,13 @@ export interface AppState {
   /** Active drawing tool in sketch mode; null selects and drags. */
   sketchTool: SketchToolName | null;
   /** Last used variant of the tools with variants, offered first in the command bar. */
-  sketchToolVariants: { rectangle: 'cornerRectangle' | 'centerRectangle'; arc: 'centerArc' | 'threePointArc' };
+  sketchToolVariants: {
+    rectangle: 'cornerRectangle' | 'centerRectangle';
+    circle: 'circle' | 'threePointCircle';
+    arc: 'centerArc' | 'threePointArc' | 'tangentArc';
+  };
+  /** Number of sides the polygon tool draws. */
+  polygonSides: number;
   selection: Pick[];
   hover: Pick | null;
 
@@ -107,7 +113,8 @@ export const initialState: AppState = {
   sketchAnalysis: null,
   sketchStatuses: {},
   sketchTool: null,
-  sketchToolVariants: { rectangle: 'cornerRectangle', arc: 'centerArc' },
+  sketchToolVariants: { rectangle: 'cornerRectangle', circle: 'circle', arc: 'centerArc' },
+  polygonSides: 6,
   selection: [],
   hover: null,
   kernelStatus: 'loading',

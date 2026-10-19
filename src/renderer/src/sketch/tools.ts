@@ -7,10 +7,23 @@
 import type { SketchData } from '../../../shared/model/sketch.ts';
 import { SketchBuilder, type PlacedPoint } from './builder.ts';
 import { proposeDimension, type DimensionDraft } from './dimensions.ts';
-import { arcGeometry, hitTest, pointPositions, type Point2 } from './geometry.ts';
+import { arcGeometry, hitTest, isCurve, pointPositions, type Point2 } from './geometry.ts';
 import { snapCursor, type SnapResult } from './snap.ts';
 
-export type SketchToolName = 'line' | 'centerline' | 'cornerRectangle' | 'centerRectangle' | 'circle' | 'centerArc' | 'threePointArc' | 'point' | 'dimension';
+export type SketchToolName =
+  | 'line'
+  | 'centerline'
+  | 'cornerRectangle'
+  | 'centerRectangle'
+  | 'circle'
+  | 'threePointCircle'
+  | 'centerArc'
+  | 'threePointArc'
+  | 'tangentArc'
+  | 'slot'
+  | 'polygon'
+  | 'point'
+  | 'dimension';
 
 export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'line',
@@ -18,11 +31,22 @@ export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'cornerRectangle',
   'centerRectangle',
   'circle',
+  'threePointCircle',
   'centerArc',
   'threePointArc',
+  'tangentArc',
+  'slot',
+  'polygon',
   'point',
   'dimension',
 ];
+
+/** Settings of tools that have them. */
+export interface ToolOptions {
+  polygonSides: number;
+}
+
+export const DEFAULT_TOOL_OPTIONS: ToolOptions = { polygonSides: 6 };
 
 export interface ToolEvent {
   u: number;
@@ -34,7 +58,7 @@ export interface ToolEvent {
 }
 
 /** Relations the finished shape will get from the current cursor position. */
-export type ToolRelation = 'horizontal' | 'vertical' | 'coincident' | 'midpoint' | 'onCurve';
+export type ToolRelation = 'horizontal' | 'vertical' | 'coincident' | 'midpoint' | 'onCurve' | 'tangent';
 
 export interface ToolInfo {
   length?: number;
@@ -561,7 +585,315 @@ export class DimensionTool implements SketchTool {
   }
 }
 
-export function createTool(name: SketchToolName): SketchTool {
+const sub = (a: Point2, b: Point2): Point2 => [a[0] - b[0], a[1] - b[1]];
+const dot = (a: Point2, b: Point2) => a[0] * b[0] + a[1] * b[1];
+function unit(a: Point2): Point2 {
+  const l = Math.hypot(a[0], a[1]);
+  return l > 0 ? [a[0] / l, a[1] / l] : [1, 0];
+}
+
+/**
+ * Where a curve that ends at `pointId` leaves that point: the direction to continue tangentially,
+ * and the curve. The most recently drawn curve wins when several end there.
+ */
+export function tangentAt(sketch: SketchData, pointId: string): { direction: Point2; curve: string; center: Point2 | null } | null {
+  const positions = pointPositions(sketch);
+  const at = positions.get(pointId);
+  if (!at) return null;
+  for (let i = sketch.entities.length - 1; i >= 0; i--) {
+    const entity = sketch.entities[i];
+    if (!entity || !isCurve(entity) || entity.construction) continue;
+    if (entity.type === 'line' && (entity.p1 === pointId || entity.p2 === pointId)) {
+      const other = positions.get(entity.p1 === pointId ? entity.p2 : entity.p1);
+      if (other) return { direction: unit(sub(at, other)), curve: entity.id, center: null };
+    }
+    if (entity.type === 'arc' && (entity.start === pointId || entity.end === pointId)) {
+      const center = positions.get(entity.center);
+      if (!center) continue;
+      const [rx, ry] = sub(at, center);
+      // Leaving the end of a counterclockwise arc turns left of the radius; leaving its start, right.
+      return { direction: unit(entity.end === pointId ? [-ry, rx] : [ry, -rx]), curve: entity.id, center };
+    }
+  }
+  return null;
+}
+
+/** The arc that starts at `start` in `direction` and ends at `end`; null if the end lies on the tangent. */
+export function tangentArcThrough(start: Point2, direction: Point2, end: Point2): { center: Point2; radius: number; counterclockwise: boolean } | null {
+  const normal: Point2 = [-direction[1], direction[0]];
+  const chord = sub(start, end);
+  const denominator = 2 * dot(normal, chord);
+  if (Math.abs(denominator) < 1e-9 * Math.max(1, dot(chord, chord))) return null;
+  const signed = -dot(chord, chord) / denominator;
+  return { center: [start[0] + normal[0] * signed, start[1] + normal[1] * signed], radius: Math.abs(signed), counterclockwise: signed > 0 };
+}
+
+/** Arcs that continue a line or arc tangentially from its end point. */
+export class TangentArcTool implements SketchTool {
+  readonly name = 'tangentArc' as const;
+  private start: { id: string; at: Point2; direction: Point2; curve: string; center: Point2 | null } | null = null;
+
+  get busy(): boolean {
+    return this.start !== null;
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const snap = snapAt(sketch, event);
+    const start = this.start;
+    if (!start) {
+      const usable = snap.target.kind === 'point' && tangentAt(sketch, snap.target.id) !== null;
+      return { geometry: EMPTY, snap: usable ? snap : { ...snap, target: { kind: 'none' } }, info: null };
+    }
+    const arc = tangentArcThrough(start.at, start.direction, at(snap));
+    const preview = new Preview();
+    if (!arc) {
+      preview.line(start.at, at(snap));
+      return { geometry: preview.build(), snap, info: null };
+    }
+    preview.arc(arc.center, arc.counterclockwise ? start.at : at(snap), arc.counterclockwise ? at(snap) : start.at);
+    const geometry = arcGeometry(arc.center, arc.counterclockwise ? start.at : at(snap), arc.counterclockwise ? at(snap) : start.at);
+    return { geometry: preview.build(), snap, info: { radius: arc.radius, angle: (geometry.sweep * 180) / Math.PI, relations: ['tangent', ...snapRelations(snap, false)] } };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const snap = snapAt(sketch, event);
+    const start = this.start;
+    if (!start) {
+      const tangent = snap.target.kind === 'point' ? tangentAt(sketch, snap.target.id) : null;
+      if (tangent && snap.target.kind === 'point') this.start = { id: snap.target.id, at: at(snap), ...tangent };
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const arc = tangentArcThrough(start.at, start.direction, at(snap));
+    if (!arc || Math.hypot(snap.u - start.at[0], snap.v - start.at[1]) < event.tolerance * MIN_SIZE_FACTOR) {
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const builder = new SketchBuilder(sketch);
+    const center = builder.freePoint(...arc.center);
+    const end = builder.point(placed(snap));
+    const id = arc.counterclockwise ? builder.arc(center, start.id, end) : builder.arc(center, end, start.id);
+    // Two arcs touch from inside when their centers lie on the same side of the shared point.
+    const inner = start.center !== null && dot(sub(start.center, start.at), sub(arc.center, start.at)) > 0;
+    builder.relation(inner ? { type: 'tangent', a: start.curve, b: id, inner } : { type: 'tangent', a: start.curve, b: id });
+    this.start = null;
+    const commit = builder.build();
+    return { commit, preview: this.hover(commit, event) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.start = null;
+    return busy;
+  }
+}
+
+/** Circles through three points. */
+export class ThreePointCircleTool implements SketchTool {
+  readonly name = 'threePointCircle' as const;
+  private points: SnapResult[] = [];
+
+  get busy(): boolean {
+    return this.points.length > 0;
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const snap = snapAt(sketch, event);
+    const [a, b] = this.points;
+    const preview = new Preview();
+    if (a && !b) preview.line(at(a), at(snap), true);
+    if (a && b) {
+      const center = circumcenter(at(a), at(b), at(snap));
+      if (center) {
+        const radius = Math.hypot(a.u - center[0], a.v - center[1]);
+        preview.circle(center, radius);
+        return { geometry: preview.build(), snap, info: { radius, relations: snapRelations(snap, false) } };
+      }
+      preview.line(at(a), at(b));
+    }
+    return { geometry: preview.build(), snap, info: { relations: snapRelations(snap, false) } };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const snap = snapAt(sketch, event);
+    const points = [...this.points, snap];
+    const [a, b, c] = points;
+    if (!a || !b || !c) {
+      if (a && b && Math.hypot(b.u - a.u, b.v - a.v) < event.tolerance * MIN_SIZE_FACTOR) return { commit: null, preview: this.hover(sketch, event) };
+      this.points = points;
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const center = circumcenter(at(a), at(b), at(c));
+    if (!center) return { commit: null, preview: this.hover(sketch, event) };
+    const builder = new SketchBuilder(sketch);
+    const circle = builder.circle(builder.freePoint(...center), Math.hypot(a.u - center[0], a.v - center[1]));
+    // The circle keeps passing through the existing points it was drawn through.
+    for (const point of points) if (point.target.kind === 'point') builder.relation({ type: 'pointOnCircle', point: point.target.id, circle });
+    this.points = [];
+    const commit = builder.build();
+    return { commit, preview: this.hover(commit, event) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.points = [];
+    return busy;
+  }
+}
+
+/** Straight slots: the two arc centers, then the width. Lines and arcs are tangent and of equal radius. */
+export class SlotTool implements SketchTool {
+  readonly name = 'slot' as const;
+  private first: PlacedPoint | null = null;
+  private second: SnapResult | null = null;
+
+  get busy(): boolean {
+    return this.first !== null;
+  }
+
+  /** Corners of the slot: start and end of both straight sides. */
+  private outline(a: Point2, b: Point2, radius: number): { normal: Point2; corners: [Point2, Point2, Point2, Point2] } {
+    const d = unit(sub(b, a));
+    const n: Point2 = [-d[1], d[0]];
+    const off = (p: Point2, s: number): Point2 => [p[0] + n[0] * radius * s, p[1] + n[1] * radius * s];
+    return { normal: n, corners: [off(a, 1), off(b, 1), off(b, -1), off(a, -1)] };
+  }
+
+  private radiusAt(a: Point2, b: Point2, cursor: Point2): number {
+    const d = unit(sub(b, a));
+    return Math.abs(dot(sub(cursor, a), [-d[1], d[0]]));
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const first = this.first;
+    const snap = snapAt(sketch, event, first && !this.second ? at(first) : null);
+    const preview = new Preview();
+    if (first && !this.second) {
+      preview.line(at(first), at(snap), true);
+      return { geometry: preview.build(), snap, info: { length: Math.hypot(snap.u - first.u, snap.v - first.v), relations: snapRelations(snap, true) } };
+    }
+    if (first && this.second) {
+      const radius = this.radiusAt(at(first), at(this.second), [event.u, event.v]);
+      const { corners } = this.outline(at(first), at(this.second), radius);
+      preview.line(corners[0], corners[1]);
+      preview.line(corners[2], corners[3]);
+      preview.arc(at(this.second), corners[2], corners[1]);
+      preview.arc(at(first), corners[0], corners[3]);
+      preview.line(at(first), at(this.second), true);
+      return { geometry: preview.build(), snap: { ...snap, target: { kind: 'none' }, alignments: [] }, info: { radius, relations: [] } };
+    }
+    return { geometry: EMPTY, snap, info: { relations: snapRelations(snap, false) } };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const first = this.first;
+    const snap = snapAt(sketch, event, first && !this.second ? at(first) : null);
+    if (!first) {
+      this.first = placed(snap);
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    if (!this.second) {
+      if (Math.hypot(snap.u - first.u, snap.v - first.v) < event.tolerance * MIN_SIZE_FACTOR) return { commit: null, preview: this.hover(sketch, event) };
+      this.second = snap;
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const second = this.second;
+    const radius = this.radiusAt(at(first), at(second), [event.u, event.v]);
+    if (radius < event.tolerance * MIN_SIZE_FACTOR) return { commit: null, preview: this.hover(sketch, event) };
+    const { corners } = this.outline(at(first), at(second), radius);
+    const builder = new SketchBuilder(sketch);
+    const c1 = builder.point(first);
+    const c2 = builder.point(placed(second));
+    const [p0, p1, p2, p3] = corners.map((corner) => builder.freePoint(...corner)) as [string, string, string, string];
+    const top = builder.line(p0, p1);
+    const bottom = builder.line(p2, p3);
+    // The end arcs run counterclockwise around the outside of the slot.
+    const end = builder.arc(c2, p2, p1);
+    const startArc = builder.arc(c1, p0, p3);
+    const axis = builder.line(c1, c2, true);
+    for (const [line, arc] of [[top, end], [top, startArc], [bottom, end], [bottom, startArc]] as const) builder.relation({ type: 'tangent', a: line, b: arc });
+    builder.relation({ type: 'equal', a: startArc, b: end });
+    for (const alignment of second.alignments) if (alignment.anchor) builder.relation({ type: alignment.axis, line: axis });
+    this.first = null;
+    this.second = null;
+    const commit = builder.build();
+    return { commit, preview: this.hover(commit, event) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.first = null;
+    this.second = null;
+    return busy;
+  }
+}
+
+/** Regular polygons from the center and one corner, around a construction circle. */
+export class PolygonTool implements SketchTool {
+  readonly name = 'polygon' as const;
+  private readonly sides: number;
+  private center: PlacedPoint | null = null;
+
+  constructor(sides: number) {
+    this.sides = Math.max(3, Math.min(64, Math.round(sides)));
+  }
+
+  get busy(): boolean {
+    return this.center !== null;
+  }
+
+  private corners(center: Point2, corner: Point2): Point2[] {
+    const radius = Math.hypot(corner[0] - center[0], corner[1] - center[1]);
+    const start = Math.atan2(corner[1] - center[1], corner[0] - center[0]);
+    return Array.from({ length: this.sides }, (_, i) => {
+      const angle = start + (2 * Math.PI * i) / this.sides;
+      return [center[0] + radius * Math.cos(angle), center[1] + radius * Math.sin(angle)] as Point2;
+    });
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const center = this.center;
+    const snap = snapAt(sketch, event, center ? at(center) : null);
+    if (!center) return { geometry: EMPTY, snap, info: { relations: snapRelations(snap, false) } };
+    const corners = this.corners(at(center), at(snap));
+    const preview = new Preview();
+    corners.forEach((corner, i) => preview.line(corner, corners[(i + 1) % corners.length] as Point2));
+    const radius = Math.hypot(snap.u - center.u, snap.v - center.v);
+    preview.circle(at(center), radius, true);
+    return { geometry: preview.build(), snap, info: { radius, relations: snapRelations(snap, true).filter((relation) => relation === 'horizontal' || relation === 'vertical') } };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const center = this.center;
+    const snap = snapAt(sketch, event, center ? at(center) : null);
+    if (!center) {
+      this.center = placed(snap);
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const radius = Math.hypot(snap.u - center.u, snap.v - center.v);
+    if (radius < event.tolerance * MIN_SIZE_FACTOR) return { commit: null, preview: this.hover(sketch, event) };
+    const builder = new SketchBuilder(sketch);
+    const c = builder.point(center);
+    const circle = builder.circle(c, radius, true);
+    const points = this.corners(at(center), at(snap)).map((corner) => builder.freePoint(...corner));
+    const sides = points.map((point, i) => builder.line(point, points[(i + 1) % points.length] as string));
+    for (const point of points) builder.relation({ type: 'pointOnCircle', point, circle });
+    for (const side of sides.slice(1)) builder.relation({ type: 'equal', a: sides[0] as string, b: side });
+    // A corner placed level with or above the center keeps the polygon's orientation.
+    for (const alignment of snap.alignments) {
+      if (alignment.anchor) builder.relation({ type: alignment.axis === 'horizontal' ? 'horizontalPoints' : 'verticalPoints', a: c, b: points[0] as string });
+    }
+    this.center = null;
+    const commit = builder.build();
+    return { commit, preview: this.hover(commit, event) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.center = null;
+    return busy;
+  }
+}
+
+export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_TOOL_OPTIONS): SketchTool {
   switch (name) {
     case 'line':
     case 'centerline':
@@ -571,6 +903,14 @@ export function createTool(name: SketchToolName): SketchTool {
       return new RectangleTool(name);
     case 'circle':
       return new CircleTool();
+    case 'threePointCircle':
+      return new ThreePointCircleTool();
+    case 'tangentArc':
+      return new TangentArcTool();
+    case 'slot':
+      return new SlotTool();
+    case 'polygon':
+      return new PolygonTool(options.polygonSides);
     case 'centerArc':
       return new CenterArcTool();
     case 'threePointArc':

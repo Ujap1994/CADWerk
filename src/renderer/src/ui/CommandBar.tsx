@@ -12,6 +12,10 @@ import {
   ChamferIcon,
   ChevronDownIcon,
   CircleIcon,
+  PolygonIcon,
+  SlotIcon,
+  TangentArcIcon,
+  ThreePointCircleIcon,
   ConstructionIcon,
   CornerRectangleIcon,
   CylinderIcon,
@@ -42,8 +46,12 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   cornerRectangle: CornerRectangleIcon,
   centerRectangle: CenterRectangleIcon,
   circle: CircleIcon,
+  threePointCircle: ThreePointCircleIcon,
   centerArc: CenterArcIcon,
   threePointArc: ThreePointArcIcon,
+  tangentArc: TangentArcIcon,
+  slot: SlotIcon,
+  polygon: PolygonIcon,
   point: PointIcon,
   dimension: DimensionIcon,
 };
@@ -218,8 +226,10 @@ function SketchTab() {
         <ToolButton tool="line" disabled={off} />
         <ToolButton tool="centerline" disabled={off} />
         <SplitToolButton tools={['cornerRectangle', 'centerRectangle']} current={variants.rectangle} disabled={off} />
-        <ToolButton tool="circle" disabled={off} />
-        <SplitToolButton tools={['centerArc', 'threePointArc']} current={variants.arc} disabled={off} />
+        <SplitToolButton tools={['circle', 'threePointCircle']} current={variants.circle} disabled={off} />
+        <SplitToolButton tools={['centerArc', 'threePointArc', 'tangentArc']} current={variants.arc} disabled={off} />
+        <ToolButton tool="slot" disabled={off} />
+        <ToolButton tool="polygon" disabled={off} />
         <ToolButton tool="point" disabled={off} />
       </Group>
       <Group label={t('commands.groups.modify')}>

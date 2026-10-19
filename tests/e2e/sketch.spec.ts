@@ -498,7 +498,7 @@ test('fits the smallest window in sketch mode: nothing overflows, the whole view
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth);
   expect(layout.canvasRight).toBeLessThanOrEqual(layout.innerWidth);
   // Every command of the sketch tab is on screen.
-  for (const command of ['exit-sketch', 'tool-line', 'tool-point', 'construction', 'delete-sketch', 'settings', 'about']) {
+  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'construction', 'delete-sketch', 'settings', 'about']) {
     const box = await page.locator(`[data-command="${command}"]`).boundingBox();
     expect(box && box.x + box.width <= layout.innerWidth).toBe(true);
   }
@@ -656,4 +656,61 @@ test('shows under, fully and over defined sketches and lets conflicts be deleted
   await expect(page.locator('.dimension-label.is-conflict')).toHaveCount(0);
   await page.click('[data-testid="sketch-ok"]');
   await expect(page.locator('.tree-item[data-feature-id="over"] [data-sketch-status]')).toHaveCount(0);
+});
+
+test('draws tangent arcs, three-point circles, slots and polygons', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const clickAt = async (u: number, v: number) => {
+    const p = await project(page, [u, v, 0]);
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+  };
+  const sketch = async () => (await state(page)).sketch?.draft.sketch;
+  const count = async (type: string, construction = false) => (await sketch())?.entities.filter((e) => e.type === type && Boolean((e as { construction?: boolean }).construction) === construction).length;
+  const relations = async () => ((await sketch())?.constraints ?? []).map((c) => (c as unknown as { type: string }).type);
+
+  // A line, then an arc that continues it tangentially (Arc ▾ > Tangent arc).
+  await page.keyboard.press('l');
+  await clickAt(-60, -40);
+  await clickAt(-20, -40);
+  await page.keyboard.press('Escape');
+  await page.click('.split-toggle[data-variants="centerArc threePointArc tangentArc"]');
+  await page.click('.menu-item[data-tool="tangentArc"]');
+  await clickAt(-20, -40);
+  await clickAt(-5, -25);
+  expect(await count('arc')).toBe(1);
+  expect(await relations()).toContain('tangent');
+
+  // Circle ▾ > 3-point circle.
+  await page.click('.split-toggle[data-variants="circle threePointCircle"]');
+  await page.click('.menu-item[data-tool="threePointCircle"]');
+  await clickAt(40, -40);
+  await clickAt(50, -30);
+  await clickAt(40, -20);
+  expect(await count('circle')).toBe(1);
+
+  // A slot: two centers and the width.
+  await page.click('[data-command="tool-slot"]');
+  await clickAt(-50, 20);
+  await clickAt(-10, 20);
+  await clickAt(-30, 28);
+  expect(await count('arc')).toBe(3);
+  expect((await relations()).filter((type) => type === 'tangent')).toHaveLength(5);
+
+  // A pentagon: the number of sides is set in the side panel.
+  await page.click('[data-command="tool-polygon"]');
+  await page.locator('[data-testid="polygon-sides"]').fill('5');
+  await page.locator('[data-testid="polygon-sides"]').press('Enter');
+  await clickAt(40, 30);
+  await clickAt(55, 33);
+  expect(await count('line')).toBe(1 + 2 + 5);
+  expect(await count('circle', true)).toBe(1);
+  await page.click('[data-testid="sketch-ok"]');
+  expect((await state(page)).history.features).toHaveLength(1);
 });

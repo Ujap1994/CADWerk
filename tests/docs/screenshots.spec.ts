@@ -193,6 +193,42 @@ test('README and user guide screenshots', async () => {
   }, before);
   await idle(page);
 
+  // More drawing tools on the front plane, above the part: a line with a tangent arc, a slot, a hexagon.
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="front"]');
+  await idle(page);
+  await page.waitForTimeout(600);
+  const front = async (u: number, v: number) => {
+    const p = await page.evaluate(
+      ([x, y, z]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(x, y, z),
+      [u, 0, v] as const,
+    );
+    if (!canvas) return;
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+  };
+  await page.keyboard.press('l');
+  await front(-75, 75);
+  await front(-40, 75);
+  await page.keyboard.press('Escape');
+  await page.click('.split-toggle[data-variants="centerArc threePointArc tangentArc"]');
+  await page.click('.menu-item[data-tool="tangentArc"]');
+  await front(-40, 75);
+  await front(-25, 92);
+  await page.click('[data-command="tool-slot"]');
+  await front(-5, 88);
+  await front(30, 88);
+  await front(12, 96);
+  await page.click('[data-command="tool-polygon"]');
+  await front(65, 90);
+  await front(78, 90);
+  await page.keyboard.press('Escape');
+  if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: out('sketch-tools.png') });
+  await page.click('[data-testid="sketch-cancel"]');
+  await idle(page);
+
   await page.click('[data-command="settings"]');
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('settings-dialog.png') });

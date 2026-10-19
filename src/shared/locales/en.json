@@ -107,7 +107,11 @@
       "construction": "Construction",
       "delete": "Delete",
       "variants": "More variants",
-      "dimension": "Dimension"
+      "dimension": "Dimension",
+      "threePointCircle": "3-point circle",
+      "tangentArc": "Tangent arc",
+      "slot": "Slot",
+      "polygon": "Polygon"
     },
     "sketchToolTips": {
       "line": "Draw connected lines (L)",
@@ -120,7 +124,11 @@
       "point": "Place sketch points (P)",
       "construction": "Turn the selected geometry into construction geometry or back",
       "delete": "Delete the selected geometry (Delete)",
-      "dimension": "Dimension lengths, distances, angles and radii; the type follows from the selection (D)"
+      "dimension": "Dimension lengths, distances, angles and radii; the type follows from the selection (D)",
+      "threePointCircle": "Circle through three points (C)",
+      "tangentArc": "Arc that continues a line or arc tangentially from its end point (A)",
+      "slot": "Straight slot from the two arc centers and the width",
+      "polygon": "Regular polygon from the center and a corner"
     }
   },
   "features": {
@@ -325,7 +333,11 @@
       "threePointArc": "Click the start point and the end point, then a point the arc passes through.",
       "point": "Click to place points; on a line or circle they stay on it.",
       "snapping": "Points snap to end points, midpoints and curves and align with other points (dashed lines); the matching relations are added automatically. Esc leaves the tool.",
-      "dimension": "Click a line, circle or arc, or two entities (points, lines, circles). Move the value to where it belongs – above, beside or along the geometry – and click. Then type the value and press Enter."
+      "dimension": "Click a line, circle or arc, or two entities (points, lines, circles). Move the value to where it belongs – above, beside or along the geometry – and click. Then type the value and press Enter.",
+      "threePointCircle": "Click three points the circle passes through.",
+      "tangentArc": "Click the end point of a line or arc, then where the arc should end. The arc leaves the line or arc tangentially.",
+      "slot": "Click the centers of both ends, then move sideways to set the width and click.",
+      "polygon": "Click the center, then a corner. All sides stay equal; the corners lie on a construction circle."
     },
     "tool": "Tool",
     "selectTool": "Select",
@@ -381,6 +393,7 @@
       "radius": "Radius",
       "diameter": "Diameter",
       "angle": "Angle"
-    }
+    },
+    "polygonSides": "Sides"
   }
 }

@@ -29,6 +29,8 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- More drawing tools: tangent arc (continues a line or arc from its end point), 3-point circle, straight
+  slot (tangent sides, equal end arcs) and regular polygon (3 to 64 sides, on a construction circle).
 - Definition status of sketches: under-defined geometry is blue, fully defined dark, over-defined red;
   status in the side panel, the status bar and the feature tree; conflicting relations and dimensions are
   listed (and shown in red) and can be deleted. The solver analyzes sketches in the background after

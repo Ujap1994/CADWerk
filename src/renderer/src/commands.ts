@@ -381,8 +381,13 @@ export function setSketchTool(tool: SketchToolName | null): void {
   const next = tool === state.sketchTool ? null : tool;
   const variants = { ...state.sketchToolVariants };
   if (next === 'cornerRectangle' || next === 'centerRectangle') variants.rectangle = next;
-  if (next === 'centerArc' || next === 'threePointArc') variants.arc = next;
+  if (next === 'circle' || next === 'threePointCircle') variants.circle = next;
+  if (next === 'centerArc' || next === 'threePointArc' || next === 'tangentArc') variants.arc = next;
   setState({ sketchTool: next, sketchToolVariants: variants, sketchSelection: next ? [] : state.sketchSelection, sketchHover: null, commandTab: 'sketch' });
+}
+
+export function setPolygonSides(sides: number): void {
+  if (Number.isFinite(sides)) setState({ polygonSides: Math.max(3, Math.min(64, Math.round(sides))) });
 }
 
 /** Turns the selected curves into construction geometry, or back if all of them already are. */

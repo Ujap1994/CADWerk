@@ -276,6 +276,40 @@ export const ThreePointArcIcon = (p: P) => (
   </Icon>
 );
 
+export const ThreePointCircleIcon = (p: P) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="8" />
+    {dot(4.4, 9.5, 1.8)}
+    {dot(17.5, 6.2, 1.8)}
+    {dot(14.5, 19.6, 1.8)}
+  </Icon>
+);
+
+/** A line continued by an arc that leaves it tangentially. */
+export const TangentArcIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3 19h9a7 7 0 0 0 7-7V5" />
+    {dot(12, 19, 1.8)}
+    {dot(19, 5, 1.8)}
+  </Icon>
+);
+
+export const SlotIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M8 7h8a5 5 0 0 1 0 10H8A5 5 0 0 1 8 7z" />
+    <path d="M8 12h8" strokeDasharray="2 2" strokeWidth={1.2} />
+    {dot(8, 12, 1.4)}
+    {dot(16, 12, 1.4)}
+  </Icon>
+);
+
+export const PolygonIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 3.5 19.4 7.75v8.5L12 20.5l-7.4-4.25v-8.5z" />
+    {dot(12, 12, 1.4)}
+  </Icon>
+);
+
 export const PointIcon = (p: P) => (
   <Icon {...p}>
     <path d="M12 3.5v4.5M12 16v4.5M3.5 12H8M16 12h4.5" />

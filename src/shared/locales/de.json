@@ -107,7 +107,11 @@
       "construction": "Konstruktion",
       "delete": "Löschen",
       "variants": "Weitere Varianten",
-      "dimension": "Bemaßung"
+      "dimension": "Bemaßung",
+      "threePointCircle": "3-Punkt-Kreis",
+      "tangentArc": "Tangentialbogen",
+      "slot": "Langloch",
+      "polygon": "Polygon"
     },
     "sketchToolTips": {
       "line": "Verbundene Linien zeichnen (L)",
@@ -120,7 +124,11 @@
       "point": "Skizzenpunkte setzen (P)",
       "construction": "Ausgewählte Geometrie in Konstruktionsgeometrie umwandeln oder zurück",
       "delete": "Ausgewählte Geometrie löschen (Entf)",
-      "dimension": "Längen, Abstände, Winkel und Radien bemaßen; die Art ergibt sich aus der Auswahl (D)"
+      "dimension": "Längen, Abstände, Winkel und Radien bemaßen; die Art ergibt sich aus der Auswahl (D)",
+      "threePointCircle": "Kreis durch drei Punkte (C)",
+      "tangentArc": "Bogen, der eine Linie oder einen Bogen am Endpunkt tangential fortsetzt (A)",
+      "slot": "Gerades Langloch aus den beiden Bogenmittelpunkten und der Breite",
+      "polygon": "Regelmäßiges Vieleck aus Mittelpunkt und einer Ecke"
     }
   },
   "features": {
@@ -325,7 +333,11 @@
       "threePointArc": "Start- und Endpunkt klicken, dann einen Punkt, durch den der Bogen läuft.",
       "point": "Klicken, um Punkte zu setzen; auf einer Linie oder einem Kreis bleiben sie darauf.",
       "snapping": "Punkte rasten an Endpunkten, Mittelpunkten und Kurven ein und richten sich an anderen Punkten aus (gestrichelte Linien); passende Beziehungen werden automatisch hinzugefügt. Esc verlässt das Werkzeug.",
-      "dimension": "Eine Linie, einen Kreis oder Bogen oder zwei Elemente (Punkte, Linien, Kreise) anklicken. Die Maßzahl dorthin bewegen, wo sie hingehört – über, neben oder entlang der Geometrie – und klicken. Dann den Wert eingeben und Enter drücken."
+      "dimension": "Eine Linie, einen Kreis oder Bogen oder zwei Elemente (Punkte, Linien, Kreise) anklicken. Die Maßzahl dorthin bewegen, wo sie hingehört – über, neben oder entlang der Geometrie – und klicken. Dann den Wert eingeben und Enter drücken.",
+      "threePointCircle": "Drei Punkte anklicken, durch die der Kreis läuft.",
+      "tangentArc": "Den Endpunkt einer Linie oder eines Bogens anklicken, dann das Ende des Bogens. Der Bogen setzt Linie oder Bogen tangential fort.",
+      "slot": "Die Mittelpunkte beider Enden anklicken, dann seitlich bewegen, um die Breite festzulegen, und klicken.",
+      "polygon": "Mittelpunkt anklicken, dann eine Ecke. Alle Seiten bleiben gleich lang; die Ecken liegen auf einem Konstruktionskreis."
     },
     "tool": "Werkzeug",
     "selectTool": "Auswählen",
@@ -381,6 +393,7 @@
       "radius": "Radius",
       "diameter": "Durchmesser",
       "angle": "Winkel"
-    }
+    },
+    "polygonSides": "Seiten"
   }
 }
