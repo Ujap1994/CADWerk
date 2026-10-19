@@ -139,6 +139,34 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('sketch-relations.png') });
   await page.keyboard.press('Escape');
+
+  // Dimensions: pick the bottom line, place the value below it and type it; then the circle's diameter.
+  await page.keyboard.press('d');
+  const clickSketch = async (u: number, v: number) => {
+    const p = await sketchPoint(u, v);
+    if (!canvas) return;
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+  };
+  await clickSketch(-31, -32);
+  await clickSketch(-31, -43);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-dimension-value.png') });
+  await page.locator('[data-testid="dimension-editor"]').fill('40');
+  await page.keyboard.press('Enter');
+  await idle(page);
+  await clickSketch(-10, 10);
+  await clickSketch(-2, 22);
+  await page.locator('[data-testid="dimension-editor"]').fill('60');
+  await page.keyboard.press('Enter');
+  await clickSketch(42, 9);
+  await clickSketch(56, 20);
+  await page.locator('[data-testid="dimension-editor"]').fill('16');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: out('sketch-dimensions.png') });
   await page.click('[data-testid="sketch-ok"]');
   await page.evaluate(() => (window as unknown as { __parawerk: { commands: { setView(v: string): void } } }).__parawerk.commands.setView('isometric'));
   await idle(page);

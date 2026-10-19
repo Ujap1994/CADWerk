@@ -54,6 +54,7 @@
       "sketch": "Sketch",
       "export": "Export",
       "edit": "Edit",
+      "define": "Define",
       "draw": "Draw",
       "modify": "Modify"
     },
@@ -105,7 +106,8 @@
       "point": "Point",
       "construction": "Construction",
       "delete": "Delete",
-      "variants": "More variants"
+      "variants": "More variants",
+      "dimension": "Dimension"
     },
     "sketchToolTips": {
       "line": "Draw connected lines (L)",
@@ -117,7 +119,8 @@
       "threePointArc": "Arc through start, end and a third point (A)",
       "point": "Place sketch points (P)",
       "construction": "Turn the selected geometry into construction geometry or back",
-      "delete": "Delete the selected geometry (Delete)"
+      "delete": "Delete the selected geometry (Delete)",
+      "dimension": "Dimension lengths, distances, angles and radii; the type follows from the selection (D)"
     }
   },
   "features": {
@@ -319,7 +322,8 @@
       "centerArc": "Click the center, then the start point; move in the direction of the arc and click the end point.",
       "threePointArc": "Click the start point and the end point, then a point the arc passes through.",
       "point": "Click to place points; on a line or circle they stay on it.",
-      "snapping": "Points snap to end points, midpoints and curves and align with other points (dashed lines); the matching relations are added automatically. Esc leaves the tool."
+      "snapping": "Points snap to end points, midpoints and curves and align with other points (dashed lines); the matching relations are added automatically. Esc leaves the tool.",
+      "dimension": "Click a line, circle or arc, or two entities (points, lines, circles). Move the value to where it belongs – above, beside or along the geometry – and click. Then type the value and press Enter."
     },
     "tool": "Tool",
     "selectTool": "Select",
@@ -346,7 +350,14 @@
     },
     "messages": {
       "redundantRelation": "This relation already follows from the existing relations and dimensions, so it would over-define the sketch.",
-      "conflictingRelation": "This relation contradicts the existing relations and dimensions."
-    }
+      "conflictingRelation": "This relation contradicts the existing relations and dimensions.",
+      "drivenDimension": "This dimension would over-define the sketch, so it was added as a reference dimension that only shows the value.",
+      "dimensionNotApplied": "The sketch cannot be solved with this value; the dimension keeps its previous value.",
+      "invalidDimension": "Enter a length greater than 0, or an angle between 0 and 180 degrees.",
+      "drivenNotEditable": "Reference dimensions show the measured value and cannot be changed."
+    },
+    "dimensionsSelected_one": "{{count}} dimension selected",
+    "dimensionsSelected_other": "{{count}} dimensions selected",
+    "dimensionHint": "Double-click a dimension to change its value, drag it to move the value. Delete removes it."
   }
 }

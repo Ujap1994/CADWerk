@@ -291,6 +291,15 @@ export const ConstructionIcon = (p: P) => (
   </Icon>
 );
 
+/** A dimension: two extension lines, the dimension line with arrows and the value above. */
+export const DimensionIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 20v-9M20 20v-9M4 15h16" />
+    <path d="m7 12.6-3 2.4 3 2.4M17 12.6l3 2.4-3 2.4" strokeWidth={1.4} />
+    <path d="M9.5 5.5h5M12 3v5" strokeWidth={1.4} />
+  </Icon>
+);
+
 export const ChevronDownIcon = (p: P) => (
   <Icon {...p}>
     <path d="m7 10 5 5 5-5" />

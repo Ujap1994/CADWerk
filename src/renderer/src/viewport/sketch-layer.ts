@@ -201,6 +201,17 @@ export class SketchLayer {
     return this.graphics.data;
   }
 
+  dimensionLabel(id: string): HTMLElement | null {
+    return this.graphics.dimensionLabel(id);
+  }
+
+  dimensionLabelElements(): IterableIterator<[string, HTMLElement]> {
+    const labels = this.graphics.dimensionLabels;
+    return (function* () {
+      for (const [id, label] of labels) yield [id, label.element] as [string, HTMLElement];
+    })();
+  }
+
   refresh(): void {
     if (this.graphics.data) this.graphics.refresh();
   }

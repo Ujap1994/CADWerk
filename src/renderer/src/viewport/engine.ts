@@ -25,6 +25,7 @@ import {
 } from 'three';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import type { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
 import { toSketch, type SketchData, type SketchFrame } from '../../../shared/model/sketch.ts';
 import type { NavigationPreset, Projection } from '../../../shared/settings.ts';
@@ -34,7 +35,7 @@ import { AxisTriad } from './axis-triad.ts';
 import { palettes, type ViewportPalette } from './palette.ts';
 import { disposeOverlay, PartModel } from './part-model.ts';
 import { ReferencePlanes, type PlaneDisplay } from './reference-planes.ts';
-import { NO_HIGHLIGHT, SketchGraphics, SketchMaterials, type SketchHighlight } from './sketch-graphics.ts';
+import { defaultDimensionFormat, NO_HIGHLIGHT, SketchGraphics, SketchMaterials, type SketchHighlight } from './sketch-graphics.ts';
 import { SketchLayer, type SketchToolDisplay } from './sketch-layer.ts';
 import { createSyntheticAssembly, type SyntheticAssembly } from './synthetic-scene.ts';
 import { ViewCube, type CubeFace } from './view-cube.ts';
@@ -119,6 +120,8 @@ export class ViewportEngine {
   private readonly callbacks: ViewportCallbacks;
   private readonly canvas: HTMLCanvasElement;
   private readonly renderer: WebGLRenderer;
+  /** HTML labels (dimension values) positioned over the canvas. */
+  private readonly labelRenderer = new CSS2DRenderer();
   private readonly scene = new Scene();
   private readonly overlays = new Group();
   private readonly ortho = new OrthographicCamera();
@@ -188,6 +191,8 @@ export class ViewportEngine {
     this.canvas.className = 'viewport-canvas';
     this.canvas.tabIndex = 0;
     container.appendChild(this.canvas);
+    this.labelRenderer.domElement.className = 'viewport-labels';
+    container.appendChild(this.labelRenderer.domElement);
 
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
@@ -363,6 +368,38 @@ export class ViewportEngine {
     this.requestRender();
   }
 
+  /** Number format of dimension labels (decimal comma in German). */
+  setDimensionLanguage(language: string): void {
+    this.sketchMaterials.format = defaultDimensionFormat(language);
+    this.sketchLayer.refresh();
+    this.requestRender();
+  }
+
+  /** The dimension whose label is under a canvas position (CSS pixels), if any. */
+  dimensionAt(x: number, y: number): string | null {
+    if (!this.sketchLayer.active) return null;
+    const canvas = this.canvas.getBoundingClientRect();
+    for (const [id, element] of this.sketchLayer.dimensionLabelElements()) {
+      const rect = element.getBoundingClientRect();
+      const [left, top] = [rect.left - canvas.left, rect.top - canvas.top];
+      // A few pixels of slack make small labels easier to grab.
+      if (x >= left - 3 && x <= left + rect.width + 3 && y >= top - 3 && y <= top + rect.height + 3) return id;
+    }
+    return null;
+  }
+
+  dimensionLabel(id: string): HTMLElement | null {
+    return this.sketchLayer.dimensionLabel(id);
+  }
+
+  /** Screen position (CSS pixels on the canvas) of a point in sketch coordinates of the open sketch. */
+  sketchToScreen(u: number, v: number): { x: number; y: number } | null {
+    const frame = this.sketchLayer.sketchFrame;
+    if (!frame) return null;
+    const p = new Vector3(...frame.origin).addScaledVector(new Vector3(...frame.xDir), u).addScaledVector(new Vector3(...frame.yDir), v);
+    return this.project(p);
+  }
+
   setSketchInput(input: SketchInput | null): void {
     this.sketchInput = input;
   }
@@ -505,6 +542,12 @@ export class ViewportEngine {
     });
   }
 
+  /** Renders a frame right away, so HTML labels exist and are positioned (e.g. before editing one). */
+  renderFrame(): void {
+    this.controller.update(performance.now());
+    this.renderNow();
+  }
+
   /** Renders one frame right away and waits for the GPU; returns the time in ms (benchmarks). */
   renderSynchronously(): number {
     const start = performance.now();
@@ -579,6 +622,9 @@ export class ViewportEngine {
     this.renderer.setScissorTest(false);
     this.renderer.clear(true, true, true);
     this.renderer.render(this.scene, camera);
+    // Labels only exist in sketch mode; skipping the label pass keeps large scenes fast.
+    this.labelRenderer.domElement.hidden = !this.sketchLayer.active;
+    if (this.sketchLayer.active) this.labelRenderer.render(this.scene, camera);
     this.viewCube.render(this.renderer, this.width, this.height, this.controller.state.quaternion);
     this.triad.render(this.renderer, this.height, this.controller.state.quaternion);
   }
@@ -612,6 +658,7 @@ export class ViewportEngine {
     this.height = Math.max(1, Math.floor(rect.height));
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setSize(this.width, this.height, false);
+    this.labelRenderer.setSize(this.width, this.height);
     this.canvas.style.width = `${this.width}px`;
     this.canvas.style.height = `${this.height}px`;
     const resolution = new Vector2(this.width, this.height);
@@ -964,6 +1011,7 @@ export class ViewportEngine {
     this.pivotMarker.material.dispose();
     Object.values(this.materials).forEach((material) => material.dispose());
     this.renderer.dispose();
+    this.labelRenderer.domElement.remove();
     this.canvas.remove();
   }
 }

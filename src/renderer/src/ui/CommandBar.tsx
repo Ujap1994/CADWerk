@@ -15,6 +15,7 @@ import {
   ConstructionIcon,
   CornerRectangleIcon,
   CylinderIcon,
+  DimensionIcon,
   ExitSketchIcon,
   ExportStepIcon,
   ExportStlIcon,
@@ -44,6 +45,7 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   centerArc: CenterArcIcon,
   threePointArc: ThreePointArcIcon,
   point: PointIcon,
+  dimension: DimensionIcon,
 };
 
 interface CommandButtonProps {
@@ -208,6 +210,9 @@ function SketchTab() {
         ) : (
           <CommandButton id="sketch-start" icon={SketchIcon} label={t('commands.sketch')} tooltip={t('commands.tooltips.sketch')} active={choosing} onClick={commands.startSketch} />
         )}
+      </Group>
+      <Group label={t('commands.groups.define')}>
+        <ToolButton tool="dimension" disabled={off} />
       </Group>
       <Group label={t('commands.groups.draw')}>
         <ToolButton tool="line" disabled={off} />

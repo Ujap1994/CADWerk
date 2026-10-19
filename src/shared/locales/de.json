@@ -54,6 +54,7 @@
       "sketch": "Skizze",
       "export": "Export",
       "edit": "Bearbeiten",
+      "define": "Bestimmen",
       "draw": "Zeichnen",
       "modify": "Ändern"
     },
@@ -105,7 +106,8 @@
       "point": "Punkt",
       "construction": "Konstruktion",
       "delete": "Löschen",
-      "variants": "Weitere Varianten"
+      "variants": "Weitere Varianten",
+      "dimension": "Bemaßung"
     },
     "sketchToolTips": {
       "line": "Verbundene Linien zeichnen (L)",
@@ -117,7 +119,8 @@
       "threePointArc": "Bogen durch Start-, End- und einen dritten Punkt (A)",
       "point": "Skizzenpunkte setzen (P)",
       "construction": "Ausgewählte Geometrie in Konstruktionsgeometrie umwandeln oder zurück",
-      "delete": "Ausgewählte Geometrie löschen (Entf)"
+      "delete": "Ausgewählte Geometrie löschen (Entf)",
+      "dimension": "Längen, Abstände, Winkel und Radien bemaßen; die Art ergibt sich aus der Auswahl (D)"
     }
   },
   "features": {
@@ -319,7 +322,8 @@
       "centerArc": "Mittelpunkt klicken, dann den Startpunkt; in Bogenrichtung bewegen und den Endpunkt klicken.",
       "threePointArc": "Start- und Endpunkt klicken, dann einen Punkt, durch den der Bogen läuft.",
       "point": "Klicken, um Punkte zu setzen; auf einer Linie oder einem Kreis bleiben sie darauf.",
-      "snapping": "Punkte rasten an Endpunkten, Mittelpunkten und Kurven ein und richten sich an anderen Punkten aus (gestrichelte Linien); passende Beziehungen werden automatisch hinzugefügt. Esc verlässt das Werkzeug."
+      "snapping": "Punkte rasten an Endpunkten, Mittelpunkten und Kurven ein und richten sich an anderen Punkten aus (gestrichelte Linien); passende Beziehungen werden automatisch hinzugefügt. Esc verlässt das Werkzeug.",
+      "dimension": "Eine Linie, einen Kreis oder Bogen oder zwei Elemente (Punkte, Linien, Kreise) anklicken. Die Maßzahl dorthin bewegen, wo sie hingehört – über, neben oder entlang der Geometrie – und klicken. Dann den Wert eingeben und Enter drücken."
     },
     "tool": "Werkzeug",
     "selectTool": "Auswählen",
@@ -346,7 +350,14 @@
     },
     "messages": {
       "redundantRelation": "Diese Beziehung ergibt sich bereits aus den vorhandenen Beziehungen und Bemaßungen und würde die Skizze überbestimmen.",
-      "conflictingRelation": "Diese Beziehung widerspricht den vorhandenen Beziehungen und Bemaßungen."
-    }
+      "conflictingRelation": "Diese Beziehung widerspricht den vorhandenen Beziehungen und Bemaßungen.",
+      "drivenDimension": "Diese Bemaßung würde die Skizze überbestimmen und wurde deshalb als Referenzbemaßung hinzugefügt, die den Wert nur anzeigt.",
+      "dimensionNotApplied": "Mit diesem Wert lässt sich die Skizze nicht lösen; die Bemaßung behält ihren bisherigen Wert.",
+      "invalidDimension": "Gib eine Länge größer als 0 oder einen Winkel zwischen 0 und 180 Grad ein.",
+      "drivenNotEditable": "Referenzbemaßungen zeigen den gemessenen Wert und lassen sich nicht ändern."
+    },
+    "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
+    "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",
+    "dimensionHint": "Doppelklick auf eine Bemaßung ändert ihren Wert, Ziehen verschiebt die Maßzahl. Entf entfernt sie."
   }
 }

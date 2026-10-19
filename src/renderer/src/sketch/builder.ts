@@ -1,4 +1,5 @@
 import type { SketchConstraint, SketchData, SketchEntity, SketchRelation } from '../../../shared/model/sketch.ts';
+import type { DimensionDraft } from './dimensions.ts';
 import type { SnapTarget } from './snap.ts';
 
 /** A point placed by a drawing tool: where it is and what it snapped to. */
@@ -78,6 +79,12 @@ export class SketchBuilder {
   relation(relation: RelationInput): string {
     const id = this.id('r');
     this.constraints.push({ ...relation, id } as SketchConstraint);
+    return id;
+  }
+
+  dimension(draft: DimensionDraft): string {
+    const id = this.id('d');
+    this.constraints.push({ ...draft, id } as SketchConstraint);
     return id;
   }
 

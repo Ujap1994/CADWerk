@@ -24,6 +24,8 @@ function sketchToolForKey(key: string): SketchToolName | null {
       return variants.arc;
     case 'p':
       return 'point';
+    case 'd':
+      return 'dimension';
     default:
       return null;
   }

@@ -3,10 +3,11 @@ import type { MenuCommand } from '../../shared/ipc.ts';
 import { PART_FILE_EXTENSION } from '../../shared/app-info.ts';
 import { defaultFeature, isEdgeFeature, type EdgeRef, type Feature, type FeatureType, type SketchFeature } from '../../shared/model/feature.ts';
 import { decodePartFile, encodePartFile, PartFileError } from '../../shared/model/part-file.ts';
-import { frameOnPlane, STANDARD_PLANES, type SketchData, type SketchPlaneRef } from '../../shared/model/sketch.ts';
+import { frameOnPlane, isDimension, STANDARD_PLANES, type SketchData, type SketchDimension, type SketchPlaneRef } from '../../shared/model/sketch.ts';
 import type { Settings } from '../../shared/settings.ts';
 import { changeLanguage, t } from './i18n.ts';
 import { SketchBuilder } from './sketch/builder.ts';
+import { storedAngle, type DimensionDraft } from './sketch/dimensions.ts';
 import { deleteEntities } from './sketch/geometry.ts';
 import { applicableRelations, type RelationKind } from './sketch/relations.ts';
 import { sketchSolver } from './sketch/solver.ts';
@@ -444,6 +445,77 @@ export async function addSketchRelation(kind: RelationKind): Promise<void> {
     // The sketch changed while the solver worked (undo, another edit): do not apply on top of it.
     if (getState().sketch?.draft.sketch !== base) return;
     recordSketchChange(solution.sketch);
+  } catch (error) {
+    showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
+  }
+}
+
+/** A typed dimension value in solver units: millimeters, or degrees turned into the stored angle. Null if invalid. */
+function dimensionValue(sketch: SketchData, dimension: DimensionDraft, typed: number): number | null {
+  if (dimension.type === 'angle') return typed > 0 && typed < 180 ? storedAngle(sketch, dimension, (typed * Math.PI) / 180) : null;
+  return typed > 0 ? typed : null;
+}
+
+function replaceConstraint(sketch: SketchData, constraint: SketchDimension): SketchData {
+  return { ...sketch, constraints: sketch.constraints.map((other) => (other.id === constraint.id ? constraint : other)) };
+}
+
+/**
+ * Adds a dimension and applies the typed value (null keeps the measured one). A dimension that
+ * would over-define the sketch becomes a driven (reference) dimension that only shows the value.
+ */
+export async function addSketchDimension(draft: DimensionDraft, typed: number | null): Promise<void> {
+  const session = getState().sketch;
+  if (!session) return;
+  const base = session.draft.sketch;
+  const builder = new SketchBuilder(base);
+  builder.dimension(draft);
+  const measured = builder.build();
+  const probe = measured.constraints.at(-1) as SketchDimension;
+  try {
+    const solver = sketchSolver();
+    if (await solver.isRedundant(base, probe)) {
+      if (getState().sketch?.draft.sketch === base) recordSketchChange({ ...base, constraints: [...base.constraints, { ...probe, driving: false }] });
+      showToast('info', t('sketch.messages.drivenDimension'));
+      return;
+    }
+    const value = typed === null ? probe.value : dimensionValue(base, probe, typed);
+    if (value === null) showToast('error', t('sketch.messages.invalidDimension'));
+    const next = value === null ? measured : replaceConstraint(measured, { ...probe, value });
+    const solution = await solver.solve(next, { analyze: false });
+    if (getState().sketch?.draft.sketch !== base) return;
+    if (solution.converged) {
+      recordSketchChange(solution.sketch);
+    } else {
+      showToast('error', t('sketch.messages.dimensionNotApplied'));
+      recordSketchChange(measured);
+    }
+  } catch (error) {
+    showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
+  }
+}
+
+/** Changes the value of a driving dimension; the geometry follows if the sketch can be solved. */
+export async function setSketchDimensionValue(id: string, typed: number): Promise<void> {
+  const session = getState().sketch;
+  if (!session) return;
+  const base = session.draft.sketch;
+  const dimension = base.constraints.find((constraint) => constraint.id === id);
+  if (!dimension || !isDimension(dimension)) return;
+  if (!dimension.driving) {
+    showToast('info', t('sketch.messages.drivenNotEditable'));
+    return;
+  }
+  const value = dimensionValue(base, dimension, typed);
+  if (value === null) {
+    showToast('error', t('sketch.messages.invalidDimension'));
+    return;
+  }
+  try {
+    const solution = await sketchSolver().solve(replaceConstraint(base, { ...dimension, value }), { analyze: false });
+    if (getState().sketch?.draft.sketch !== base) return;
+    if (solution.converged) recordSketchChange(solution.sketch);
+    else showToast('error', t('sketch.messages.dimensionNotApplied'));
   } catch (error) {
     showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
   }

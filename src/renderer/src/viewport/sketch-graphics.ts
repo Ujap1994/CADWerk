@@ -2,7 +2,9 @@ import { Box3, BufferAttribute, BufferGeometry, Color, Group, Matrix4, Points, S
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import { ORIGIN_ID, type SketchData, type SketchFrame } from '../../../shared/model/sketch.ts';
+import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { isDimension, ORIGIN_ID, type SketchData, type SketchDimension, type SketchFrame } from '../../../shared/model/sketch.ts';
+import { arrowStrokes, dimensionGraphic, displayValue } from '../sketch/dimensions.ts';
 import { curvePointIds, curvePolyline, isCurve, pointPositions, type Point2 } from '../sketch/geometry.ts';
 import type { ViewportPalette } from './palette.ts';
 
@@ -22,6 +24,21 @@ const DASH_PX = 7;
 const GAP_PX = 5;
 /** Re-tessellate curves when the zoom has changed by more than this factor. */
 const RETESSELLATE_FACTOR = 1.6;
+/** Dimension arrows and gaps keep their size on screen within this factor. */
+const DIMENSION_ZOOM_FACTOR = 1.15;
+const ARROW_PX = 9;
+
+/** Label text of a dimension: "25.4", "Ø20", "R5", "30°"; driven dimensions in parentheses. */
+export type DimensionFormat = (dimension: SketchDimension, value: number) => string;
+
+export function defaultDimensionFormat(language: string): DimensionFormat {
+  const number = new Intl.NumberFormat(language, { maximumFractionDigits: 2, useGrouping: false });
+  return (dimension, value) => {
+    const text = number.format(value);
+    const shown = dimension.type === 'radius' ? `R${text}` : dimension.type === 'diameter' ? `Ø${text}` : dimension.type === 'angle' ? `${text}°` : text;
+    return dimension.driving ? shown : `(${shown})`;
+  };
+}
 
 const POINT_VERTEX = /* glsl */ `
 attribute vec3 pointColor;
@@ -59,8 +76,19 @@ export class SketchMaterials {
   readonly highlight: LineMaterial;
   /** Inference lines while drawing. */
   readonly guide: LineMaterial;
+  /** Dimension lines and arrows (vertex colors). */
+  readonly dimension: LineMaterial;
+  format: DimensionFormat = defaultDimensionFormat('en');
   readonly points: Record<SketchLook, ShaderMaterial>;
-  readonly colors = { active: new Color(), inactive: new Color(), hovered: new Color(), selected: new Color(), guide: new Color() };
+  readonly colors = {
+    active: new Color(),
+    inactive: new Color(),
+    hovered: new Color(),
+    selected: new Color(),
+    guide: new Color(),
+    dimension: new Color(),
+    dimensionDriven: new Color(),
+  };
 
   constructor() {
     const line = (look: SketchLook, dashed: boolean) =>
@@ -75,6 +103,7 @@ export class SketchMaterials {
     this.construction = { active: line('active', true), inactive: line('inactive', true) };
     this.highlight = new LineMaterial({ linewidth: 3.2, worldUnits: false, vertexColors: true, depthTest: false, transparent: true });
     this.guide = new LineMaterial({ linewidth: 1, worldUnits: false, dashed: true, depthTest: false, transparent: true, opacity: 0.85 });
+    this.dimension = new LineMaterial({ linewidth: 1.1, worldUnits: false, vertexColors: true, depthTest: false, transparent: true });
     const points = (look: SketchLook) =>
       new ShaderMaterial({
         vertexShader: POINT_VERTEX,
@@ -93,6 +122,8 @@ export class SketchMaterials {
     this.colors.hovered.setHex(palette.hover);
     this.colors.selected.setHex(palette.selected);
     this.colors.guide.setHex(palette.guide);
+    this.colors.dimension.setHex(palette.dimension);
+    this.colors.dimensionDriven.setHex(palette.dimensionDriven);
     this.guide.color.copy(this.colors.guide);
     for (const look of ['active', 'inactive'] as const) {
       this.lines[look].color.copy(this.colors[look]);
@@ -101,7 +132,9 @@ export class SketchMaterials {
   }
 
   setResolution(resolution: Vector2, pixelRatio: number): void {
-    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide]) material.resolution.copy(resolution);
+    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, this.dimension]) {
+      material.resolution.copy(resolution);
+    }
     for (const material of Object.values(this.points)) (material.uniforms.uPixelRatio as { value: number }).value = pixelRatio;
   }
 
@@ -116,7 +149,9 @@ export class SketchMaterials {
   }
 
   dispose(): void {
-    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, ...Object.values(this.points)]) material.dispose();
+    for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, this.dimension, ...Object.values(this.points)]) {
+      material.dispose();
+    }
   }
 }
 
@@ -137,6 +172,9 @@ export class SketchGraphics {
   private readonly construction: LineSegments2;
   private readonly highlight: LineSegments2;
   private readonly points: Points<BufferGeometry, ShaderMaterial>;
+  private readonly dimensionLines: LineSegments2;
+  private readonly labels = new Map<string, CSS2DObject>();
+  private dimensionsAt = 0;
   private sketch: SketchData | null = null;
   private highlightState: SketchHighlight = NO_HIGHLIGHT;
   private tessellatedAt = 0;
@@ -149,8 +187,9 @@ export class SketchGraphics {
     this.construction = new LineSegments2(new LineSegmentsGeometry(), materials.construction[look]);
     this.highlight = new LineSegments2(new LineSegmentsGeometry(), materials.highlight);
     this.points = new Points(new BufferGeometry(), materials.points[look]);
+    this.dimensionLines = new LineSegments2(new LineSegmentsGeometry(), materials.dimension);
     const order = look === 'active' ? 30 : 5;
-    [this.construction, this.lines, this.highlight, this.points].forEach((object, i) => {
+    [this.construction, this.lines, this.highlight, this.points, this.dimensionLines].forEach((object, i) => {
       object.renderOrder = order + i;
       object.frustumCulled = false;
       object.raycast = () => undefined;
@@ -190,6 +229,15 @@ export class SketchGraphics {
   /** Re-tessellates after a large zoom change; returns whether anything changed. */
   ensureResolution(mmPerPixel: number): boolean {
     if (!this.sketch || this.tessellatedAt <= 0) return false;
+    // Dimension arrows keep their size on screen.
+    if (this.labels.size > 0) {
+      const zoom = mmPerPixel / this.dimensionsAt;
+      if (zoom > DIMENSION_ZOOM_FACTOR || zoom < 1 / DIMENSION_ZOOM_FACTOR) {
+        this.tessellatedAt = mmPerPixel;
+        this.rebuild();
+        return true;
+      }
+    }
     const ratio = mmPerPixel / this.tessellatedAt;
     if (ratio < RETESSELLATE_FACTOR && ratio > 1 / RETESSELLATE_FACTOR) return false;
     if (!this.sketch.entities.some((entity) => entity.type === 'circle' || entity.type === 'arc')) {
@@ -207,9 +255,73 @@ export class SketchGraphics {
     return this.localBounds.clone().applyMatrix4(this.group.matrix);
   }
 
+  /** The label element of a dimension (for editing its value). */
+  dimensionLabel(id: string): HTMLElement | null {
+    return this.labels.get(id)?.element ?? null;
+  }
+
+  /** Label elements by dimension id (for hit testing). */
+  get dimensionLabels(): ReadonlyMap<string, CSS2DObject> {
+    return this.labels;
+  }
+
   dispose(): void {
-    for (const object of [this.lines, this.construction, this.highlight]) object.geometry.dispose();
+    for (const object of [this.lines, this.construction, this.highlight, this.dimensionLines]) object.geometry.dispose();
     this.points.geometry.dispose();
+    for (const label of this.labels.values()) this.group.remove(label);
+    this.labels.clear();
+  }
+
+  /** Dimension lines, arrows and labels; only the open sketch shows dimensions. */
+  private rebuildDimensions(sketch: SketchData, positions: ReturnType<typeof pointPositions>, hovered: string | null, selected: ReadonlySet<string>): void {
+    const lines: number[] = [];
+    const colors: number[] = [];
+    const shown = new Set<string>();
+    const mmPerPixel = this.tessellatedAt;
+    this.dimensionsAt = mmPerPixel;
+    if (this.look === 'active') {
+      for (const constraint of sketch.constraints) {
+        if (!isDimension(constraint)) continue;
+        const graphic = dimensionGraphic(sketch, constraint, mmPerPixel, positions);
+        const value = displayValue(sketch, constraint, positions);
+        if (!graphic || value === null) continue;
+        const color =
+          constraint.id === hovered
+            ? this.materials.colors.hovered
+            : selected.has(constraint.id)
+              ? this.materials.colors.selected
+              : constraint.driving
+                ? this.materials.colors.dimension
+                : this.materials.colors.dimensionDriven;
+        const strokes = [...graphic.lines, ...graphic.arrows.flatMap((arrow) => arrowStrokes(arrow, ARROW_PX * mmPerPixel))];
+        for (const [a, b] of strokes) {
+          lines.push(a[0], a[1], 0, b[0], b[1], 0);
+          colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+        }
+        shown.add(constraint.id);
+        let label = this.labels.get(constraint.id);
+        if (!label) {
+          const element = document.createElement('div');
+          element.className = 'dimension-label';
+          element.dataset.dimensionId = constraint.id;
+          label = new CSS2DObject(element);
+          this.labels.set(constraint.id, label);
+          this.group.add(label);
+        }
+        label.position.set(graphic.label[0], graphic.label[1], 0);
+        const element = label.element;
+        element.textContent = this.materials.format(constraint, value);
+        element.classList.toggle('is-driven', !constraint.driving);
+        element.classList.toggle('is-hovered', constraint.id === hovered);
+        element.classList.toggle('is-selected', selected.has(constraint.id));
+      }
+    }
+    setSegments(this.dimensionLines, lines, colors);
+    for (const [id, label] of this.labels) {
+      if (shown.has(id)) continue;
+      this.group.remove(label);
+      this.labels.delete(id);
+    }
   }
 
   private rebuild(): void {
@@ -241,6 +353,8 @@ export class SketchGraphics {
     setSegments(this.construction, construction);
     if (this.construction.visible) this.construction.computeLineDistances();
     setSegments(this.highlight, highlight, highlightColors);
+
+    this.rebuildDimensions(sketch, positions, hovered, selectedSet);
 
     // The open sketch shows every point; other sketches only their stand-alone points.
     const owned = this.look === 'inactive' ? curvePointIds(sketch) : null;

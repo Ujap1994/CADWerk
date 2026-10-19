@@ -44,6 +44,11 @@ async function drawPoint(page: Page, id: string, x: number, y: number): Promise<
   );
 }
 
+/** Waits for two rendered frames: labels are positioned by the frame after a change. */
+async function frames(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+}
+
 /** Waits until the view looks straight at the sketch plane: sketch x to the right, sketch y up. */
 async function expectNormalView(page: Page, xDir: [number, number, number], yDir: [number, number, number]): Promise<void> {
   await expect
@@ -497,4 +502,102 @@ test('fits the smallest window in sketch mode: nothing overflows, the whole view
     const box = await page.locator(`[data-command="${command}"]`).boundingBox();
     expect(box && box.x + box.width <= layout.innerWidth).toBe(true);
   }
+});
+
+test('dimensions: placing with a value, reference dimensions, editing, moving and deleting', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('r1', 0, 0), P('r2', 46, 0), P('r3', 46, 27), P('r4', 0, 27),
+        { id: 'l1', type: 'line', p1: 'r1', p2: 'r2' }, { id: 'l2', type: 'line', p1: 'r2', p2: 'r3' },
+        { id: 'l3', type: 'line', p1: 'r3', p2: 'r4' }, { id: 'l4', type: 'line', p1: 'r4', p2: 'r1' },
+        P('m', 25, 14), { id: 'k', type: 'circle', center: 'm', radius: 6 },
+      ],
+      constraints: [
+        { id: 'o', type: 'coincident', a: 'r1', b: 'origin' },
+        { id: 'h1', type: 'horizontal', line: 'l1' }, { id: 'h2', type: 'horizontal', line: 'l3' },
+        { id: 'v1', type: 'vertical', line: 'l2' }, { id: 'v2', type: 'vertical', line: 'l4' },
+      ],
+    };
+    const features = [{ id: 's', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await page.dblclick('.tree-item[data-feature-id="s"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const click = async (u: number, v: number) => {
+    const p = await project(page, [u, v, 0]);
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+  };
+  const editor = page.locator('[data-testid="dimension-editor"]');
+  const entity = async (id: string) => (await state(page)).sketch?.draft.sketch.entities.find((e) => e.id === id);
+  const dimensions = async () =>
+    ((await state(page)).sketch?.draft.sketch.constraints ?? []).filter((c) => 'value' in c) as unknown as { id: string; type: string; value: number; driving: boolean; offset?: number[] }[];
+
+  // The width: pick the bottom line, place the value below it, type it.
+  await page.keyboard.press('d');
+  await click(20, 0);
+  await click(23, -10);
+  await expect(editor).toHaveValue('46');
+  await editor.fill('50');
+  await editor.press('Enter');
+  await expect.poll(async () => (await entity('r2'))?.x).toBeCloseTo(50, 6);
+  await expect(page.locator('.dimension-label')).toHaveText(['50']);
+
+  // The height, placed beside the right line.
+  await click(50, 13);
+  await click(62, 13);
+  await editor.fill('30');
+  await editor.press('Enter');
+  await expect.poll(async () => (await entity('r3'))?.y).toBeCloseTo(30, 6);
+
+  // The circle: its diameter; Esc keeps the measured value.
+  await click(31, 14);
+  await click(40, 26);
+  await expect(editor).toHaveValue('12');
+  await editor.press('Escape');
+  await expect.poll(async () => (await dimensions()).map((d) => d.type)).toEqual(['distance', 'distance', 'diameter']);
+
+  // The top line is already defined by the width: it becomes a reference dimension.
+  await click(25, 30);
+  await click(25, 38);
+  await editor.press('Enter');
+  await expect(page.locator('.toast')).toContainText('reference dimension');
+  await expect.poll(async () => (await dimensions()).at(-1)?.driving).toBe(false);
+  await expect(page.locator('.dimension-label.is-driven')).toHaveText(['(50)']);
+
+  // Double-click a value to change it; the geometry follows.
+  await page.keyboard.press('Escape');
+  await frames(page);
+  const width = page.locator('.dimension-label', { hasText: /^50$/ });
+  const box = await width.boundingBox();
+  if (!box) throw new Error('label not visible');
+  await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(editor).toBeVisible();
+  await editor.fill('60');
+  await editor.press('Enter');
+  await expect.poll(async () => (await entity('r2'))?.x).toBeCloseTo(60, 6);
+  await expect(page.locator('.dimension-label.is-driven')).toHaveText(['(60)']);
+
+  // Dragging a value moves only the label.
+  await frames(page);
+  const label = await page.locator('.dimension-label', { hasText: /^60$/ }).boundingBox();
+  if (!label) throw new Error('label not visible');
+  const before = (await dimensions())[0]?.offset ?? [0, 0];
+  await page.mouse.move(label.x + label.width / 2, label.y + label.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(label.x + label.width / 2 + 60, label.y + label.height / 2 + 30, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => ((await dimensions())[0]?.offset ?? [0, 0])[0]).toBeGreaterThan((before[0] ?? 0) + 1);
+  expect((await entity('r2'))?.x).toBeCloseTo(60, 6);
+
+  // The double-click selected the dimension (a further click would deselect it); Delete removes it.
+  await expect(page.locator('[data-testid="sketch-selection"]')).toContainText('1 dimension selected');
+  await page.keyboard.press('Delete');
+  expect((await dimensions()).map((d) => d.type)).toEqual(['distance', 'diameter', 'distance']);
 });

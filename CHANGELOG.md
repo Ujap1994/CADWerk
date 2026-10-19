@@ -25,6 +25,12 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   perpendicular, collinear, equal, tangent, concentric, symmetric, fix), offered according to the
   selection and checked by the solver: over-defining or conflicting relations are refused with a
   message; existing relations of the selection are listed and can be deleted.
+- Smart dimension (key D): lengths, horizontal and vertical distances, point-to-line and parallel-line
+  distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
+  values typed right at the dimension; dimensions that would over-define the sketch become reference
+  dimensions; double-click to change, drag to move, Delete to remove.
+- Compact command bar on smaller windows (tighter buttons below 1,500 px, icons only below 1,280 px); the
+  layout never grows wider than the window.
 - Command bar tabs *Features* and *Sketch*.
 - Own sparse 2D constraint solver running in a worker (the basis for relations and dimensions).
 

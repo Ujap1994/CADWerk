@@ -3,8 +3,9 @@
 > [!NOTE]
 > The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane
 > or planar face, sketch mode with its grid and its own undo history, the drawing tools with snapping and
-> automatic relations, adding and removing relations, selecting, dragging and deleting sketch geometry,
-> and editing existing sketches. Dimensions follow in the next update; the page grows with them.
+> automatic relations, relations, dimensions, selecting, dragging and deleting sketch geometry, and editing
+> existing sketches. Status colors for fully defined geometry and more tools follow; the page grows with
+> them.
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or
@@ -148,6 +149,44 @@ relations are added automatically while you draw; others you add yourself:
 ParaWerk checks every new relation with the solver first. A relation that already follows from the
 existing relations and dimensions (it would *over-define* the sketch) or contradicts them is refused
 with a message, so a sketch never ends up in a state it cannot solve.
+
+## Dimensions
+
+Dimensions give the geometry its sizes. There is one **Dimension** tool (key **D**, in the *Define*
+group of the *Sketch* tab); what it measures follows from what you pick and from where you put the value:
+
+1. Click a line, a circle or an arc – or two entities, for example two points, a point and a line, two
+   lines or two circles.
+2. Move the mouse: the dimension follows and shows the current value. Click where the value should go.
+3. Type the value and press **Enter**. The geometry changes so the dimension holds. **Esc** keeps the
+   measured value.
+
+![Placing a dimension: the value is typed right at the dimension](../images/screenshots/sketch-dimension-value.png)
+
+| You pick | Value placed | Dimension |
+|---|---|---|
+| A line, or two points | above or below | horizontal distance |
+| | to the left or right | vertical distance |
+| | elsewhere | length / direct distance |
+| A circle | anywhere | diameter (Ø) |
+| An arc | anywhere | radius (R) |
+| A point and a line | anywhere | distance from the point to the line |
+| Two lines that cross | anywhere | angle (in degrees) |
+| Two parallel lines | anywhere | distance between them |
+| Circles and arcs together with points or each other | as for points | distance between the centers |
+
+The sketch origin can be picked as well, so geometry can be dimensioned from the origin.
+
+- **Change a value:** double-click the dimension, type the new value, press **Enter**.
+- **Move a value:** drag it; only the label moves.
+- **Delete:** click the dimension to select it and press **Delete**.
+
+A dimension that would *over-define* the sketch – because its value already follows from other dimensions
+and relations – is added as a **reference dimension**. It shows the measured value in parentheses, for
+example *(60)*, updates when the geometry changes, and cannot be edited. If the sketch cannot be solved
+with a typed value, ParaWerk keeps the previous value and says so.
+
+![A dimensioned sketch: width, height and diameter, and their extension lines](../images/screenshots/sketch-dimensions.png)
 
 ## Working with sketch geometry
 

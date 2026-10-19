@@ -1,5 +1,6 @@
 /* ParaWerk design tokens: light theme by default, dark via [data-theme='dark']. */
 :root {
+  --dimension: #1e293b;
   --font: system-ui, -apple-system, 'Segoe UI Variable', 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif;
   --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
 
@@ -34,6 +35,7 @@
 }
 
 :root[data-theme='dark'] {
+  --dimension: #e2e8f0;
   --bg-app: #0f1318;
   --bg-panel: #171c23;
   --bg-sunken: #12161c;
@@ -851,6 +853,63 @@ input {
 .viewport-canvas {
   display: block;
   outline: none;
+}
+
+.viewport-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.viewport-labels[hidden] {
+  display: none;
+}
+
+/* Dimension values: the sketch controller hit-tests them, so they never take mouse events themselves. */
+.dimension-label {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--viewport-top) 78%, transparent);
+  color: var(--dimension);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 17px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dimension-label.is-driven {
+  color: var(--text-faint);
+}
+
+.dimension-label.is-hovered {
+  color: var(--orange);
+  outline: 1px solid var(--orange);
+}
+
+.dimension-label.is-selected {
+  color: var(--orange);
+}
+
+.dimension-editor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 92px;
+  padding: 2px 5px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-md);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  z-index: 5;
 }
 
 .sketch-cursor-info {

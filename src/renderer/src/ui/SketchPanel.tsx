@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { STANDARD_PLANES, type SketchPlaneRef } from '../../../shared/model/sketch.ts';
 import * as commands from '../commands.ts';
+import { isDimension } from '../../../shared/model/sketch.ts';
 import { applicableRelations, relationKindOf, relationsOf } from '../sketch/relations.ts';
 import { useAppState } from '../state/store.ts';
 import { useFeatureName } from './FeatureTree.tsx';
@@ -54,6 +55,16 @@ function SelectionSection() {
   const sketch = useAppState((state) => state.sketch?.draft.sketch);
   const selection = useAppState((state) => state.sketchSelection);
   if (!sketch || selection.length === 0) return null;
+  const dimensions = new Set(sketch.constraints.filter(isDimension).map((dimension) => dimension.id));
+  if (selection.every((id) => dimensions.has(id))) {
+    return (
+      <fieldset className="panel-section" data-testid="sketch-selection">
+        <legend className="panel-section-title">{t('sketch.selection')}</legend>
+        <p className="sketch-count">{t('sketch.dimensionsSelected', { count: selection.length })}</p>
+        <p className="panel-hint is-flush">{t('sketch.dimensionHint')}</p>
+      </fieldset>
+    );
+  }
   const options = applicableRelations(sketch, selection);
   const existing = relationsOf(sketch, selection);
   return (

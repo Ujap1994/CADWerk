@@ -6,12 +6,23 @@
 
 import type { SketchData } from '../../../shared/model/sketch.ts';
 import { SketchBuilder, type PlacedPoint } from './builder.ts';
-import { arcGeometry, pointPositions, type Point2 } from './geometry.ts';
+import { proposeDimension, type DimensionDraft } from './dimensions.ts';
+import { arcGeometry, hitTest, pointPositions, type Point2 } from './geometry.ts';
 import { snapCursor, type SnapResult } from './snap.ts';
 
-export type SketchToolName = 'line' | 'centerline' | 'cornerRectangle' | 'centerRectangle' | 'circle' | 'centerArc' | 'threePointArc' | 'point';
+export type SketchToolName = 'line' | 'centerline' | 'cornerRectangle' | 'centerRectangle' | 'circle' | 'centerArc' | 'threePointArc' | 'point' | 'dimension';
 
-export const SKETCH_TOOLS: readonly SketchToolName[] = ['line', 'centerline', 'cornerRectangle', 'centerRectangle', 'circle', 'centerArc', 'threePointArc', 'point'];
+export const SKETCH_TOOLS: readonly SketchToolName[] = [
+  'line',
+  'centerline',
+  'cornerRectangle',
+  'centerRectangle',
+  'circle',
+  'centerArc',
+  'threePointArc',
+  'point',
+  'dimension',
+];
 
 export interface ToolEvent {
   u: number;
@@ -40,12 +51,18 @@ export interface ToolPreview {
   geometry: SketchData;
   snap: SnapResult;
   info: ToolInfo | null;
+  /** The dimension the dimension tool would place at the cursor. */
+  dimension?: DimensionDraft;
+  /** Entities the dimension tool has picked so far. */
+  picks?: readonly string[];
 }
 
 export interface ToolStep {
   /** The sketch with the finished shape, or null if the click only placed an intermediate point. */
   commit: SketchData | null;
   preview: ToolPreview;
+  /** A dimension to add: the value is asked for next. */
+  place?: DimensionDraft;
 }
 
 export interface SketchTool {
@@ -495,6 +512,55 @@ export class PointTool implements SketchTool {
   }
 }
 
+/**
+ * Smart dimension: pick one or two entities, move the label to where it belongs and click.
+ * What is dimensioned follows from the picks and from where the label goes (see proposeDimension).
+ */
+export class DimensionTool implements SketchTool {
+  readonly name = 'dimension' as const;
+  private picks: string[] = [];
+
+  get busy(): boolean {
+    return this.picks.length > 0;
+  }
+
+  private hit(sketch: SketchData, event: ToolEvent) {
+    return hitTest(sketch, pointPositions(sketch), event.u, event.v, event.tolerance * 0.75);
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const hit = this.hit(sketch, event);
+    const target: SnapResult['target'] = !hit
+      ? { kind: 'none' }
+      : hit.type === 'point'
+        ? { kind: 'point', id: hit.id }
+        : { kind: 'curve', curve: hit.id, curveType: hit.type };
+    const draft = this.picks.length > 0 ? proposeDimension(sketch, this.picks, [event.u, event.v]) : null;
+    return { geometry: EMPTY, snap: { u: event.u, v: event.v, target, alignments: [] }, info: null, picks: this.picks, ...(draft ? { dimension: draft } : {}) };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const hit = this.hit(sketch, event);
+    if (hit) {
+      const [first] = this.picks;
+      if (!this.picks.includes(hit.id)) {
+        // A second entity joins the first if the two can be dimensioned together; otherwise it starts over.
+        this.picks = first && this.picks.length === 1 && proposeDimension(sketch, [first, hit.id], [event.u, event.v]) ? [first, hit.id] : [hit.id];
+      }
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const draft = this.picks.length > 0 ? proposeDimension(sketch, this.picks, [event.u, event.v]) : null;
+    this.picks = [];
+    return { commit: null, preview: this.hover(sketch, event), ...(draft ? { place: draft } : {}) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.picks = [];
+    return busy;
+  }
+}
+
 export function createTool(name: SketchToolName): SketchTool {
   switch (name) {
     case 'line':
@@ -511,5 +577,7 @@ export function createTool(name: SketchToolName): SketchTool {
       return new ThreePointArcTool();
     case 'point':
       return new PointTool();
+    case 'dimension':
+      return new DimensionTool();
   }
 }

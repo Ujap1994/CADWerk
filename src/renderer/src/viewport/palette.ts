@@ -17,6 +17,9 @@ export interface ViewportPalette {
   sketchInactive: number;
   /** Inference lines while drawing. */
   guide: number;
+  /** Dimensions of the open sketch; driven (reference) dimensions are shown dimmer. */
+  dimension: number;
+  dimensionDriven: number;
   cubeFace: number;
   cubeFaceHover: number;
   cubeEdge: number;
@@ -40,6 +43,8 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     sketch: 0x1f56c4,
     sketchInactive: 0x3d4a5c,
     guide: 0x5f6e84,
+    dimension: 0x1e293b,
+    dimensionDriven: 0x7b8798,
     cubeFace: 0xf4f6fa,
     cubeFaceHover: 0xffc978,
     cubeEdge: 0xc4cddb,
@@ -61,6 +66,8 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     sketch: 0x7eaaff,
     sketchInactive: 0xa9b5c6,
     guide: 0x9fb0c8,
+    dimension: 0xe2e8f0,
+    dimensionDriven: 0x8d99aa,
     cubeFace: 0x2c3442,
     cubeFaceHover: 0xb87522,
     cubeEdge: 0x3a4556,

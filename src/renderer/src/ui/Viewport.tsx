@@ -61,6 +61,7 @@ function planeDisplay(state: AppState): PlaneDisplay {
 export function Viewport() {
   const { t, i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const cursorInfoRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<ViewportEngine | null>(null);
 
@@ -86,7 +87,7 @@ export function Viewport() {
       if (!info) return;
       element.textContent = info.text;
       element.style.transform = `translate(${Math.round(info.x + 18)}px, ${Math.round(info.y + 20)}px)`;
-    });
+    }, viewportRef.current);
     engine.setSketchInput(controller);
     registerSketchControl(controller);
 
@@ -135,6 +136,7 @@ export function Viewport() {
         engine.setInactiveSketches(inactiveSketches(state));
       }
       if (!previous || state.effectiveTheme !== previous.effectiveTheme) engine.setTheme(state.effectiveTheme);
+      if (!previous || state.language !== previous.language) engine.setDimensionLanguage(state.language);
       if (!previous || state.settings.projection !== previous.settings.projection) engine.setProjection(state.settings.projection);
       if (!previous || state.settings.navigation !== previous.settings.navigation) engine.setNavigation(state.settings.navigation);
       if (!previous || state.settings.showFrameStats !== previous.settings.showFrameStats) {
@@ -159,7 +161,7 @@ export function Viewport() {
   }, [t, i18n.language]);
 
   return (
-    <div className="viewport" data-testid="viewport">
+    <div ref={viewportRef} className="viewport" data-testid="viewport">
       <div ref={containerRef} className="viewport-surface" />
       <div ref={cursorInfoRef} className="sketch-cursor-info" data-testid="sketch-cursor-info" hidden />
       <ViewToolbar />
