@@ -60,7 +60,7 @@ how that time is spread over the calendar.
 
 ## Progress
 
-### Phase 0 – status on 2026-10-18
+### Phase 0 – completed on 2026-10-19 (Gate 1 reached)
 
 | Item | Status |
 |---|---|
@@ -80,7 +80,12 @@ how that time is spread over the calendar.
 | Comparison with native OCCT | ✅ done: WebAssembly is 1.5–4× slower; stays the default, native add-on path kept open |
 | Multi-threaded kernel | ✅ evaluated: 1.6–1.8× natively for edits; deferred until a budget requires it (ADR 0001) |
 
-**Findings so far that change the plan:**
+**Gate 1 result:** the stack is fast and robust enough to continue. WebAssembly stays the kernel platform
+(1.5–4× slower than native, but interactive edits of typical parts take well under a second, one binary
+serves all platforms, and the kernel runs sandboxed). First preview released as
+[v0.1.0-alpha.0](https://github.com/Ujap1994/ParaWerk/releases/tag/v0.1.0-alpha.0). Next: Phase 1.
+
+**Findings that changed the plan:**
 
 - The prebuilt OCCT WebAssembly build leaked memory and re-triangulated whole bodies on every change.
   ParaWerk now uses its own OCCT 8 build with a C++ facade: no leaks, half the memory, edits of large
@@ -535,7 +540,7 @@ All suites run in CI on Windows, macOS and Linux. Every reported bug gets a fail
 
 | Gate | When (Scenario B) | Question | Investment so far |
 |---|---|---|---|
-| Gate 1 | end of Phase 0, ~month 1–1.5 | Is the stack fast and robust enough? WebAssembly or native kernel? | ~4–6 weeks |
+| Gate 1 ✅ | reached 2026-10-19 | Is the stack fast and robust enough? WebAssembly or native kernel? → yes, WebAssembly (ADR 0001) | Phase 0 |
 | Gate 2 | end of Phase 2, ~month 6–8 | Can real parts be modeled productively? Continue to assemblies? | ~25–30 % |
 | Gate 3 | end of Phase 5, ~month 11–13 | Are assemblies with standard parts convincing? Continue to drawings? | ~60 % |
 | Release | end of Phase 8 | Are all budgets met? Ship v1.0 | 100 % |
