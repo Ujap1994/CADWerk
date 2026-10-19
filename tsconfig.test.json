@@ -20,6 +20,7 @@
     "src/kernel/**/*",
     "src/shared/**/*",
     "src/renderer/src/**/*",
-    "src/main/protocol-path.ts"
+    "src/main/protocol-path.ts",
+    "src/sketch/**/*"
   ]
 }
