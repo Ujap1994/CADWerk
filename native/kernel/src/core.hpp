@@ -77,6 +77,9 @@ MeshData exportMesh(int id, double linear, double angular);
 std::string exportStep(int id);
 int importStep(const std::string& data);
 
+/** Enables OCCT's parallel algorithms (meshing, booleans); requires a threaded build. */
+void setParallel(bool enabled);
+
 /** Converts the current exception into an error code and message (call inside a catch block). */
 std::pair<std::string, std::string> describeException(std::exception_ptr error);
 

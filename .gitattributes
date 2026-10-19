@@ -1,0 +1,4 @@
+# Prebuilt kernel: never convert line endings (checksums in vendor/parawerk-kernel/manifest.json).
+vendor/** -text
+*.wasm binary
+*.png binary

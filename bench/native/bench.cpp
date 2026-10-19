@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <functional>
 #include <map>
 #include <string>
@@ -82,6 +83,9 @@ void releaseAll(const std::vector<int>& ids) {
 
 int main(int argc, char** argv) {
   const std::string output = argc > 1 ? argv[1] : "kernel-native.json";
+  // PARALLEL=1 enables OCCT's parallel meshing and booleans.
+  const char* parallelEnv = std::getenv("PARALLEL");
+  setParallel(parallelEnv != nullptr && std::string(parallelEnv) == "1");
   std::map<std::string, Result> cases;
 
   cases["box.rebuild"] = measure([](int i) {

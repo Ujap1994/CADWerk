@@ -87,8 +87,15 @@ with `setjmp`/`longjmp` on all non-MSVC compilers. Combined with native WebAssem
 produced invalid WebAssembly ("br_table: label arity inconsistent"). The build script disables both for
 Emscripten; WebAssembly has no signals to convert.
 
+## Multi-threading (measured, deferred)
+
+Natively, OCCT's parallel meshing and booleans make fillets, edits of the 100-hole plate and STL export
+1.6–1.8× faster on 8 cores; full rebuilds and re-meshing gain only 1.1–1.2×. A threaded WebAssembly
+build needs SharedArrayBuffer, a pool of nested pthread workers and slower shared-memory growth, which
+adds stability risk for a moderate gain. **Decision:** single-threaded for now; the core already has a
+`setParallel` switch. The threaded build is added when a performance budget requires it (trigger:
+editing a late feature in a 300-feature part exceeds 1 s single-threaded).
+
 ## Next steps
 
-- Multi-threaded meshing and booleans (`-pthread`, OCCT's thread pool; cross-origin isolation is already
-  enabled).
 - History tracking in the facade for persistent naming (ADR 0002).

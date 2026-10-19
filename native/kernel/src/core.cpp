@@ -59,6 +59,8 @@ using AncestorMap = NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<To
 
 constexpr double kNaN = std::numeric_limits<double>::quiet_NaN();
 
+bool parallel = false;
+
 class ShapeStore {
  public:
   int add(const TopoDS_Shape& shape) {
@@ -156,7 +158,7 @@ void triangulate(const TopoDS_Shape& shape, double linear, double angular, bool 
   parameters.Deflection = linear;
   parameters.Angle = angular;
   parameters.Relative = false;
-  parameters.InParallel = false;
+  parameters.InParallel = parallel;
   BRepMesh_IncrementalMesh mesher(shape, parameters);
 }
 
@@ -281,7 +283,21 @@ void appendEdges(const TopoDS_Shape& shape, double linear, double angular, MeshD
   }
 }
 
+/** Sets up and runs a boolean operation, in parallel when enabled. */
+void configure(BRepAlgoAPI_BooleanOperation& algorithm, const TopoDS_Shape& body, const TopoDS_Shape& tool) {
+  NCollection_List<TopoDS_Shape> arguments;
+  arguments.Append(body);
+  NCollection_List<TopoDS_Shape> tools;
+  tools.Append(tool);
+  algorithm.SetArguments(arguments);
+  algorithm.SetTools(tools);
+  algorithm.SetRunParallel(parallel);
+  algorithm.Build();
+}
+
 }  // namespace
+
+void setParallel(bool enabled) { parallel = enabled; }
 
 // ------------------------------------------------------------------ features
 
@@ -300,12 +316,14 @@ int booleanOperation(int bodyId, int toolId, int op) {
   const TopoDS_Shape& tool = store().get(toolId);
   TopoDS_Shape result;
   if (op == 0) {
-    BRepAlgoAPI_Fuse algorithm(body, tool);
+    BRepAlgoAPI_Fuse algorithm;
+    configure(algorithm, body, tool);
     if (algorithm.HasErrors()) throw KernelError("operation-failed", "boolean operation failed");
     algorithm.SimplifyResult(true, true, 1e-6);
     result = algorithm.Shape();
   } else {
-    BRepAlgoAPI_Cut algorithm(body, tool);
+    BRepAlgoAPI_Cut algorithm;
+    configure(algorithm, body, tool);
     if (algorithm.HasErrors()) throw KernelError("operation-failed", "boolean operation failed");
     algorithm.SimplifyResult(true, true, 1e-6);
     result = algorithm.Shape();

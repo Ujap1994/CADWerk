@@ -31,15 +31,17 @@ em++ "$REPO/native/kernel/src/core.cpp" "$REPO/native/kernel/src/bindings.cpp" -
   -sEXPORTED_RUNTIME_METHODS=wasmMemory \
   --emit-tsd parawerk-kernel.d.ts
 
-# Record exactly what was built, so the binary in the repository is traceable.
+# Record exactly what was built, so the binary in the repository is traceable and
+# CI can detect C++ changes that were not rebuilt (scripts/verify-kernel.mjs).
 node -e '
-const fs = require("fs"); const crypto = require("crypto");
-const [out, occt, emsdk] = process.argv.slice(1);
-const hash = (f) => crypto.createHash("sha256").update(fs.readFileSync(`${out}/${f}`)).digest("hex");
+const fs = require("fs"); const crypto = require("crypto"); const path = require("path");
+const [out, repo, occt, emsdk] = process.argv.slice(1);
+const hash = (f) => crypto.createHash("sha256").update(fs.readFileSync(f)).digest("hex");
+const sources = ["native/kernel/src/core.hpp", "native/kernel/src/core.cpp", "native/kernel/src/bindings.cpp", "scripts/build-kernel.sh"];
 fs.writeFileSync(`${out}/manifest.json`, JSON.stringify({
-  occt, emscripten: emsdk, source: ["native/kernel/src/core.cpp", "native/kernel/src/bindings.cpp"],
-  built: new Date().toISOString(),
-  files: { "parawerk-kernel.js": hash("parawerk-kernel.js"), "parawerk-kernel.wasm": hash("parawerk-kernel.wasm") },
+  occt, emscripten: emsdk, built: new Date().toISOString(),
+  sources: Object.fromEntries(sources.map((s) => [s, hash(path.join(repo, s))])),
+  files: { "parawerk-kernel.js": hash(`${out}/parawerk-kernel.js`), "parawerk-kernel.wasm": hash(`${out}/parawerk-kernel.wasm`) },
 }, null, 2) + "\n");
-' "$OUT" "$OCCT_VERSION" "$EMSDK_VERSION"
+' "$OUT" "$REPO" "$OCCT_VERSION" "$EMSDK_VERSION"
 ls -la "$OUT"
