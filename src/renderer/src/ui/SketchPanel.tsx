@@ -60,6 +60,20 @@ function useConstraintName() {
   };
 }
 
+function CornerSize({ tool }: { tool: 'sketchFillet' | 'sketchChamfer' }) {
+  const { t } = useTranslation();
+  const size = useAppState((state) => (tool === 'sketchFillet' ? state.filletRadius : state.chamferDistance));
+  return (
+    <NumberField
+      label={t(tool === 'sketchFillet' ? 'sketch.filletRadius' : 'sketch.chamferDistance')}
+      value={size}
+      step={0.5}
+      testId="corner-size"
+      onChange={(value) => commands.setCornerSize(tool, value)}
+    />
+  );
+}
+
 function PolygonSides() {
   const { t } = useTranslation();
   const sides = useAppState((state) => state.polygonSides);
@@ -213,6 +227,7 @@ function OpenSketch() {
         <p className="sketch-tool-name">{tool ? t(`commands.sketchTools.${tool}`) : t('sketch.selectTool')}</p>
         <p className="panel-hint is-flush">{t(`sketch.toolHints.${tool ?? 'select'}`)}</p>
         {tool === 'polygon' ? <PolygonSides /> : null}
+        {tool === 'sketchFillet' || tool === 'sketchChamfer' ? <CornerSize tool={tool} /> : null}
         {tool ? <p className="panel-hint is-flush">{t('sketch.toolHints.snapping')}</p> : null}
       </fieldset>
       {tool ? null : <SelectionSection />}

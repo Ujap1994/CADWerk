@@ -106,7 +106,16 @@ explains the active tool.
 **R**, **C** and **A** start the variant you used last; the small arrow next to *Rectangle*, *Circle* and
 *Arc* offers all variants.
 
-![A line continued by a tangent arc, a slot and a hexagon](../images/screenshots/sketch-tools.png)
+### Fillets and chamfers in a sketch
+
+**Fillet** and **Chamfer** (in the *Modify* group) round or bevel the corner where two lines meet: set the
+radius or distance in the side panel, then click corners. The lines are shortened, joined by a tangent arc
+(with a radius dimension) or by a line (with both distances dimensioned), and the old corner stays as a
+*virtual sharp* on both lines – so dimensions and relations to the corner keep working, and a fully
+defined sketch stays fully defined. A radius or distance that does not fit the lines is refused with a
+message.
+
+![A line continued by a tangent arc, a slot, a hexagon and a rectangle with a rounded and a beveled corner](../images/screenshots/sketch-tools.png)
 
 ![Drawing a line from a corner: preview, measurement and a horizontal relation](../images/screenshots/sketch-drawing.png)
 

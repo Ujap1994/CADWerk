@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SketchBuilder } from '../../src/renderer/src/sketch/builder.ts';
 import { pointPositions } from '../../src/renderer/src/sketch/geometry.ts';
 import { snapCursor } from '../../src/renderer/src/sketch/snap.ts';
-import { circumcenter, createTool, type SketchTool, type ToolEvent } from '../../src/renderer/src/sketch/tools.ts';
+import { circumcenter, createTool, DEFAULT_TOOL_OPTIONS, type SketchTool, type ToolEvent } from '../../src/renderer/src/sketch/tools.ts';
 import { ORIGIN_ID, type SketchData, type SketchEntity } from '../../src/shared/model/sketch.ts';
 import { parseSketchData } from '../../src/shared/model/validate-sketch.ts';
 import { solveSketch } from '../../src/sketch/solver/index.ts';
@@ -258,7 +258,7 @@ describe('three-point circles, slots and polygons', () => {
   });
 
   it('draws regular polygons with the chosen number of sides', () => {
-    const sketch = draw(createTool('polygon', { polygonSides: 6 }), [[0, 0], [20, 0.3]]);
+    const sketch = draw(createTool('polygon', { ...DEFAULT_TOOL_OPTIONS, polygonSides: 6 }), [[0, 0], [20, 0.3]]);
     const sides = sketch.entities.filter((e) => e.type === 'line');
     expect(sides).toHaveLength(6);
     expect(sketch.entities.find((e) => e.type === 'circle')).toMatchObject({ construction: true, radius: 20 });
@@ -266,6 +266,6 @@ describe('three-point circles, slots and polygons', () => {
     expect(types(sketch).filter((t) => t === 'pointOnCircle')).toHaveLength(6);
     expect(types(sketch)).toContain('horizontalPoints');
     expectConsistent(sketch);
-    expect(draw(createTool('polygon', { polygonSides: 1 }), [[0, 0], [10, 3]]).entities.filter((e) => e.type === 'line')).toHaveLength(3);
+    expect(draw(createTool('polygon', { ...DEFAULT_TOOL_OPTIONS, polygonSides: 1 }), [[0, 0], [10, 3]]).entities.filter((e) => e.type === 'line')).toHaveLength(3);
   });
 });

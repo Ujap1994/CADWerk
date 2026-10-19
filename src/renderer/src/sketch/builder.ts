@@ -20,6 +20,7 @@ export class SketchBuilder {
   private readonly base: SketchData;
   private readonly entities: SketchEntity[] = [];
   private readonly constraints: SketchConstraint[] = [];
+  private readonly replaced = new Map<string, SketchEntity>();
   private readonly next = new Map<string, number>();
 
   constructor(base: SketchData) {
@@ -88,12 +89,18 @@ export class SketchBuilder {
     return id;
   }
 
+  /** Changes an existing entity (e.g. a line that now ends at another point). */
+  replace(id: string, entity: SketchEntity): void {
+    this.replaced.set(id, entity);
+  }
+
   get changed(): boolean {
-    return this.entities.length > 0 || this.constraints.length > 0;
+    return this.entities.length > 0 || this.constraints.length > 0 || this.replaced.size > 0;
   }
 
   build(): SketchData {
     if (!this.changed) return this.base;
-    return { entities: [...this.base.entities, ...this.entities], constraints: [...this.base.constraints, ...this.constraints] };
+    const existing = this.replaced.size > 0 ? this.base.entities.map((entity) => this.replaced.get(entity.id) ?? entity) : this.base.entities;
+    return { entities: [...existing, ...this.entities], constraints: [...this.base.constraints, ...this.constraints] };
   }
 }

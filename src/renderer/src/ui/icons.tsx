@@ -317,6 +317,21 @@ export const PointIcon = (p: P) => (
   </Icon>
 );
 
+/** A corner rounded off; the sharp corner it replaces is dashed. */
+export const SketchFilletIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 20v-7a8 8 0 0 1 8-8h8" />
+    <path d="M4 13V5h8" strokeDasharray="2 2" strokeWidth={1.2} />
+  </Icon>
+);
+
+export const SketchChamferIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 20v-9l6-6h10" />
+    <path d="M4 11V5h6" strokeDasharray="2 2" strokeWidth={1.2} />
+  </Icon>
+);
+
 /** Construction geometry is drawn dashed. */
 export const ConstructionIcon = (p: P) => (
   <Icon {...p}>

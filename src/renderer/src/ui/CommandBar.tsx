@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FeatureType } from '../../../shared/model/feature.ts';
 import * as commands from '../commands.ts';
@@ -13,6 +13,8 @@ import {
   ChevronDownIcon,
   CircleIcon,
   PolygonIcon,
+  SketchChamferIcon,
+  SketchFilletIcon,
   SlotIcon,
   TangentArcIcon,
   ThreePointCircleIcon,
@@ -52,6 +54,8 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   tangentArc: TangentArcIcon,
   slot: SlotIcon,
   polygon: PolygonIcon,
+  sketchFillet: SketchFilletIcon,
+  sketchChamfer: SketchChamferIcon,
   point: PointIcon,
   dimension: DimensionIcon,
 };
@@ -233,6 +237,7 @@ function SketchTab() {
         <ToolButton tool="point" disabled={off} />
       </Group>
       <Group label={t('commands.groups.modify')}>
+        <SplitToolButton tools={['sketchFillet', 'sketchChamfer']} current={variants.corner} disabled={off} />
         <CommandButton
           id="construction"
           icon={ConstructionIcon}
@@ -254,8 +259,40 @@ function SketchTab() {
   );
 }
 
+const DENSITIES = ['normal', 'tight', 'icons', 'dense'] as const;
+
+/**
+ * Sets the first density at which all commands of the bar fit. The bar keeps the height of the
+ * normal density, so the 3D view never jumps when the mode (and with it the commands) changes.
+ */
+function fitDensity(bar: HTMLElement): void {
+  bar.style.minHeight = '';
+  bar.dataset.density = DENSITIES[0];
+  const height = bar.offsetHeight;
+  if (bar.scrollWidth <= bar.clientWidth + 1) return;
+  bar.style.minHeight = `${height}px`;
+  for (const density of DENSITIES.slice(1)) {
+    bar.dataset.density = density;
+    if (bar.scrollWidth <= bar.clientWidth + 1) return;
+  }
+}
+
+/** Fits the bar after every render (the commands change with the tab and mode) and on window resizes. */
+function useFittingDensity(bar: React.RefObject<HTMLElement | null>): void {
+  useLayoutEffect(() => {
+    const fit = () => {
+      if (bar.current) fitDensity(bar.current);
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  });
+}
+
 export function CommandBar() {
   const { t } = useTranslation();
+  const barRef = useRef<HTMLElement>(null);
+  useFittingDensity(barRef);
   const tab = useAppState((state) => state.commandTab);
   const canUndo = useAppState((state) => (state.sketch ? state.sketch.past.length > 0 : state.history.past.length > 0 || state.activeEdit !== null));
   const canRedo = useAppState((state) =>
@@ -264,7 +301,7 @@ export function CommandBar() {
   const hasFeatures = useAppState((state) => state.history.features.length > 0);
 
   return (
-    <header className="command-bar" role="toolbar" aria-label="ParaWerk">
+    <header ref={barRef} className="command-bar" role="toolbar" aria-label="ParaWerk">
       <div className="brand" aria-hidden="true">
         <img src="./favicon.svg" alt="" width={28} height={28} />
       </div>

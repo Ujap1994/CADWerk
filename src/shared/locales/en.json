@@ -111,7 +111,9 @@
       "threePointCircle": "3-point circle",
       "tangentArc": "Tangent arc",
       "slot": "Slot",
-      "polygon": "Polygon"
+      "polygon": "Polygon",
+      "sketchFillet": "Fillet",
+      "sketchChamfer": "Chamfer"
     },
     "sketchToolTips": {
       "line": "Draw connected lines (L)",
@@ -128,7 +130,9 @@
       "threePointCircle": "Circle through three points (C)",
       "tangentArc": "Arc that continues a line or arc tangentially from its end point (A)",
       "slot": "Straight slot from the two arc centers and the width",
-      "polygon": "Regular polygon from the center and a corner"
+      "polygon": "Regular polygon from the center and a corner",
+      "sketchFillet": "Round the corner where two lines meet",
+      "sketchChamfer": "Bevel the corner where two lines meet"
     }
   },
   "features": {
@@ -337,7 +341,9 @@
       "threePointCircle": "Click three points the circle passes through.",
       "tangentArc": "Click the end point of a line or arc, then where the arc should end. The arc leaves the line or arc tangentially.",
       "slot": "Click the centers of both ends, then move sideways to set the width and click.",
-      "polygon": "Click the center, then a corner. All sides stay equal; the corners lie on a construction circle."
+      "polygon": "Click the center, then a corner. All sides stay equal; the corners lie on a construction circle.",
+      "sketchFillet": "Set the radius, then click corners where two lines meet. The lines are shortened and joined by a tangent arc with a radius dimension.",
+      "sketchChamfer": "Set the distance, then click corners where two lines meet. Both lines are shortened by the distance and joined by a line."
     },
     "tool": "Tool",
     "selectTool": "Select",
@@ -368,7 +374,10 @@
       "drivenDimension": "This dimension would over-define the sketch, so it was added as a reference dimension that only shows the value.",
       "dimensionNotApplied": "The sketch cannot be solved with this value; the dimension keeps its previous value.",
       "invalidDimension": "Enter a length greater than 0, or an angle between 0 and 180 degrees.",
-      "drivenNotEditable": "Reference dimensions show the measured value and cannot be changed."
+      "drivenNotEditable": "Reference dimensions show the measured value and cannot be changed.",
+      "cornerNotACorner": "Click a corner where exactly two lines meet.",
+      "cornerTooLarge": "The radius or distance is too large for the lines at this corner.",
+      "cornerStraight": "The two lines continue each other in a straight line; there is no corner."
     },
     "dimensionsSelected_one": "{{count}} dimension selected",
     "dimensionsSelected_other": "{{count}} dimensions selected",
@@ -394,6 +403,8 @@
       "diameter": "Diameter",
       "angle": "Angle"
     },
-    "polygonSides": "Sides"
+    "polygonSides": "Sides",
+    "filletRadius": "Radius",
+    "chamferDistance": "Distance"
   }
 }

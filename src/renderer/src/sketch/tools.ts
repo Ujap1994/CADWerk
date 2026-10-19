@@ -6,6 +6,7 @@
 
 import type { SketchData } from '../../../shared/model/sketch.ts';
 import { SketchBuilder, type PlacedPoint } from './builder.ts';
+import { chamferCorner, cornerAt, filletCorner, type CornerError } from './corners.ts';
 import { proposeDimension, type DimensionDraft } from './dimensions.ts';
 import { arcGeometry, hitTest, isCurve, pointPositions, type Point2 } from './geometry.ts';
 import { snapCursor, type SnapResult } from './snap.ts';
@@ -23,6 +24,8 @@ export type SketchToolName =
   | 'slot'
   | 'polygon'
   | 'point'
+  | 'sketchFillet'
+  | 'sketchChamfer'
   | 'dimension';
 
 export const SKETCH_TOOLS: readonly SketchToolName[] = [
@@ -38,15 +41,19 @@ export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'slot',
   'polygon',
   'point',
+  'sketchFillet',
+  'sketchChamfer',
   'dimension',
 ];
 
 /** Settings of tools that have them. */
 export interface ToolOptions {
   polygonSides: number;
+  filletRadius: number;
+  chamferDistance: number;
 }
 
-export const DEFAULT_TOOL_OPTIONS: ToolOptions = { polygonSides: 6 };
+export const DEFAULT_TOOL_OPTIONS: ToolOptions = { polygonSides: 6, filletRadius: 5, chamferDistance: 3 };
 
 export interface ToolEvent {
   u: number;
@@ -87,6 +94,8 @@ export interface ToolStep {
   preview: ToolPreview;
   /** A dimension to add: the value is asked for next. */
   place?: DimensionDraft;
+  /** Why the click did nothing (a key in sketch.messages). */
+  message?: string;
 }
 
 export interface SketchTool {
@@ -893,6 +902,42 @@ export class PolygonTool implements SketchTool {
   }
 }
 
+const CORNER_MESSAGES: Record<CornerError, string> = {
+  'not-a-corner': 'cornerNotACorner',
+  'too-large': 'cornerTooLarge',
+  straight: 'cornerStraight',
+};
+
+/** Sketch fillet and chamfer: click a corner where two lines meet. */
+export class CornerTool implements SketchTool {
+  readonly name: 'sketchFillet' | 'sketchChamfer';
+  readonly busy = false;
+  private readonly size: number;
+
+  constructor(name: 'sketchFillet' | 'sketchChamfer', size: number) {
+    this.name = name;
+    this.size = size;
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const snap = snapAt(sketch, event);
+    const corner = snap.target.kind === 'point' && cornerAt(sketch, snap.target.id) !== null;
+    return { geometry: EMPTY, snap: corner ? { ...snap, alignments: [] } : { u: event.u, v: event.v, target: { kind: 'none' }, alignments: [] }, info: null };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const snap = snapAt(sketch, event);
+    if (snap.target.kind !== 'point') return { commit: null, preview: this.hover(sketch, event), message: CORNER_MESSAGES['not-a-corner'] };
+    const result = this.name === 'sketchFillet' ? filletCorner(sketch, snap.target.id, this.size) : chamferCorner(sketch, snap.target.id, this.size);
+    if (!result.ok) return { commit: null, preview: this.hover(sketch, event), message: CORNER_MESSAGES[result.error] };
+    return { commit: result.sketch, preview: this.hover(result.sketch, event) };
+  }
+
+  cancel(): boolean {
+    return false;
+  }
+}
+
 export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_TOOL_OPTIONS): SketchTool {
   switch (name) {
     case 'line':
@@ -917,6 +962,10 @@ export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_
       return new ThreePointArcTool();
     case 'point':
       return new PointTool();
+    case 'sketchFillet':
+      return new CornerTool(name, options.filletRadius);
+    case 'sketchChamfer':
+      return new CornerTool(name, options.chamferDistance);
     case 'dimension':
       return new DimensionTool();
   }

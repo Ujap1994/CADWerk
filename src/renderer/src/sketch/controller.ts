@@ -2,7 +2,7 @@ import { isDimension, type SketchData, type SketchDimension } from '../../../sha
 import * as commands from '../commands.ts';
 import { formatNumber, parseNumber } from '../format.ts';
 import { t } from '../i18n.ts';
-import { getState, setState, store, type AppState } from '../state/store.ts';
+import { getState, setState, showToast, store, type AppState } from '../state/store.ts';
 import type { SketchInput, SketchPointer, ViewportEngine } from '../viewport/engine.ts';
 import type { SketchHighlight, SketchStatusColors } from '../viewport/sketch-graphics.ts';
 import type { SketchToolDisplay } from '../viewport/sketch-layer.ts';
@@ -114,7 +114,9 @@ export class SketchController implements SketchInput, SketchToolControl {
     this.showCursorInfo = showCursorInfo;
     this.editorHost = editorHost;
     this.unsubscribe = store.subscribe((state, previous) => {
-      if (state.sketchTool !== previous.sketchTool || (state.sketch === null && previous.sketch !== null) || state.polygonSides !== previous.polygonSides) {
+      const optionsChanged =
+        state.polygonSides !== previous.polygonSides || state.filletRadius !== previous.filletRadius || state.chamferDistance !== previous.chamferDistance;
+      if (state.sketchTool !== previous.sketchTool || (state.sketch === null && previous.sketch !== null) || optionsChanged) {
         this.selectTool(state.sketchTool);
       }
       else if (this.tool && state.sketch && state.sketch.draft.sketch !== this.toolSketch) {
@@ -293,7 +295,8 @@ export class SketchController implements SketchInput, SketchToolControl {
     this.tool?.cancel();
     const sketch = getState().sketch?.draft.sketch;
     if (sketch && !this.editor) this.showDraft(sketch, undefined);
-    this.tool = name ? createTool(name, { polygonSides: getState().polygonSides }) : null;
+    const { polygonSides, filletRadius, chamferDistance } = getState();
+    this.tool = name ? createTool(name, { polygonSides, filletRadius, chamferDistance }) : null;
     this.toolSketch = getState().sketch?.draft.sketch ?? null;
     if (!this.tool) {
       this.engine.setSketchToolDisplay(null);
@@ -330,6 +333,7 @@ export class SketchController implements SketchInput, SketchToolControl {
     }
     this.showPreview(step.preview, pointer);
     if (step.place) this.placeDimension(step.place);
+    if (step.message) showToast('info', t(`sketch.messages.${step.message}`));
   }
 
   /** The dimension tool placed a dimension: ask for its value, then add it. */

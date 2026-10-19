@@ -222,6 +222,17 @@ test('README and user guide screenshots', async () => {
   await page.click('[data-command="tool-polygon"]');
   await front(65, 90);
   await front(78, 90);
+  // A rectangle with a rounded and a beveled corner.
+  await page.keyboard.press('r');
+  await front(-130, 70);
+  await front(-92, 100);
+  await page.click('[data-command="tool-sketchFillet"]');
+  await page.locator('[data-testid="corner-size"]').fill('8');
+  await front(-92, 100);
+  await page.click('.split-toggle[data-variants="sketchFillet sketchChamfer"]');
+  await page.click('.menu-item[data-tool="sketchChamfer"]');
+  await page.locator('[data-testid="corner-size"]').fill('6');
+  await front(-130, 70);
   await page.keyboard.press('Escape');
   if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
   await page.waitForTimeout(400);

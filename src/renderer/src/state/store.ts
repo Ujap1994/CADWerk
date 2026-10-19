@@ -79,9 +79,13 @@ export interface AppState {
     rectangle: 'cornerRectangle' | 'centerRectangle';
     circle: 'circle' | 'threePointCircle';
     arc: 'centerArc' | 'threePointArc' | 'tangentArc';
+    corner: 'sketchFillet' | 'sketchChamfer';
   };
   /** Number of sides the polygon tool draws. */
   polygonSides: number;
+  /** Radius of sketch fillets and distance of sketch chamfers (mm). */
+  filletRadius: number;
+  chamferDistance: number;
   selection: Pick[];
   hover: Pick | null;
 
@@ -113,8 +117,10 @@ export const initialState: AppState = {
   sketchAnalysis: null,
   sketchStatuses: {},
   sketchTool: null,
-  sketchToolVariants: { rectangle: 'cornerRectangle', circle: 'circle', arc: 'centerArc' },
+  sketchToolVariants: { rectangle: 'cornerRectangle', circle: 'circle', arc: 'centerArc', corner: 'sketchFillet' },
   polygonSides: 6,
+  filletRadius: 5,
+  chamferDistance: 3,
   selection: [],
   hover: null,
   kernelStatus: 'loading',

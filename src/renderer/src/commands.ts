@@ -383,7 +383,13 @@ export function setSketchTool(tool: SketchToolName | null): void {
   if (next === 'cornerRectangle' || next === 'centerRectangle') variants.rectangle = next;
   if (next === 'circle' || next === 'threePointCircle') variants.circle = next;
   if (next === 'centerArc' || next === 'threePointArc' || next === 'tangentArc') variants.arc = next;
+  if (next === 'sketchFillet' || next === 'sketchChamfer') variants.corner = next;
   setState({ sketchTool: next, sketchToolVariants: variants, sketchSelection: next ? [] : state.sketchSelection, sketchHover: null, commandTab: 'sketch' });
+}
+
+export function setCornerSize(tool: 'sketchFillet' | 'sketchChamfer', size: number): void {
+  if (!(size > 0)) return;
+  setState(tool === 'sketchFillet' ? { filletRadius: size } : { chamferDistance: size });
 }
 
 export function setPolygonSides(sides: number): void {

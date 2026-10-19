@@ -4,7 +4,7 @@
 
 | Area | Purpose |
 |---|---|
-| **Command bar** (top) | *File* and *Edit* commands on the left, *Export*, *Settings* and *About* on the right. In between, the tabs **Features** and **Sketch** switch the command set; entering sketch mode switches to the *Sketch* tab automatically. Hover over a command to see what it does and its shortcut. |
+| **Command bar** (top) | *File* and *Edit* commands on the left, *Export*, *Settings* and *About* on the right. In between, the tabs **Features** and **Sketch** switch the command set; entering sketch mode switches to the *Sketch* tab automatically. Hover over a command to see what it does and its shortcut. When the window is too narrow for all commands, the buttons get tighter and then show only their icons. |
 | **Feature tree** (left) | The origin, the three standard planes and the history of the part, from top to bottom. Hover over a plane to show it in the 3D view; hover over a feature to edit, suppress or delete it; double-click to edit. Features with a rebuild error are shown in red with a warning icon. |
 | **Property panel** (left, replaces the tree while a feature is created or edited) | Parameters of the feature with live preview. **✓** (Enter) applies, **✕** (Esc) cancels. |
 | **Sketch panel** (left, above the tree in sketch mode) | The open sketch, its plane and contents. **✓** keeps the sketch, **✕** discards the changes. See [Sketches](sketches.md). |

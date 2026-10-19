@@ -111,7 +111,9 @@
       "threePointCircle": "3-Punkt-Kreis",
       "tangentArc": "Tangentialbogen",
       "slot": "Langloch",
-      "polygon": "Polygon"
+      "polygon": "Polygon",
+      "sketchFillet": "Verrundung",
+      "sketchChamfer": "Fase"
     },
     "sketchToolTips": {
       "line": "Verbundene Linien zeichnen (L)",
@@ -128,7 +130,9 @@
       "threePointCircle": "Kreis durch drei Punkte (C)",
       "tangentArc": "Bogen, der eine Linie oder einen Bogen am Endpunkt tangential fortsetzt (A)",
       "slot": "Gerades Langloch aus den beiden Bogenmittelpunkten und der Breite",
-      "polygon": "Regelmäßiges Vieleck aus Mittelpunkt und einer Ecke"
+      "polygon": "Regelmäßiges Vieleck aus Mittelpunkt und einer Ecke",
+      "sketchFillet": "Ecke zwischen zwei Linien abrunden",
+      "sketchChamfer": "Ecke zwischen zwei Linien anfasen"
     }
   },
   "features": {
@@ -337,7 +341,9 @@
       "threePointCircle": "Drei Punkte anklicken, durch die der Kreis läuft.",
       "tangentArc": "Den Endpunkt einer Linie oder eines Bogens anklicken, dann das Ende des Bogens. Der Bogen setzt Linie oder Bogen tangential fort.",
       "slot": "Die Mittelpunkte beider Enden anklicken, dann seitlich bewegen, um die Breite festzulegen, und klicken.",
-      "polygon": "Mittelpunkt anklicken, dann eine Ecke. Alle Seiten bleiben gleich lang; die Ecken liegen auf einem Konstruktionskreis."
+      "polygon": "Mittelpunkt anklicken, dann eine Ecke. Alle Seiten bleiben gleich lang; die Ecken liegen auf einem Konstruktionskreis.",
+      "sketchFillet": "Radius einstellen, dann Ecken anklicken, an denen sich zwei Linien treffen. Die Linien werden gekürzt und durch einen tangentialen Bogen mit Radiusmaß verbunden.",
+      "sketchChamfer": "Abstand einstellen, dann Ecken anklicken, an denen sich zwei Linien treffen. Beide Linien werden um den Abstand gekürzt und durch eine Linie verbunden."
     },
     "tool": "Werkzeug",
     "selectTool": "Auswählen",
@@ -368,7 +374,10 @@
       "drivenDimension": "Diese Bemaßung würde die Skizze überbestimmen und wurde deshalb als Referenzbemaßung hinzugefügt, die den Wert nur anzeigt.",
       "dimensionNotApplied": "Mit diesem Wert lässt sich die Skizze nicht lösen; die Bemaßung behält ihren bisherigen Wert.",
       "invalidDimension": "Gib eine Länge größer als 0 oder einen Winkel zwischen 0 und 180 Grad ein.",
-      "drivenNotEditable": "Referenzbemaßungen zeigen den gemessenen Wert und lassen sich nicht ändern."
+      "drivenNotEditable": "Referenzbemaßungen zeigen den gemessenen Wert und lassen sich nicht ändern.",
+      "cornerNotACorner": "Klicke eine Ecke an, an der sich genau zwei Linien treffen.",
+      "cornerTooLarge": "Radius oder Abstand ist für die Linien an dieser Ecke zu groß.",
+      "cornerStraight": "Die beiden Linien setzen sich geradlinig fort; hier ist keine Ecke."
     },
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
     "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",
@@ -394,6 +403,8 @@
       "diameter": "Durchmesser",
       "angle": "Winkel"
     },
-    "polygonSides": "Seiten"
+    "polygonSides": "Seiten",
+    "filletRadius": "Radius",
+    "chamferDistance": "Abstand"
   }
 }

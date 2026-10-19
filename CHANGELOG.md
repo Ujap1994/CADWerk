@@ -29,14 +29,19 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- Sketch fillet and chamfer: round or bevel the corner of two lines; lines are shortened, the arc is
+  tangent and dimensioned, the corner stays as a virtual sharp so dimensions to it keep working.
+- Tangency at a shared end point uses a well-conditioned equation, so tangent arcs and fillets are
+  correctly reported as fully defined.
 - More drawing tools: tangent arc (continues a line or arc from its end point), 3-point circle, straight
   slot (tangent sides, equal end arcs) and regular polygon (3 to 64 sides, on a construction circle).
 - Definition status of sketches: under-defined geometry is blue, fully defined dark, over-defined red;
   status in the side panel, the status bar and the feature tree; conflicting relations and dimensions are
   listed (and shown in red) and can be deleted. The solver analyzes sketches in the background after
   every change.
-- Compact command bar on smaller windows (tighter buttons below 1,500 px, icons only below 1,280 px); the
-  layout never grows wider than the window.
+- The command bar adapts to the available width: tighter buttons, then icons only (the names stay in the
+  tooltips). Its height stays the same, so the 3D view never jumps, and the layout never grows wider than
+  the window.
 - Command bar tabs *Features* and *Sketch*.
 - Own sparse 2D constraint solver running in a worker (the basis for relations and dimensions).
 

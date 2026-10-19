@@ -107,7 +107,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Sketch geometry in the 3D view, selection, dragging with live solving, delete | ✅ done (drag step 7 ms at 2,000 entities, Apple M3) |
 | Drawing tools (line, centerline, rectangles, circle, arcs, point), inference lines, snapping and automatic relations | ✅ done |
 | More tools: tangent arc, 3-point circle, slot, polygon | ✅ done |
-| Sketch fillet and chamfer, trim and extend | ⏳ next |
+| Sketch fillet and chamfer | ✅ done |
+| Trim and extend | ⏳ next |
 | 3-point and parallelogram rectangles, ellipse, spline | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |

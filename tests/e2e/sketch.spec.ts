@@ -493,12 +493,20 @@ test('fits the smallest window in sketch mode: nothing overflows, the whole view
   await expect(page.locator('[data-command="tool-line"]')).toBeVisible();
   const layout = await page.evaluate(() => {
     const canvas = document.querySelector('.viewport-canvas')?.getBoundingClientRect();
-    return { scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, canvasRight: canvas?.right ?? Infinity };
+    const bar = document.querySelector('.command-bar') as HTMLElement;
+    return {
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+      canvasRight: canvas?.right ?? Infinity,
+      barOverflow: bar.scrollWidth - bar.clientWidth,
+    };
   });
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth);
+  // The command bar picks a density at which nothing has to scroll.
+  expect(layout.barOverflow).toBeLessThanOrEqual(1);
   expect(layout.canvasRight).toBeLessThanOrEqual(layout.innerWidth);
   // Every command of the sketch tab is on screen.
-  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'construction', 'delete-sketch', 'settings', 'about']) {
+  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'tool-sketchFillet', 'construction', 'delete-sketch', 'settings', 'about']) {
     const box = await page.locator(`[data-command="${command}"]`).boundingBox();
     expect(box && box.x + box.width <= layout.innerWidth).toBe(true);
   }
@@ -713,4 +721,70 @@ test('draws tangent arcs, three-point circles, slots and polygons', async () => 
   expect(await count('circle', true)).toBe(1);
   await page.click('[data-testid="sketch-ok"]');
   expect((await state(page)).history.features).toHaveLength(1);
+});
+
+test('rounds and bevels corners of a fully defined rectangle, keeping it fully defined', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('b', 50, 0), P('c', 50, 30), P('d', 0, 30),
+        { id: 'l1', type: 'line', p1: 'origin', p2: 'b' }, { id: 'l2', type: 'line', p1: 'b', p2: 'c' },
+        { id: 'l3', type: 'line', p1: 'c', p2: 'd' }, { id: 'l4', type: 'line', p1: 'd', p2: 'origin' },
+      ],
+      constraints: [
+        { id: 'h1', type: 'horizontal', line: 'l1' }, { id: 'v1', type: 'vertical', line: 'l2' },
+        { id: 'h2', type: 'horizontal', line: 'l3' }, { id: 'v2', type: 'vertical', line: 'l4' },
+        { id: 'w', type: 'distance', a: 'origin', b: 'b', value: 50, driving: true, offset: [0, -8] },
+        { id: 'h', type: 'distance', a: 'b', b: 'c', value: 30, driving: true, offset: [8, 0] },
+      ],
+    };
+    const features = [{ id: 's', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await page.dblclick('.tree-item[data-feature-id="s"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const clickAt = async (u: number, v: number) => {
+    const p = await project(page, [u, v, 0]);
+    await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+    await page.mouse.click(canvas.x + p.x, canvas.y + p.y);
+  };
+  const sketch = async () => (await state(page)).sketch?.draft.sketch;
+
+  // Fillet (Modify group), radius 6, at the corner (50, 0).
+  await page.click('[data-command="tool-sketchFillet"]');
+  await page.locator('[data-testid="corner-size"]').fill('6');
+  await clickAt(50, 0);
+  expect((await sketch())?.entities.filter((e) => e.type === 'arc')).toHaveLength(1);
+  await expect(page.locator('.dimension-label', { hasText: 'R6' })).toBeVisible();
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
+
+  // A radius that does not fit is refused with a message.
+  await page.locator('[data-testid="corner-size"]').fill('40');
+  await clickAt(50, 30);
+  await expect(page.locator('.toast')).toContainText('too large');
+
+  // Chamfer the opposite corner by 5.
+  await page.click('.split-toggle[data-variants="sketchFillet sketchChamfer"]');
+  await page.click('.menu-item[data-tool="sketchChamfer"]');
+  await page.locator('[data-testid="corner-size"]').fill('5');
+  await clickAt(0, 30);
+  expect((await sketch())?.entities.filter((e) => e.type === 'line')).toHaveLength(5);
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
+
+  // Changing the width keeps the rounded and beveled corners.
+  await page.keyboard.press('Escape');
+  await frames(page);
+  const width = await page.locator('.dimension-label', { hasText: /^50$/ }).boundingBox();
+  if (!width) throw new Error('label not visible');
+  await page.mouse.dblclick(width.x + width.width / 2, width.y + width.height / 2);
+  await page.locator('[data-testid="dimension-editor"]').fill('70');
+  await page.locator('[data-testid="dimension-editor"]').press('Enter');
+  await expect.poll(async () => ((await sketch())?.entities.find((e) => e.id === 'b') as { x: number } | undefined)?.x).toBeCloseTo(70, 6);
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
 });

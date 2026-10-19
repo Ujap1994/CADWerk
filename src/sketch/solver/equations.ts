@@ -119,6 +119,17 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
     return null;
   };
 
+  /** End points of lines and arcs (circles have none). */
+  const endPoints = (id: string): string[] => {
+    const entity = byId.get(id);
+    return entity?.type === 'line' ? [entity.p1, entity.p2] : entity?.type === 'arc' ? [entity.start, entity.end] : [];
+  };
+  /** A point where two curves meet end to end, if any. */
+  const sharedEndPoint = (a: string, b: string): string | undefined => {
+    const ends = endPoints(b);
+    return endPoints(a).find((end) => ends.includes(end));
+  };
+
   /** Adds an equation; `fn` receives the local parameter values in the order of `params`. */
   const add = (owner: string, params: number[], fn: (v: Float64Array) => number) => {
     const local = new Float64Array(params.length);
@@ -213,7 +224,27 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
         const lineB = lineOf(constraint.b);
         const roundA = roundOf(constraint.a);
         const roundB = roundOf(constraint.b);
-        if ((lineA || lineB) && (roundA || roundB)) {
+        // Curves that touch at a shared end point get a form that is well conditioned there: the
+        // distance form has a double root at the touching point, which leaves the point free to
+        // first order (the analysis would report it as under-defined).
+        const shared = sharedEndPoint(constraint.a, constraint.b);
+        const touch = shared ? point(shared) : undefined;
+        if ((lineA || lineB) && (roundA || roundB) && touch) {
+          const line = (lineA ?? lineB) as Line;
+          const round = (roundA ?? roundB) as Round;
+          // The radius to the touching point is perpendicular to the line.
+          add(id, [...line.a, ...line.b, ...round.center, ...touch], (v) => {
+            const dx = (v[2] as number) - (v[0] as number), dy = (v[3] as number) - (v[1] as number);
+            return (dx * ((v[6] as number) - (v[4] as number)) + dy * ((v[7] as number) - (v[5] as number))) / Math.max(lengthOf(dx, dy), 1e-12);
+          });
+        } else if (roundA && roundB && touch) {
+          // Both centers and the touching point lie on one line.
+          add(id, [...roundA.center, ...roundB.center, ...touch], (v) => {
+            const ax = (v[0] as number) - (v[4] as number), ay = (v[1] as number) - (v[5] as number);
+            const bx = (v[2] as number) - (v[4] as number), by = (v[3] as number) - (v[5] as number);
+            return (ax * by - ay * bx) / Math.max(lengthOf(ax, ay), 1e-12);
+          });
+        } else if ((lineA || lineB) && (roundA || roundB)) {
           const line = (lineA ?? lineB) as Line;
           const round = (roundA ?? roundB) as Round;
           add(id, [...line.a, ...line.b, ...roundParams(round)], (v) => {
