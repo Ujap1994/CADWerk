@@ -10,12 +10,14 @@ import { SketchPanel } from './SketchPanel.tsx';
 import { StatusBar } from './StatusBar.tsx';
 import { Viewport } from './Viewport.tsx';
 
-/** Single-key shortcuts for the drawing tools in sketch mode; rectangles and arcs use the last variant. */
+/** Single-key shortcuts for the drawing tools in sketch mode; tools with variants use the last one. */
 function sketchToolForKey(key: string): SketchToolName | null {
   const variants = getState().sketchToolVariants;
   switch (key.toLowerCase()) {
     case 'l':
-      return 'line';
+      return variants.line;
+    case 's':
+      return 'spline';
     case 'r':
       return variants.rectangle;
     case 'c':

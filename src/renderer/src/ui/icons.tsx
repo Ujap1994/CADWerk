@@ -323,6 +323,15 @@ export const ThreePointArcIcon = (p: P) => (
   </Icon>
 );
 
+export const SplineIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3 18c2.5-7 6-8.5 9-6s6.5 1 9-6" />
+    {dot(3, 18, 1.8)}
+    {dot(12, 12, 1.8)}
+    {dot(21, 6, 1.8)}
+  </Icon>
+);
+
 export const EllipseIcon = (p: P) => (
   <Icon {...p}>
     <ellipse cx="12" cy="12" rx="9.5" ry="6" />

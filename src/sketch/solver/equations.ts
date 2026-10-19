@@ -81,6 +81,8 @@ export function buildSystem(entities: readonly SketchEntity[], constraints: read
     else if (entity.type === 'line') entityParams.set(entity.id, [...(point(entity.p1) ?? []), ...(point(entity.p2) ?? [])]);
     else if (entity.type === 'circle') entityParams.set(entity.id, [...(point(entity.center) ?? []), radiusParam.get(entity.id) ?? -1]);
     else if (entity.type === 'ellipse') entityParams.set(entity.id, [...(point(entity.center) ?? []), ...(point(entity.major) ?? []), ...(point(entity.minor) ?? [])]);
+    // A spline has no parameters of its own: it follows its fit points.
+    else if (entity.type === 'spline') entityParams.set(entity.id, entity.points.flatMap((id) => point(id) ?? []));
     else entityParams.set(entity.id, [...(point(entity.center) ?? []), ...(point(entity.start) ?? []), ...(point(entity.end) ?? [])]);
   }
 

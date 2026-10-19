@@ -6,7 +6,7 @@
 
 import type { SketchArc, SketchCurve, SketchData, SketchLine } from '../../../shared/model/sketch.ts';
 import { SketchBuilder } from './builder.ts';
-import { constraintReferences, deleteEntities, isCurve, pointPositions, type Point2 } from './geometry.ts';
+import { constraintReferences, curvePoints, deleteEntities, isCurve, pointPositions, type Point2 } from './geometry.ts';
 import { boundaries, extensionTargets, parameterOf, pointAt, shapeOf, type Boundary, type CurveShape } from './intersect.ts';
 
 export type TrimError = 'not-a-curve' | 'no-target' | 'connected' | 'constrained' | 'ellipse';
@@ -72,6 +72,7 @@ function dropLoosePoints(sketch: SketchData, candidates: readonly string[]): Ske
     if (entity.type === 'circle') used.add(entity.center);
     if (entity.type === 'arc') used.add(entity.center).add(entity.start).add(entity.end);
     if (entity.type === 'ellipse') used.add(entity.center).add(entity.major).add(entity.minor);
+    if (entity.type === 'spline') for (const point of entity.points) used.add(point);
   }
   const loose = candidates.filter((id) => !used.has(id));
   return loose.length > 0 ? deleteEntities(sketch, loose) : sketch;
@@ -81,7 +82,7 @@ function dropLoosePoints(sketch: SketchData, candidates: readonly string[]): Ske
 export function trimAt(sketch: SketchData, curveId: string, at: Point2): TrimResult {
   const piece = trimPiece(sketch, curveId, at);
   const curve = sketch.entities.find((entity) => entity.id === curveId) as SketchCurve | undefined;
-  if (!piece || !curve) return { ok: false, error: 'not-a-curve' };
+  if (!piece || !curve || curve.type === 'spline') return { ok: false, error: 'not-a-curve' };
   if (piece.whole) return { ok: true, sketch: deleteEntities(sketch, [curveId]) };
   // Pieces of an ellipse would be elliptical arcs, which sketches do not have.
   if (curve.type === 'ellipse') return { ok: false, error: 'ellipse' };
@@ -138,7 +139,7 @@ export function extendAt(sketch: SketchData, curveId: string, at: Point2): TrimR
   const pointId = curve.type === 'line' ? (end === 'start' ? curve.p1 : curve.p2) : end === 'start' ? curve.start : curve.end;
   // An end that other curves share, or that relations and dimensions hold, cannot simply move.
   const sharedBy = sketch.entities.filter(
-    (entity) => isCurve(entity) && entity.id !== curveId && (entity.type === 'line' ? [entity.p1, entity.p2] : entity.type === 'arc' ? [entity.start, entity.end, entity.center] : [entity.center]).includes(pointId),
+    (entity) => isCurve(entity) && entity.id !== curveId && curvePoints(entity).includes(pointId),
   );
   if (sharedBy.length > 0) return { ok: false, error: 'connected' };
   if (sketch.constraints.some((constraint) => constraintReferences(constraint).includes(pointId))) return { ok: false, error: 'constrained' };

@@ -1,8 +1,8 @@
 # Sketches
 
 > [!NOTE]
-> This page describes the sketcher of preview 0.2. Splines, projecting model edges into a sketch and
-> equations follow, and so do the features that turn sketches into solids (extrude, revolve; Phase 2).
+> This page describes the current sketcher. Projecting model edges into a sketch and equations follow,
+> and so do the features that turn sketches into solids (extrude, revolve; Phase 2).
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or
@@ -88,7 +88,7 @@ explains the active tool.
 | Tool | Key | How to draw |
 |---|---|---|
 | **Line** | L | Click the start point, then each next point: the lines form a connected chain. Clicking the chain's start point closes it; **Esc** or a second click on the last point ends it. Pressing, dragging and releasing draws a single line. |
-| **Centerline** | | Like a line, but the result is construction geometry (dashed), for example a symmetry axis. |
+| **Centerline** | L | Like a line, but the result is construction geometry (dashed), for example a symmetry axis. It shares a button with *Line*. |
 | **Rectangle** | R | Click one corner, then the opposite corner (or drag). The sides get horizontal and vertical relations. |
 | **Center rectangle** | R | Click the center, then a corner. Dashed diagonals keep the center in the middle. |
 | **3-point rectangle** | R | A rectangle at any angle: click both ends of one side, then move sideways to set the width and click. Opposite sides stay parallel and the corners square; a side drawn horizontally or vertically keeps that relation. |
@@ -101,10 +101,11 @@ explains the active tool.
 | **Tangent arc** | A | Click the end point of a line or arc, then where the arc should end. The arc continues the line or arc without a kink (*tangent* relation). |
 | **Slot** | | Click the centers of both rounded ends, then move sideways to set the width. Both straight sides are tangent to the equal end arcs. |
 | **Polygon** | | Set the number of sides in the side panel (3 to 64), click the center, then a corner. All sides stay equal; the corners lie on a construction circle, which you can dimension. |
+| **Spline** | S | A smooth curve through the points you click. Every click adds a point (one undo step each); **Esc** or a second click on the last point ends it. See [Splines](#splines). |
 | **Point** | P | Click to place sketch points, for example for hole positions. |
 
-**R**, **C** and **A** start the variant you used last; the small arrow next to *Rectangle*, *Circle* and
-*Arc* offers all variants.
+**L**, **R**, **C** and **A** start the variant you used last; the small arrow next to *Line*,
+*Rectangle*, *Circle* and *Arc* offers all variants.
 
 ![The rectangle variants: corner, center, 3-point rectangle and parallelogram](../images/screenshots/sketch-rectangle-variants.png)
 
@@ -161,6 +162,21 @@ perpendicular to each other; everything else follows from the three points:
   out, because the curve at a constant distance from an ellipse is not an ellipse.
 
 ![A fully defined ellipse with a tangent line; pointing at it shows its axes in the status bar](../images/screenshots/sketch-ellipse.png)
+
+### Splines
+
+A spline is a smooth curve through its **fit points**. ParaWerk uses a natural cubic spline: the curve
+passes through every point, bends continuously (no kinks inside) and runs straight out at both ends.
+
+- The fit points are ordinary sketch points: they snap while you draw (so a spline can start at the end
+  of a line), and you can drag, dimension and relate them like any point. The curve follows.
+- The spline is fully defined when all of its points are.
+- Points do not snap onto the curve between the fit points yet, and other curves cannot be trimmed or
+  extended up to a spline; splines can be moved, copied, mirrored and patterned, but not trimmed or
+  offset.
+- DXF export writes splines as polylines within 0.005 mm; DXF import reads splines defined by fit points.
+
+![A profile with a spline between two lines; pointing at it shows its points and length](../images/screenshots/sketch-spline.png)
 
 ### Fillets and chamfers in a sketch
 

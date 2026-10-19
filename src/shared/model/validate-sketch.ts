@@ -1,5 +1,6 @@
 import {
   DIMENSION_TYPES,
+  MAX_SPLINE_POINTS,
   ORIGIN_ID,
   type SketchConstraint,
   type SketchData,
@@ -50,6 +51,12 @@ function parseEntity(raw: unknown, path: string): SketchEntity {
         end: identifier(raw.end, `${path}.end`),
         ...extra,
       };
+    case 'spline': {
+      if (!Array.isArray(raw.points) || raw.points.length < 2 || raw.points.length > MAX_SPLINE_POINTS) {
+        throw new ValidationError(`expected 2 to ${MAX_SPLINE_POINTS} points`, `${path}.points`);
+      }
+      return { id, type: 'spline', points: raw.points.map((point, i) => identifier(point, `${path}.points[${i}]`)), ...extra };
+    }
     case 'ellipse':
       return {
         id,
@@ -134,6 +141,7 @@ export function parseSketchData(raw: unknown, path = 'sketch'): SketchData {
     if (entity.type === 'circle') expectPoint(entity.center, where);
     if (entity.type === 'arc') [entity.center, entity.start, entity.end].forEach((id) => expectPoint(id, where));
     if (entity.type === 'ellipse') [entity.center, entity.major, entity.minor].forEach((id) => expectPoint(id, where));
+    if (entity.type === 'spline') entity.points.forEach((id) => expectPoint(id, where));
   });
   const ids = new Set(kinds.keys());
   constraints.forEach((constraint, i) => {

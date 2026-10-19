@@ -385,6 +385,7 @@ export function setSketchTool(tool: SketchToolName | null): void {
   if (!state.sketch) return;
   const next = tool === state.sketchTool ? null : tool;
   const variants = { ...state.sketchToolVariants };
+  if (next === 'line' || next === 'centerline') variants.line = next;
   if (next === 'cornerRectangle' || next === 'centerRectangle' || next === 'threePointRectangle' || next === 'parallelogram') variants.rectangle = next;
   if (next === 'circle' || next === 'threePointCircle' || next === 'ellipse') variants.circle = next;
   if (next === 'centerArc' || next === 'threePointArc' || next === 'tangentArc') variants.arc = next;

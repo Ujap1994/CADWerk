@@ -21,6 +21,7 @@ import {
   TrimIcon,
   SketchFilletIcon,
   SlotIcon,
+  SplineIcon,
   TangentArcIcon,
   ThreePointCircleIcon,
   ThreePointRectangleIcon,
@@ -70,6 +71,7 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   trim: TrimIcon,
   extend: ExtendIcon,
   point: PointIcon,
+  spline: SplineIcon,
   dimension: DimensionIcon,
 };
 
@@ -277,11 +279,11 @@ function SketchTab() {
         <ToolButton tool="dimension" disabled={off} />
       </Group>
       <Group label={t('commands.groups.draw')}>
-        <ToolButton tool="line" disabled={off} />
-        <ToolButton tool="centerline" disabled={off} />
+        <SplitToolButton tools={['line', 'centerline']} current={variants.line} disabled={off} />
         <SplitToolButton tools={['cornerRectangle', 'centerRectangle', 'threePointRectangle', 'parallelogram']} current={variants.rectangle} disabled={off} />
         <SplitToolButton tools={['circle', 'threePointCircle', 'ellipse']} current={variants.circle} disabled={off} />
         <SplitToolButton tools={['centerArc', 'threePointArc', 'tangentArc']} current={variants.arc} disabled={off} />
+        <ToolButton tool="spline" disabled={off} />
         <ToolButton tool="slot" disabled={off} />
         <ToolButton tool="polygon" disabled={off} />
         <ToolButton tool="point" disabled={off} />

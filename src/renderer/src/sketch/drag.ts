@@ -1,6 +1,6 @@
 import type { SketchData } from '../../../shared/model/sketch.ts';
 import type { DragTarget } from '../../../sketch/solver/index.ts';
-import { pointPositions, type SketchHit } from './geometry.ts';
+import { curvePoints, pointPositions, type SketchHit } from './geometry.ts';
 
 /** Where a drag started and where the pointer is now, in sketch coordinates. */
 export interface DragPositions {
@@ -10,7 +10,7 @@ export interface DragPositions {
 
 /**
  * Where the dragged geometry should go: points follow the cursor by the distance it moved
- * (no jump to the cursor), lines, arcs and ellipses move as a whole, circles grabbed at their
+ * (no jump to the cursor), lines, arcs, ellipses and splines move as a whole, circles grabbed at their
  * edge change their radius (ellipses change size by dragging their axis points).
  */
 export function dragTarget(base: SketchData, hit: SketchHit, start: DragPositions, pointer: DragPositions): DragTarget | null {
@@ -27,8 +27,9 @@ export function dragTarget(base: SketchData, hit: SketchHit, start: DragPosition
       return { kind: 'point', ...(moved(entity.id) ?? { id: entity.id, x: pointer.u, y: pointer.v }) };
     case 'line':
     case 'arc':
-    case 'ellipse': {
-      const ids = entity.type === 'line' ? [entity.p1, entity.p2] : entity.type === 'arc' ? [entity.center, entity.start, entity.end] : [entity.center, entity.major, entity.minor];
+    case 'ellipse':
+    case 'spline': {
+      const ids = curvePoints(entity);
       const points = ids.map(moved).filter((point) => point !== null);
       return points.length === ids.length ? { kind: 'points', points } : null;
     }

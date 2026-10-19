@@ -76,6 +76,7 @@ export interface AppState {
   sketchTool: SketchToolName | null;
   /** Last used variant of the tools with variants, offered first in the command bar. */
   sketchToolVariants: {
+    line: 'line' | 'centerline';
     rectangle: 'cornerRectangle' | 'centerRectangle' | 'threePointRectangle' | 'parallelogram';
     circle: 'circle' | 'threePointCircle' | 'ellipse';
     arc: 'centerArc' | 'threePointArc' | 'tangentArc';
@@ -118,7 +119,7 @@ export const initialState: AppState = {
   sketchAnalysis: null,
   sketchStatuses: {},
   sketchTool: null,
-  sketchToolVariants: { rectangle: 'cornerRectangle', circle: 'circle', arc: 'centerArc', corner: 'sketchFillet', trim: 'trim' },
+  sketchToolVariants: { line: 'line', rectangle: 'cornerRectangle', circle: 'circle', arc: 'centerArc', corner: 'sketchFillet', trim: 'trim' },
   polygonSides: 6,
   filletRadius: 5,
   chamferDistance: 3,

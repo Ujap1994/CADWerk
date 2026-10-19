@@ -26,6 +26,8 @@ export function shapeOf(curve: SketchCurve, positions: Positions): CurveShape | 
     const ellipse = ellipseOf(curve, positions);
     return ellipse ? { kind: 'ellipse', ellipse, closed: true } : null;
   }
+  // Splines do not take part in crossings yet (a point cannot be kept on a spline).
+  if (curve.type === 'spline') return null;
   const center = positions.get(curve.center);
   if (!center) return null;
   if (curve.type === 'circle') return { kind: 'circle', center, radius: curve.radius, startAngle: 0, sweep: 2 * Math.PI, closed: true };
@@ -241,7 +243,7 @@ export function boundaries(sketch: SketchData, curveId: string, options: { exten
 export function extensionTargets(sketch: SketchData, curveId: string, end: 'start' | 'end'): Boundary[] {
   const positions = pointPositions(sketch);
   const curve = sketch.entities.find((entity) => entity.id === curveId);
-  if (!curve || !isCurve(curve) || curve.type === 'circle' || curve.type === 'ellipse') return [];
+  if (!curve || !isCurve(curve) || curve.type === 'circle' || curve.type === 'ellipse' || curve.type === 'spline') return [];
   const shape = shapeOf(curve, positions);
   if (!shape) return [];
   const result: Boundary[] = [];

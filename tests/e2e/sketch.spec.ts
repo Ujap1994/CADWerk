@@ -755,7 +755,7 @@ test('shows under, fully and over defined sketches and lets conflicts be deleted
   await expect(page.locator('.tree-item[data-feature-id="over"] [data-sketch-status]')).toHaveCount(0);
 });
 
-test('draws tangent arcs, three-point circles, slots, polygons, angled rectangles, parallelograms and ellipses', async () => {
+test('draws tangent arcs, three-point circles, slots, polygons, angled rectangles, parallelograms, ellipses and splines', async () => {
   launched = await launchApp();
   const { page } = launched;
   await page.click('[data-command="sketch"]');
@@ -834,6 +834,18 @@ test('draws tangent arcs, three-point circles, slots, polygons, angled rectangle
   await clickAt(8, 39);
   expect(await count('ellipse')).toBe(1);
   expect(await relations()).toContain('horizontalPoints');
+
+  // A spline (key S) through four points, ended by Esc; each point is a sketch point.
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('s');
+  await clickAt(-60, 35);
+  await clickAt(-50, 45);
+  await clickAt(-40, 38);
+  await clickAt(-30, 46);
+  await page.keyboard.press('Escape');
+  expect(await count('spline')).toBe(1);
+  const spline = (await sketch())?.entities.find((e) => e.type === 'spline') as unknown as { points: string[] };
+  expect(spline.points).toHaveLength(4);
   await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Under defined');
   await page.click('[data-testid="sketch-ok"]');
   expect((await state(page)).history.features).toHaveLength(1);

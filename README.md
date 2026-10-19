@@ -99,7 +99,7 @@ Preview 0.2 adds the 2D sketcher (Phase 1) to the foundation of Phase 0:
 - **2D sketcher:** sketches on the front, top and right plane and on planar faces, with their own undo
   history.
   - *Drawing:* lines and centerlines, rectangles (corner, center, 3-point, parallelogram), circles
-    (center, 3-point), ellipses, arcs (center, 3-point, tangent), slots, polygons and points, with
+    (center, 3-point), ellipses, arcs (center, 3-point, tangent), splines, slots, polygons and points, with
     snapping, inference lines and automatic relations.
   - *Relations and dimensions:* thirteen relation types, offered for the selection and checked by the
     solver, shown as symbols next to the geometry; one smart dimension tool for lengths, distances,
@@ -127,7 +127,7 @@ See the [user guide](docs/user-guide/README.md) for details.
 > Everything below is **planned**. Each item moves to "Available now", with screenshots, once it ships.
 
 ### 2D sketcher (rest of Phase 1)
-- Splines
+- Points on splines, trimming at splines
 - Scale the selection; project and convert model edges into a sketch
 - Global variables and equations
 

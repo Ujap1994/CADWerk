@@ -24,13 +24,14 @@ In sketch mode, the **DXF** group of the *Sketch* tab exchanges sketch geometry 
 cutting and CNC software:
 
 - **Export** saves the open sketch as a DXF file (R12, millimeters) with its lines, circles and arcs.
-  R12 has no ellipses, so ellipses are written as closed polylines that stay within 0.005 mm of the true
+  R12 has no ellipses and splines, so they are written as polylines that stay within 0.005 mm of the true
   shape. Construction geometry and sketch points are left out, so only the real outline gets cut.
 - **Import** adds the geometry of a DXF file to the open sketch, at its coordinates: lines, circles,
   arcs, points and polylines (also with arc segments). End points that coincide are joined, so imported
   outlines are connected. Drawings in inches, centimeters or meters are converted to millimeters (from
-  the file's unit setting). Full ellipses become sketch ellipses. Texts, dimensions, splines, elliptical
-  arcs, hatches and blocks are not imported; a message lists what was left out.
+  the file's unit setting). Full ellipses become sketch ellipses and splines given by fit points become
+  sketch splines. Texts, dimensions, splines given only by control points, elliptical arcs, hatches and
+  blocks are not imported; a message lists what was left out.
 
 More formats (3MF, PDF, IGES, glTF) and STEP import follow according to the
 [roadmap](../../ROADMAP.md).

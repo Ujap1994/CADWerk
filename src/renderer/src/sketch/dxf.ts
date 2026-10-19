@@ -1,16 +1,17 @@
 /**
  * DXF exchange for sketches: export as DXF R12 (lines, circles, arcs in millimeters; R12 has no
- * ellipses, so they become fine closed polylines; construction geometry is left out, so laser and
+ * ellipses and splines, so they become fine polylines; construction geometry is left out, so laser and
  * CNC software cut only the real outline) and import of the common 2D entities. Imported geometry
  * is connected where end points coincide.
  */
 
 import type { SketchData } from '../../../shared/model/sketch.ts';
 import { SketchBuilder } from './builder.ts';
-import { arcGeometry, ellipseOf, ellipsePoint, pointPositions, type Point2 } from './geometry.ts';
+import { arcGeometry, ellipseOf, ellipsePoint, pointPositions, splineOf, type Point2 } from './geometry.ts';
+import { segmentsPerSpan, splinePolyline } from './spline.ts';
 
-/** Largest distance of an exported ellipse polyline from the true ellipse, in millimeters. */
-const ELLIPSE_TOLERANCE = 0.005;
+/** Largest distance of an exported ellipse or spline polyline from the true curve, in millimeters. */
+const CURVE_TOLERANCE = 0.005;
 
 function number(value: number): string {
   const text = (Math.round(value * 1e6) / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
@@ -34,6 +35,25 @@ export function sketchToDxf(sketch: SketchData): { text: string; entities: numbe
   pair(0, 'SECTION');
   pair(2, 'ENTITIES');
   let entities = 0;
+  /** An R12 polyline (POLYLINE, VERTEX …, SEQEND) through the given points. */
+  const polyline = (points: readonly Point2[], closed: boolean) => {
+    pair(0, 'POLYLINE');
+    pair(8, '0');
+    pair(66, '1');
+    pair(10, 0);
+    pair(20, 0);
+    pair(30, 0);
+    pair(70, closed ? '1' : '0');
+    for (const [x, y] of points) {
+      pair(0, 'VERTEX');
+      pair(8, '0');
+      pair(10, x);
+      pair(20, y);
+      pair(30, 0);
+    }
+    pair(0, 'SEQEND');
+    pair(8, '0');
+  };
   for (const entity of sketch.entities) {
     if (entity.construction) continue;
     if (entity.type === 'line') {
@@ -79,25 +99,14 @@ export function sketchToDxf(sketch: SketchData): { text: string; entities: numbe
       const ellipse = ellipseOf(entity, positions);
       if (!ellipse) continue;
       const radius = Math.max(ellipse.a, ellipse.b);
-      const step = radius > ELLIPSE_TOLERANCE ? 2 * Math.acos(1 - ELLIPSE_TOLERANCE / radius) : Math.PI / 6;
+      const step = radius > CURVE_TOLERANCE ? 2 * Math.acos(1 - CURVE_TOLERANCE / radius) : Math.PI / 6;
       const count = Math.min(4096, Math.max(24, Math.ceil((2 * Math.PI) / step)));
-      pair(0, 'POLYLINE');
-      pair(8, '0');
-      pair(66, '1');
-      pair(10, 0);
-      pair(20, 0);
-      pair(30, 0);
-      pair(70, '1');
-      for (let i = 0; i < count; i++) {
-        const [x, y] = ellipsePoint(ellipse, (2 * Math.PI * i) / count);
-        pair(0, 'VERTEX');
-        pair(8, '0');
-        pair(10, x);
-        pair(20, y);
-        pair(30, 0);
-      }
-      pair(0, 'SEQEND');
-      pair(8, '0');
+      polyline(Array.from({ length: count }, (_, i) => ellipsePoint(ellipse, (2 * Math.PI * i) / count)), true);
+      entities++;
+    } else if (entity.type === 'spline') {
+      const spline = splineOf(entity, positions);
+      if (!spline) continue;
+      polyline(splinePolyline(spline, segmentsPerSpan(spline, CURVE_TOLERANCE)), false);
       entities++;
     }
   }
@@ -241,6 +250,18 @@ export function dxfToSketch(text: string, base: SketchData): DxfImport {
         pointAt(at(entity, first(entity, 10), first(entity, 20)));
         imported++;
         break;
+      case 'SPLINE': {
+        // Splines through fit points become sketch splines; splines given only by control points are skipped.
+        const xs = values(entity, 11);
+        const ys = values(entity, 21);
+        if (xs.length < 2 || xs.length !== ys.length || xs.length > 1000) {
+          skipped.SPLINE = (skipped.SPLINE ?? 0) + 1;
+          break;
+        }
+        builder.spline(xs.map((x, i) => pointAt(at(entity, x, ys[i] as number))));
+        imported++;
+        break;
+      }
       case 'ELLIPSE': {
         // Center, end of the major axis relative to it, ratio of the axes; elliptical arcs are not supported.
         const sweep = first(entity, 42, 2 * Math.PI) - first(entity, 41, 0);

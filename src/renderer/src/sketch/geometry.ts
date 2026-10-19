@@ -4,6 +4,7 @@
  */
 
 import { ORIGIN_ID, type SketchConstraint, type SketchCurve, type SketchData, type SketchEntity } from '../../../shared/model/sketch.ts';
+import { segmentsPerSpan, splinePolyline, splineThrough, type SplineGeometry } from './spline.ts';
 
 export type Point2 = readonly [number, number];
 
@@ -33,6 +34,8 @@ export function curvePoints(curve: SketchCurve): string[] {
       return [curve.center, curve.start, curve.end];
     case 'ellipse':
       return [curve.center, curve.major, curve.minor];
+    case 'spline':
+      return [...curve.points];
   }
 }
 
@@ -124,6 +127,12 @@ export function closestOnEllipse(e: EllipseGeometry, p: Point2): { t: number; at
   return { t, at, distance: Math.hypot(p[0] - at[0], p[1] - at[1]) };
 }
 
+/** The spline of a sketch entity, or null if a point is missing. */
+export function splineOf(curve: { points: readonly string[] }, positions: ReadonlyMap<string, Point2>): SplineGeometry | null {
+  const points = curve.points.map((id) => positions.get(id));
+  return points.every((p) => p !== undefined) ? splineThrough(points as Point2[]) : null;
+}
+
 /** The ellipse of a sketch entity, or null if a point is missing. */
 export function ellipseOf(curve: { center: string; major: string; minor: string }, positions: ReadonlyMap<string, Point2>): EllipseGeometry | null {
   const center = positions.get(curve.center);
@@ -147,6 +156,10 @@ export function curvePolyline(curve: SketchCurve, positions: ReadonlyMap<string,
     const p1 = positions.get(curve.p1);
     const p2 = positions.get(curve.p2);
     return p1 && p2 ? [p1, p2] : null;
+  }
+  if (curve.type === 'spline') {
+    const spline = splineOf(curve, positions);
+    return spline ? splinePolyline(spline, segmentsPerSpan(spline, MAX_DEVIATION_PX * mmPerPixel)) : null;
   }
   if (curve.type === 'ellipse') {
     const ellipse = ellipseOf(curve, positions);
@@ -193,6 +206,14 @@ export function distanceToCurve(curve: SketchCurve, positions: ReadonlyMap<strin
   if (curve.type === 'ellipse') {
     const ellipse = ellipseOf(curve, positions);
     return ellipse ? closestOnEllipse(ellipse, [u, v]).distance : Infinity;
+  }
+  if (curve.type === 'spline') {
+    const spline = splineOf(curve, positions);
+    if (!spline) return Infinity;
+    const polyline = splinePolyline(spline, 24);
+    let best = Infinity;
+    for (let i = 1; i < polyline.length; i++) best = Math.min(best, distanceToSegment(u, v, polyline[i - 1] as Point2, polyline[i] as Point2));
+    return best;
   }
   const center = positions.get(curve.center);
   if (!center) return Infinity;

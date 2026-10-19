@@ -360,6 +360,45 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('sketch-ellipse.png') });
   await page.click('[data-testid="sketch-ok"]');
+
+  // A spline between two lines: a handle profile whose fit points are dimensioned like any points.
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('a', 70, 0), { id: 'base', type: 'line', p1: 'origin', p2: 'a' },
+        P('b', 70, 12), { id: 'end', type: 'line', p1: 'a', p2: 'b' },
+        P('s1', 50, 22), P('s2', 30, 14), P('s3', 12, 26), P('c', 0, 18),
+        { id: 'curve', type: 'spline', points: ['b', 's1', 's2', 's3', 'c'] },
+        { id: 'start', type: 'line', p1: 'c', p2: 'origin' },
+      ],
+      constraints: [
+        { id: 'h', type: 'horizontal', line: 'base' }, { id: 'v1', type: 'vertical', line: 'end' }, { id: 'v2', type: 'vertical', line: 'start' },
+        { id: 'w', type: 'distance', a: 'origin', b: 'a', value: 70, driving: true, offset: [0, -8] },
+        { id: 'r', type: 'distance', a: 'a', b: 'b', value: 12, driving: true, offset: [8, 0] },
+        { id: 'l', type: 'distance', a: 'c', b: 'origin', value: 18, driving: true, offset: [-8, 0] },
+        { id: 'top', type: 'verticalDistance', a: 'origin', b: 's1', value: 22, driving: true, offset: [40, 0] },
+      ],
+    };
+    const features = [{ id: 'handle', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
+  });
+  await idle(page);
+  await page.dblclick('.tree-item[data-feature-id="handle"]');
+  await idle(page);
+  await page.waitForTimeout(600);
+  await page.click('[data-testid="zoom-to-fit"]');
+  await page.waitForTimeout(800);
+  {
+    const p = await page.evaluate(
+      ([x, y, z]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(x, y, z),
+      [40, 17.4, 0] as const,
+    );
+    if (canvas) await page.mouse.move(canvas.x + p.x, canvas.y + p.y, { steps: 3 });
+  }
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-spline.png') });
+  await page.click('[data-testid="sketch-ok"]');
   await page.evaluate((features) => {
     (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
   }, model);

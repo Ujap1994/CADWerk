@@ -56,8 +56,22 @@ export interface SketchEllipse {
   construction?: boolean;
 }
 
-export type SketchEntity = SketchPoint | SketchLine | SketchCircle | SketchArc | SketchEllipse;
-export type SketchCurve = SketchLine | SketchCircle | SketchArc | SketchEllipse;
+/**
+ * Spline through its fit points (at least two): a natural cubic spline parameterized by chord length.
+ * The points are ordinary sketch points; the curve follows them.
+ */
+export interface SketchSpline {
+  id: string;
+  type: 'spline';
+  points: string[];
+  construction?: boolean;
+}
+
+/** Most fit points a spline may have (limits damaged or hostile files). */
+export const MAX_SPLINE_POINTS = 1000;
+
+export type SketchEntity = SketchPoint | SketchLine | SketchCircle | SketchArc | SketchEllipse | SketchSpline;
+export type SketchCurve = SketchLine | SketchCircle | SketchArc | SketchEllipse | SketchSpline;
 
 interface ConstraintBase {
   id: string;

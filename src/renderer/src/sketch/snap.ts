@@ -11,7 +11,7 @@ import { lineEllipse } from './intersect.ts';
 export type SnapTarget =
   | { kind: 'point'; id: string }
   | { kind: 'midpoint'; line: string }
-  | { kind: 'curve'; curve: string; curveType: 'line' | 'circle' | 'arc' | 'ellipse' }
+  | { kind: 'curve'; curve: string; curveType: 'line' | 'circle' | 'arc' | 'ellipse' | 'spline' }
   | { kind: 'none' };
 
 /** An inference line: the cursor is aligned with `from` along an axis. */
@@ -53,6 +53,7 @@ function projectOntoCurve(sketch: SketchData, positions: ReadonlyMap<string, Poi
     const t = lengthSquared > 0 ? Math.max(0, Math.min(1, ((u - a[0]) * dx + (v - a[1]) * dy) / lengthSquared)) : 0;
     return [a[0] + t * dx, a[1] + t * dy];
   }
+  if (curve.type === 'spline') return null;
   if (curve.type === 'ellipse') {
     const ellipse = ellipseOf(curve, positions);
     return ellipse ? closestOnEllipse(ellipse, [u, v]).at : null;
@@ -121,7 +122,8 @@ export function snapCursor(sketch: SketchData, positions: ReadonlyMap<string, Po
   };
   let curve: { id: string; type: 'line' | 'circle' | 'arc' | 'ellipse'; distance: number } | null = null;
   for (const entity of sketch.entities) {
-    if (!isCurve(entity) || exclude.has(entity.id)) continue;
+    // Splines snap at their fit points only: no relation can keep a point on a spline yet.
+    if (!isCurve(entity) || entity.type === 'spline' || exclude.has(entity.id)) continue;
     const distance = distanceToCurve(entity, positions, u, v);
     if (distance <= tolerance && (!curve || distance < curve.distance)) curve = { id: entity.id, type: entity.type, distance };
   }
@@ -188,6 +190,7 @@ function crossCurve(sketch: SketchData, positions: ReadonlyMap<string, Point2>, 
     if (t < 0 || t > 1) return null;
     return swap([ax + t * (bx - ax), level]);
   }
+  if (curve.type === 'spline') return null;
   if (curve.type === 'ellipse') {
     const ellipse = ellipseOf(curve, positions);
     if (!ellipse) return null;

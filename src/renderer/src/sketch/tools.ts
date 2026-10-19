@@ -4,7 +4,7 @@
  * The SketchController connects them to the mouse, the 3D view and the undo history.
  */
 
-import type { SketchData } from '../../../shared/model/sketch.ts';
+import type { SketchData, SketchSpline } from '../../../shared/model/sketch.ts';
 import { SketchBuilder, type PlacedPoint } from './builder.ts';
 import { chamferCorner, cornerAt, filletCorner, type CornerError } from './corners.ts';
 import { extensionTargets } from './intersect.ts';
@@ -29,6 +29,7 @@ export type SketchToolName =
   | 'slot'
   | 'polygon'
   | 'point'
+  | 'spline'
   | 'sketchFillet'
   | 'sketchChamfer'
   | 'trim'
@@ -51,6 +52,7 @@ export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'slot',
   'polygon',
   'point',
+  'spline',
   'sketchFillet',
   'sketchChamfer',
   'trim',
@@ -147,6 +149,10 @@ class Preview {
 
   arc(center: Point2, start: Point2, end: Point2, construction = false): void {
     this.entities.push({ id: `tmp${this.count++}`, type: 'arc', center: this.point(center), start: this.point(start), end: this.point(end), ...(construction ? { construction } : {}) });
+  }
+
+  spline(points: readonly Point2[]): void {
+    this.entities.push({ id: `tmp${this.count++}`, type: 'spline', points: points.map((p) => this.point(p)) });
   }
 
   ellipse(center: Point2, major: Point2, minor: Point2): void {
@@ -362,6 +368,79 @@ export class CircleTool implements SketchTool {
   cancel(): boolean {
     const busy = this.busy;
     this.center = null;
+    return busy;
+  }
+}
+
+/**
+ * Splines through clicked points. From the second point on, every click adds a fit point to the
+ * sketch (one undo step each, like a chain of lines); Esc or a second click on the last point ends the
+ * spline, and so does a click on its first point (which closes it).
+ */
+export class SplineTool implements SketchTool {
+  readonly name = 'spline' as const;
+  private first: PlacedPoint | null = null;
+  private spline: string | null = null;
+  private last: Point2 | null = null;
+
+  get busy(): boolean {
+    return this.last !== null;
+  }
+
+  /** The spline being drawn, if it is still in the sketch (undo may have removed it). */
+  private current(sketch: SketchData): SketchSpline | null {
+    const entity = this.spline ? sketch.entities.find((candidate) => candidate.id === this.spline) : undefined;
+    return entity?.type === 'spline' ? entity : null;
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const snap = snapAt(sketch, event, this.last);
+    const last = this.last;
+    if (!last) return { geometry: EMPTY, snap, info: { relations: snapRelations(snap, false) } };
+    const positions = pointPositions(sketch);
+    const spline = this.current(sketch);
+    const placedSoFar = spline ? spline.points.map((id) => positions.get(id)).filter((p): p is Point2 => p !== undefined) : this.first ? [at(this.first)] : [];
+    const preview = new Preview();
+    preview.spline([...placedSoFar, at(snap)]);
+    return { geometry: preview.build(), snap, info: { length: Math.hypot(snap.u - last[0], snap.v - last[1]), relations: snapRelations(snap, true) } };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const snap = snapAt(sketch, event, this.last);
+    let spline = this.current(sketch);
+    if (this.spline && !spline) this.cancel();
+    if (!this.last) {
+      this.first = placed(snap);
+      this.last = at(snap);
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const lastId = spline?.points.at(-1);
+    const sameAsLast = snap.target.kind === 'point' && snap.target.id === lastId;
+    if (sameAsLast || Math.hypot(snap.u - this.last[0], snap.v - this.last[1]) < event.tolerance * MIN_SIZE_FACTOR) {
+      // A second click on the same spot (or a double click) ends the spline.
+      this.cancel();
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const builder = new SketchBuilder(sketch);
+    const point = builder.point(placed(snap));
+    if (!spline) {
+      this.spline = builder.spline([builder.point(this.first as PlacedPoint), point]);
+    } else {
+      builder.replace(spline.id, { ...spline, points: [...spline.points, point] });
+      spline = { ...spline, points: [...spline.points, point] };
+    }
+    const closes = spline !== null && snap.target.kind === 'point' && snap.target.id === spline.points[0];
+    if (closes) this.cancel();
+    else this.last = at(snap);
+    const commit = builder.build();
+    return { commit, preview: this.hover(commit, event) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.first = null;
+    this.spline = null;
+    this.last = null;
     return busy;
   }
 }
@@ -1257,6 +1336,8 @@ export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_
       return new ThreePointArcTool();
     case 'point':
       return new PointTool();
+    case 'spline':
+      return new SplineTool();
     case 'sketchFillet':
       return new CornerTool(name, options.filletRadius);
     case 'sketchChamfer':

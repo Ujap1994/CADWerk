@@ -148,7 +148,7 @@ function signedArea(steps: readonly Step[], positions: Positions): number {
  */
 export function offsetSelection(sketch: SketchData, ids: readonly string[], distance: number, flip = false): OffsetResult {
   const selected = new Set(ids);
-  const curves = sketch.entities.filter((entity): entity is SketchCurve => isCurve(entity) && entity.type !== 'ellipse' && selected.has(entity.id));
+  const curves = sketch.entities.filter((entity): entity is SketchCurve => isCurve(entity) && entity.type !== 'ellipse' && entity.type !== 'spline' && selected.has(entity.id));
   if (curves.length === 0 || !(distance > 0)) return { ok: false, error: 'nothing-selected' };
   const positions = pointPositions(sketch);
   const builder = new SketchBuilder(sketch);

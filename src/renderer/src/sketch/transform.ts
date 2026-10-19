@@ -56,6 +56,7 @@ function copyGeometry(
       const [start, end] = options.reverse ? [mapped(curve.end), mapped(curve.start)] : [mapped(curve.start), mapped(curve.end)];
       curves.set(curve.id, builder.arc(mapped(curve.center), start, end, construction));
     } else if (curve.type === 'ellipse') curves.set(curve.id, builder.ellipse(mapped(curve.center), mapped(curve.major), mapped(curve.minor), construction));
+    else if (curve.type === 'spline') curves.set(curve.id, builder.spline(curve.points.map(mapped), construction));
   }
   return { points, curves };
 }

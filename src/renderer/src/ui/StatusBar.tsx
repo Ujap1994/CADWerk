@@ -3,7 +3,8 @@ import type { Language } from '../../../shared/i18n.ts';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
 import { ORIGIN_ID, STANDARD_PLANES, type SketchData } from '../../../shared/model/sketch.ts';
 import { formatNumber, formatQuantity } from '../format.ts';
-import { arcGeometry, ellipseOf, pointPositions } from '../sketch/geometry.ts';
+import { arcGeometry, ellipseOf, pointPositions, splineOf } from '../sketch/geometry.ts';
+import { splineLength } from '../sketch/spline.ts';
 import { relationKindOf } from '../sketch/relations.ts';
 import { useAppState, type Pick } from '../state/store.ts';
 
@@ -31,6 +32,9 @@ function describeSketchEntity(sketch: SketchData, id: string, t: Translate, lang
   } else if (entity.type === 'ellipse') {
     const ellipse = ellipseOf(entity, positions);
     if (ellipse) text = t('status.sketchEllipse', { major: mm(2 * ellipse.a), minor: mm(2 * ellipse.b) });
+  } else if (entity.type === 'spline') {
+    const spline = splineOf(entity, positions);
+    if (spline) text = t('status.sketchSpline', { count: entity.points.length, length: mm(splineLength(spline)) });
   } else {
     const [center, start, end] = [positions.get(entity.center), positions.get(entity.start), positions.get(entity.end)];
     if (center && start && end) {

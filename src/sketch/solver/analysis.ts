@@ -93,7 +93,9 @@ export function analyze(
           ? [entity.center]
           : entity.type === 'ellipse'
             ? [entity.center, entity.major, entity.minor]
-            : [entity.center, entity.start, entity.end];
+            : entity.type === 'spline'
+              ? entity.points
+              : [entity.center, entity.start, entity.end];
     for (const ref of refs) {
       if (status.has(ref)) status.set(ref, 'over');
     }

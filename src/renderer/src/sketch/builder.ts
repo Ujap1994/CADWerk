@@ -43,7 +43,8 @@ export class SketchBuilder {
     const id = this.id('p');
     this.entities.push({ id, type: 'point', x: placed.u, y: placed.v });
     if (placed.target.kind === 'midpoint') this.relation({ type: 'midpoint', point: id, line: placed.target.line });
-    if (placed.target.kind === 'curve') {
+    // Splines cannot hold points on them yet (snapping never targets them).
+    if (placed.target.kind === 'curve' && placed.target.curveType !== 'spline') {
       this.relation(
         placed.target.curveType === 'line'
           ? { type: 'pointOnLine', point: id, line: placed.target.curve }
@@ -74,6 +75,13 @@ export class SketchBuilder {
   arc(center: string, start: string, end: string, construction = false): string {
     const id = this.id('a');
     this.entities.push({ id, type: 'arc', center, start, end, ...(construction ? { construction } : {}) });
+    return id;
+  }
+
+  /** Spline through its fit points. */
+  spline(points: readonly string[], construction = false): string {
+    const id = this.id('s');
+    this.entities.push({ id, type: 'spline', points: [...points], ...(construction ? { construction } : {}) });
     return id;
   }
 
