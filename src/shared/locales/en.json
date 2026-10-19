@@ -149,6 +149,11 @@
     "area": "Surface",
     "face": "Face {{index}}",
     "edge": "Edge {{index}}",
+    "sketchPoint": "Point · X {{x}} · Y {{y}}",
+    "sketchLine": "Line · {{length}}",
+    "sketchCircle": "Circle · Ø {{diameter}}",
+    "sketchArc": "Arc · R {{radius}} · {{angle}}°",
+    "construction": "construction geometry",
     "selected_one": "{{count}} item selected",
     "selected_other": "{{count}} items selected",
     "frameStats": "{{fps}} fps · {{ms}} ms"

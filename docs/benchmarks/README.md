@@ -8,8 +8,8 @@ suite as regression tests.
 
 ```bash
 npm run bench:kernel   # geometry kernel (Node, OCCT WebAssembly)
-npm run bench:solver   # 2D constraint solver candidate (PlaneGCS)
-npm run build && npm run bench:render   # 3D view: orbiting synthetic assemblies (uses your GPU)
+npm run bench:solver   # 2D constraint solver: ParaWerk's sparse solver and PlaneGCS for comparison
+npm run build && npm run bench:render   # 3D view (orbiting synthetic assemblies) and dragging in sketches (uses your GPU)
 npm run bench:compare  # compare bench/results with bench/baselines
 ```
 
@@ -70,6 +70,23 @@ on natively compiled OCCT with the same kernel core. Native is 1.5–4× faster 
 
 Draw calls include the view cube and the axis indicator (about 41).
 
+## Reference results – Phase 1 (Apple M3, 16 GB, macOS)
+
+### Dragging in sketches (1600 × 1000 window, Retina)
+
+Each step is what one mouse movement costs: the solver round trip to its worker, updating the sketch
+graphics and drawing a GPU-synchronized frame. The sketches are chains of linked rectangles without
+dimensions, so the dragged point can move; a corner at the far end is dragged.
+
+| Sketch entities | Step (median) | Solver | Graphics update | Steps per second |
+|---|---|---|---|---|
+| 50 | 7.0 ms | 0.4 ms | 0.07 ms | 143 |
+| 500 | 7.0 ms | 1.4 ms | 0.22 ms | 143 |
+| 2,000 | 7.3 ms | 3.1 ms | 0.41 ms | 137 |
+
+The Phase 1 target (60 fps with 500 entities) is met with a wide margin; most of each step is the frame
+itself. Solver-only numbers are in [ADR 0005](../adr/0005-sketch-solver.md).
+
 ## CI runners – Phase 0 baselines
 
 | Case | Linux (AMD EPYC 7763) | Windows (Intel Xeon 8573C) | macOS (Apple M1, virtual) |
@@ -89,4 +106,6 @@ Draw calls include the view cube and the axis indicator (about 41).
   prebuilt build ([ADR 0001](../adr/0001-geometry-kernel.md)). Multi-threading is the next step.
 - Instancing keeps assemblies with thousands of identical parts fast. Beyond about 10,000 components,
   level of detail and culling are needed to reach the v1.0 target of 30 fps for 50,000 instances.
-- The sketch solver needs decomposition or a sparse solver before Phase 1 can reach its targets.
+- PlaneGCS ran out of memory at about 1,000 constraints, so ParaWerk got its own sparse solver
+  ([ADR 0005](../adr/0005-sketch-solver.md)); dragging stays above 130 steps per second at 2,000 sketch
+  entities.

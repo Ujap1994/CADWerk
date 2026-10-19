@@ -6,8 +6,11 @@ import { solve } from './solver.ts';
 export type { DefinitionStatus } from './analysis.ts';
 export { isRedundant };
 
-/** Dragging: move a point, or change a circle's radius (dragging its edge). */
-export type DragTarget = { kind: 'point'; id: string; x: number; y: number } | { kind: 'radius'; id: string; radius: number };
+/** Dragging: move a point, move several points together (a whole line or arc), or change a circle's radius (dragging its edge). */
+export type DragTarget =
+  | { kind: 'point'; id: string; x: number; y: number }
+  | { kind: 'points'; points: { id: string; x: number; y: number }[] }
+  | { kind: 'radius'; id: string; radius: number };
 
 export interface SketchSolution {
   /** Geometry after solving (always a complete, valid sketch). */
@@ -37,15 +40,18 @@ export function solveSketch(input: SketchData, options: SolveSketchOptions = {})
   const start = performance.now();
   const system = buildSystem(input.entities, input.constraints);
   const targets = new Map<number, number>();
-  if (options.drag?.kind === 'point') {
-    const params = system.pointParams.get(options.drag.id);
+  const drag = options.drag;
+  const points = drag?.kind === 'point' ? [drag] : drag?.kind === 'points' ? drag.points : [];
+  for (const point of points) {
+    const params = system.pointParams.get(point.id);
     if (params) {
-      targets.set(params[0], options.drag.x);
-      targets.set(params[1], options.drag.y);
+      targets.set(params[0], point.x);
+      targets.set(params[1], point.y);
     }
-  } else if (options.drag?.kind === 'radius') {
-    const param = system.radiusParam.get(options.drag.id);
-    if (param !== undefined) targets.set(param, Math.max(1e-6, options.drag.radius));
+  }
+  if (drag?.kind === 'radius') {
+    const param = system.radiusParam.get(drag.id);
+    if (param !== undefined) targets.set(param, Math.max(1e-6, drag.radius));
   }
 
   const result = solve(system, { targets });

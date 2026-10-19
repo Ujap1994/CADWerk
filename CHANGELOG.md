@@ -13,6 +13,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   plane; the **Sketch** command; the view turns normal to the sketch
   plane; adaptive grid and sketch origin; undo and redo step by step inside a sketch, with the whole
   session as one step of the part history; editing existing sketches with rollback of later features.
+- Sketch geometry in the 3D view: open sketches on top of the part with points and dashed construction
+  geometry, other sketches on their planes; hover with exact sizes in the status bar, click selection,
+  dragging with live solving in the background (about 7 ms per step with 2,000 entities), deleting with
+  dependent relations.
 - Command bar tabs *Features* and *Sketch*.
 - Own sparse 2D constraint solver running in a worker (the basis for relations and dimensions).
 

@@ -11,6 +11,10 @@ export interface ViewportPalette {
   grid: number;
   axisX: number;
   axisY: number;
+  /** Geometry of the open sketch. */
+  sketch: number;
+  /** Other sketches. */
+  sketchInactive: number;
   cubeFace: number;
   cubeFaceHover: number;
   cubeEdge: number;
@@ -31,6 +35,8 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     grid: 0x2c3a4f,
     axisX: 0xe5484d,
     axisY: 0x30a46c,
+    sketch: 0x1f56c4,
+    sketchInactive: 0x3d4a5c,
     cubeFace: 0xf4f6fa,
     cubeFaceHover: 0xffc978,
     cubeEdge: 0xc4cddb,
@@ -49,6 +55,8 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     grid: 0xb4c0d2,
     axisX: 0xf06368,
     axisY: 0x4cc38a,
+    sketch: 0x7eaaff,
+    sketchInactive: 0xa9b5c6,
     cubeFace: 0x2c3442,
     cubeFaceHover: 0xb87522,
     cubeEdge: 0x3a4556,

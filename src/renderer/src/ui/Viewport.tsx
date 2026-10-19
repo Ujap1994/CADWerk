@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { isEdgeFeature } from '../../../shared/model/feature.ts';
 import { frameOf, STANDARD_PLANES } from '../../../shared/model/sketch.ts';
 import * as commands from '../commands.ts';
+import { SketchController, sketchHighlight } from '../sketch/controller.ts';
+import { sketchSolver } from '../sketch/solver.ts';
 import { setState, store, type AppState, type Pick } from '../state/store.ts';
-import { ViewportEngine, type PickFilter } from '../viewport/engine.ts';
+import { ViewportEngine, type InactiveSketch, type PickFilter } from '../viewport/engine.ts';
 import type { PlaneDisplay } from '../viewport/reference-planes.ts';
 import { registerViewport } from '../viewport/registry.ts';
 import type { CubeFace } from '../viewport/view-cube.ts';
@@ -33,6 +35,17 @@ function pickFilter(state: AppState): PickFilter {
   if (state.sketch) return 'none';
   const edit = state.activeEdit;
   return edit ? (isEdgeFeature(edit.draft) ? 'edges' : 'none') : 'all';
+}
+
+/** Sketches shown in the 3D view besides the open one: those before the current edit position, unless suppressed. */
+function inactiveSketches(state: AppState): InactiveSketch[] {
+  const features = state.history.features;
+  const end = state.sketch?.index ?? state.activeEdit?.index ?? features.length;
+  const sketches: InactiveSketch[] = [];
+  for (const feature of features.slice(0, end)) {
+    if (feature.type === 'sketch' && !feature.suppressed) sketches.push({ id: feature.id, frame: frameOf(feature.plane), data: feature.sketch });
+  }
+  return sketches;
 }
 
 /** All planes while choosing a sketch plane; otherwise only hovered (also in the tree) and selected ones. */
@@ -64,6 +77,7 @@ export function Viewport() {
     );
     engineRef.current = engine;
     registerViewport(engine);
+    engine.setSketchInput(new SketchController(engine, sketchSolver));
 
     const sync = (state: AppState, previous: AppState | null) => {
       if (!previous || state.display !== previous.display) {
@@ -94,6 +108,20 @@ export function Viewport() {
       if (!previous || plane !== previous.sketch?.draft.plane) {
         // Entering sketch mode turns the view normal to the sketch plane.
         engine.setSketchFrame(plane ? frameOf(plane) : null, plane !== undefined && !previous?.sketch);
+      }
+      const sketch = state.sketch?.draft.sketch;
+      if (sketch && (sketch !== previous?.sketch?.draft.sketch || plane !== previous.sketch.draft.plane)) {
+        engine.setActiveSketch(sketch, sketchHighlight(state));
+      } else if (sketch && (state.sketchHover !== previous?.sketchHover || state.sketchSelection !== previous.sketchSelection)) {
+        engine.setSketchHighlight(sketchHighlight(state));
+      }
+      if (
+        !previous ||
+        state.history.features !== previous.history.features ||
+        state.sketch?.index !== previous.sketch?.index ||
+        state.activeEdit?.index !== previous.activeEdit?.index
+      ) {
+        engine.setInactiveSketches(inactiveSketches(state));
       }
       if (!previous || state.effectiveTheme !== previous.effectiveTheme) engine.setTheme(state.effectiveTheme);
       if (!previous || state.settings.projection !== previous.settings.projection) engine.setProjection(state.settings.projection);

@@ -96,8 +96,9 @@ The Phase 0 preview proves the technology stack end to end:
 - **Feature tree and property panels:** live preview while editing, rollback of later features,
   suppress, delete, undo and redo; clear error messages when a feature cannot be built.
 - **Sketch mode (Phase 1, in progress):** sketches on the front, top and right plane and on planar faces; the view turns
-  normal to the plane, an adaptive grid and the sketch origin are shown, and undo works step by step
-  inside the sketch. Drawing tools, relations and dimensions follow next.
+  normal to the plane, an adaptive grid and the sketch origin are shown; sketch geometry can be selected,
+  dragged with live constraint solving and deleted, and undo works step by step inside the sketch.
+  Drawing tools, relations and dimensions follow next.
 - **Files:** native `.pwpart` files, STEP and binary STL export.
 - **Interface:** English and German (switchable at runtime, system language by default), light and dark
   theme, own icon set and visual design.

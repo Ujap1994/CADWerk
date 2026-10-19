@@ -3,9 +3,15 @@ import { readdir } from 'node:fs/promises';
 import { idle, launchApp, type LaunchedApp } from './harness.ts';
 
 interface SketchState {
+  sketchSelection: string[];
   history: { features: { id: string; type: string; plane?: { kind: string; plane?: string }; sketch?: { entities: unknown[] } }[]; past: unknown[] };
   choosingSketchPlane: boolean;
-  sketch: { mode: string; index: number; draft: { plane: { plane?: string }; sketch: { entities: unknown[] } }; past: unknown[] } | null;
+  sketch: {
+    mode: string;
+    index: number;
+    draft: { plane: { plane?: string }; sketch: { entities: { id: string; type: string; x?: number; y?: number; radius?: number }[]; constraints: { id: string }[] } };
+    past: unknown[];
+  } | null;
   rebuild: { results: unknown[] } | null;
   dirty: boolean;
   commandTab: string;
@@ -250,4 +256,91 @@ test('saving in sketch mode stores the sketch and stays in sketch mode', async (
   await page.click('[data-testid="sketch-ok"]');
   expect((await state(page)).history.past).toHaveLength(steps);
   expect((await state(page)).dirty).toBe(false);
+});
+
+test('drags under-defined geometry with live solving, selects and deletes it', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('r1', -40, -20), P('r2', 40, -20), P('r3', 40, 25), P('r4', -40, 25),
+        { id: 'l1', type: 'line', p1: 'r1', p2: 'r2' }, { id: 'l2', type: 'line', p1: 'r2', p2: 'r3' },
+        { id: 'l3', type: 'line', p1: 'r3', p2: 'r4' }, { id: 'l4', type: 'line', p1: 'r4', p2: 'r1' },
+        P('c', 0, 60), { id: 'k', type: 'circle', center: 'c', radius: 10 },
+        P('fixed', -60, 60),
+      ],
+      constraints: [
+        { id: 'h1', type: 'horizontal', line: 'l1' }, { id: 'h2', type: 'horizontal', line: 'l3' },
+        { id: 'v1', type: 'vertical', line: 'l2' }, { id: 'v2', type: 'vertical', line: 'l4' },
+        { id: 'f', type: 'fix', point: 'fixed' },
+      ],
+    };
+    const features = [{ id: 's', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await page.dblclick('.tree-item[data-feature-id="s"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+  const screen = async (u: number, v: number) => {
+    const p = await project(page, [u, v, 0]);
+    return { x: canvas.x + p.x, y: canvas.y + p.y };
+  };
+  const drag = async (from: [number, number], to: [number, number]) => {
+    const a = await screen(...from);
+    const b = await screen(...to);
+    await page.mouse.move(a.x, a.y);
+    await page.mouse.down();
+    await page.mouse.move(b.x, b.y, { steps: 12 });
+    await page.mouse.up();
+  };
+  const entity = async (id: string) => (await state(page)).sketch?.draft.sketch.entities.find((e) => e.id === id);
+
+  // Hovering shows the exact entity.
+  const top = await screen(0, 25);
+  await page.mouse.move(top.x, top.y);
+  await expect(page.locator('[data-testid="pick-info"]')).toHaveText('Line · 80 mm');
+
+  // Dragging a corner resizes the rectangle; the relations keep it a rectangle.
+  await drag([40, 25], [50, 30]);
+  await expect.poll(async () => (await state(page)).sketch?.past.length).toBe(1);
+  const r3 = await entity('r3');
+  expect(r3?.x).toBeCloseTo(50, 0);
+  expect(r3?.y).toBeCloseTo(30, 0);
+  expect((await entity('r2'))?.x).toBeCloseTo(r3?.x as number, 6);
+  expect((await entity('r4'))?.y).toBeCloseTo(r3?.y as number, 6);
+  expect((await entity('r1'))?.x).toBeCloseTo(-40, 6);
+
+  // A fixed point does not move, and nothing is recorded.
+  await drag([-60, 60], [-70, 70]);
+  await page.waitForTimeout(300);
+  expect((await state(page)).sketch?.past.length).toBe(1);
+  expect((await entity('fixed'))?.x).toBeCloseTo(-60, 6);
+
+  // Dragging the edge of a circle changes its radius.
+  await drag([10, 60], [16, 60]);
+  await expect.poll(async () => (await state(page)).sketch?.past.length).toBe(2);
+  expect((await entity('k'))?.radius).toBeCloseTo(16, 0);
+
+  // Undo goes back one drag at a time.
+  await page.click('[data-command="undo"]');
+  expect((await entity('k'))?.radius).toBeCloseTo(10, 6);
+
+  // Click selects, Delete removes the line and its relation but keeps the shared corners.
+  const bottom = await screen(0, -20);
+  await page.mouse.click(bottom.x, bottom.y);
+  expect((await state(page)).sketchSelection).toEqual(['l1']);
+  await page.keyboard.press('Delete');
+  const after = (await state(page)).sketch?.draft.sketch;
+  expect(after?.entities.map((e) => e.id)).not.toContain('l1');
+  expect(after?.entities.map((e) => e.id)).toContain('r1');
+  expect(after?.constraints.map((c) => c.id)).not.toContain('h1');
+  // Esc clears the selection.
+  const topNow = await screen(0, r3?.y as number);
+  await page.mouse.click(topNow.x, topNow.y);
+  expect((await state(page)).sketchSelection).toEqual(['l3']);
+  await page.keyboard.press('Escape');
+  expect((await state(page)).sketchSelection).toEqual([]);
 });

@@ -1,10 +1,11 @@
-import { Color, DoubleSide, Group, Matrix4, Mesh, PlaneGeometry, ShaderMaterial, Vector2, Vector3 } from 'three';
+import { Color, DoubleSide, Group, Matrix4, Mesh, PlaneGeometry, ShaderMaterial, Vector2, type Vector3 } from 'three';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import { toSketch, type SketchFrame } from '../../../shared/model/sketch.ts';
+import { toSketch, type SketchData, type SketchFrame } from '../../../shared/model/sketch.ts';
 import { gridSpacing } from './grid.ts';
 import type { ViewportPalette } from './palette.ts';
+import { frameMatrix, NO_HIGHLIGHT, SketchGraphics, type SketchHighlight, type SketchMaterials } from './sketch-graphics.ts';
 
 const ORIGIN_ARROW_PX = 34;
 
@@ -68,10 +69,7 @@ const ORIGIN_ARROWS = [
   [0, 1, 0, -0.09, 0.78, 0],
 ].flat();
 
-/**
- * What sketch mode draws in the 3D view: the grid on the sketch plane and the
- * sketch origin. Sketch geometry joins this layer in the next steps.
- */
+/** What sketch mode draws in the 3D view: the grid on the sketch plane, the sketch origin and the open sketch. */
 export class SketchLayer {
   readonly group = new Group();
   private frame: SketchFrame | null = null;
@@ -88,8 +86,11 @@ export class SketchLayer {
   private readonly grid: Mesh<PlaneGeometry, ShaderMaterial>;
   private readonly origin: LineSegments2;
   private readonly originMaterial: LineMaterial;
+  private readonly graphics: SketchGraphics;
+  private mmPerPixel = 1;
 
-  constructor() {
+  constructor(materials: SketchMaterials) {
+    this.graphics = new SketchGraphics(materials, 'active');
     this.grid = new Mesh(
       new PlaneGeometry(2, 2),
       new ShaderMaterial({
@@ -114,7 +115,7 @@ export class SketchLayer {
     this.origin.renderOrder = 20;
     this.origin.raycast = () => undefined;
 
-    this.group.add(this.grid, this.origin);
+    this.group.add(this.grid, this.origin, this.graphics.group);
     this.group.visible = false;
   }
 
@@ -130,11 +131,31 @@ export class SketchLayer {
     this.frame = frame;
     this.group.visible = frame !== null;
     if (!frame) return;
-    this.basis
-      .makeBasis(new Vector3(...frame.xDir), new Vector3(...frame.yDir), new Vector3(...frame.normal))
-      .setPosition(new Vector3(...frame.origin));
+    this.basis.copy(frameMatrix(frame));
     this.grid.matrix.copy(this.basis);
     this.grid.updateMatrixWorld(true);
+    this.graphics.setFrame(frame);
+  }
+
+  /** Shows the geometry of the open sketch (also intermediate states while dragging). */
+  setSketch(sketch: SketchData, highlight: SketchHighlight = NO_HIGHLIGHT): void {
+    this.graphics.update(sketch, highlight, this.mmPerPixel);
+  }
+
+  setHighlight(highlight: SketchHighlight): void {
+    this.graphics.setHighlight(highlight);
+  }
+
+  get sketch(): SketchData | null {
+    return this.graphics.data;
+  }
+
+  refresh(): void {
+    if (this.graphics.data) this.graphics.refresh();
+  }
+
+  worldBounds() {
+    return this.frame ? this.graphics.worldBounds() : null;
   }
 
   setPalette(palette: ViewportPalette): void {
@@ -158,6 +179,8 @@ export class SketchLayer {
     const frame = this.frame;
     if (!frame) return;
     const mmPerPixel = view.height / Math.max(1, view.viewportHeightPx);
+    this.mmPerPixel = mmPerPixel;
+    this.graphics.ensureResolution(mmPerPixel);
     const { minor, minorStrength } = gridSpacing(mmPerPixel);
     const uniforms = this.uniforms;
     const [cx, cy] = toSketch(frame, [view.target.x, view.target.y, view.target.z]);
@@ -174,6 +197,7 @@ export class SketchLayer {
   }
 
   dispose(): void {
+    this.graphics.dispose();
     this.grid.geometry.dispose();
     this.grid.material.dispose();
     this.origin.geometry.dispose();

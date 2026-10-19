@@ -23,6 +23,7 @@
 | Front, back, left, right, top, bottom, isometric | Ctrl+1 … Ctrl+7 | ⌘1 … ⌘7 |
 | Apply / cancel the property panel | Enter / Esc | Enter / Esc |
 | Clear the selection; cancel the plane choice of the sketch command | Esc | Esc |
+| Delete the selected sketch geometry (in sketch mode) | Delete / Backspace | Delete / ⌫ |
 | Settings | Ctrl+, | ⌘, |
 
 ## Selecting

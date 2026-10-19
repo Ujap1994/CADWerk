@@ -62,6 +62,10 @@ export interface AppState {
   choosingSketchPlane: boolean;
   /** Sketch mode. */
   sketch: SketchSession | null;
+  /** Selected entities (and later constraints) of the open sketch, by id. */
+  sketchSelection: string[];
+  /** Entity of the open sketch under the cursor. */
+  sketchHover: string | null;
   selection: Pick[];
   hover: Pick | null;
 
@@ -88,6 +92,8 @@ export const initialState: AppState = {
   activeEdit: null,
   choosingSketchPlane: false,
   sketch: null,
+  sketchSelection: [],
+  sketchHover: null,
   selection: [],
   hover: null,
   kernelStatus: 'loading',

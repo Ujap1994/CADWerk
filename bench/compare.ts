@@ -12,8 +12,8 @@ import { benchRoot, type BenchReport } from './lib.ts';
 const threshold = Number(process.env.BENCH_THRESHOLD ?? '1.3');
 /** Cases faster than this are dominated by noise and not compared. */
 const MIN_MS = 2;
-/** CI machines have no real GPU, so render results are reported but never fail the build. */
-const ADVISORY_SUITES = new Set(['render']);
+/** CI machines have no real GPU, so render and sketch interaction results are reported but never fail the build. */
+const ADVISORY_SUITES = new Set(['render', 'sketch']);
 
 const resultsDir = path.join(benchRoot, 'results');
 const files = existsSync(resultsDir) ? readdirSync(resultsDir).filter((file) => file.endsWith('.json')) : [];

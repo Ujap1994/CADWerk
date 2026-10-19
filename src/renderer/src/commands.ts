@@ -6,6 +6,7 @@ import { decodePartFile, encodePartFile, PartFileError } from '../../shared/mode
 import { frameOnPlane, STANDARD_PLANES, type SketchData, type SketchPlaneRef } from '../../shared/model/sketch.ts';
 import type { Settings } from '../../shared/settings.ts';
 import { changeLanguage, t } from './i18n.ts';
+import { deleteEntities } from './sketch/geometry.ts';
 import {
   applySketchSession,
   hasSketchChanges,
@@ -30,7 +31,7 @@ function baseName(path: string): string {
 
 /** State that leaves every mode (feature edit, sketch) without storing anything. */
 function closedModes(): Partial<AppState> {
-  return { activeEdit: null, sketch: null, choosingSketchPlane: false, selection: [], hover: null, commandTab: 'features' };
+  return { activeEdit: null, sketch: null, choosingSketchPlane: false, selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'features' };
 }
 
 function documentName(): string {
@@ -237,7 +238,7 @@ export function undo(): void {
   }
   const { sketch } = getState();
   if (sketch) {
-    updateSketch(undoSketch(sketch));
+    updateSketch(undoSketch(sketch), { sketchSelection: [], sketchHover: null });
     return;
   }
   if (getState().choosingSketchPlane) {
@@ -258,7 +259,7 @@ export function redo(): void {
   }
   const { sketch } = getState();
   if (sketch) {
-    updateSketch(redoSketch(sketch));
+    updateSketch(redoSketch(sketch), { sketchSelection: [], sketchHover: null });
     return;
   }
   if (getState().activeEdit || getState().choosingSketchPlane) return;
@@ -297,7 +298,7 @@ export function chooseSketchPlane(plane: SketchPlaneRef): void {
 }
 
 function enterSketch(session: SketchSession): void {
-  updateSketch(session, { activeEdit: null, choosingSketchPlane: false, selection: [], hover: null, commandTab: 'sketch' });
+  updateSketch(session, { activeEdit: null, choosingSketchPlane: false, selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'sketch' });
 }
 
 /** Replaces the sketch session and keeps the dirty flag in sync with unsaved sketch work. */
@@ -323,9 +324,10 @@ export function exitSketch(): void {
     if (state.choosingSketchPlane) setState({ choosingSketchPlane: false, commandTab: 'features' });
     return;
   }
+  const leave: Partial<AppState> = { selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'features' };
   const features = applySketchSession(state.history.features, session);
-  if (features) setHistory(commit(state.history, features), { sketch: null, selection: [], hover: null, commandTab: 'features' });
-  else updateSketch(null, { selection: [], hover: null, commandTab: 'features' });
+  if (features) setHistory(commit(state.history, features), { ...leave, sketch: null });
+  else updateSketch(null, leave);
 }
 
 /** Leaves sketch mode and discards its changes (after asking, if there are any). */
@@ -345,7 +347,29 @@ export async function cancelSketch(): Promise<void> {
     });
     if (!confirmed || getState().sketch !== session) return;
   }
-  updateSketch(null, { selection: [], hover: null, commandTab: 'features' });
+  updateSketch(null, { selection: [], hover: null, sketchSelection: [], sketchHover: null, commandTab: 'features' });
+}
+
+/** Clicking sketch geometry: select it, add or remove it (additive), or clear the selection (null). */
+export function selectSketchEntity(id: string | null, additive: boolean): void {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  if (!id) {
+    if (!additive && sketchSelection.length > 0) setState({ sketchSelection: [] });
+    return;
+  }
+  const selected = sketchSelection.includes(id);
+  if (additive) setState({ sketchSelection: selected ? sketchSelection.filter((other) => other !== id) : [...sketchSelection, id] });
+  else setState({ sketchSelection: selected && sketchSelection.length === 1 ? [] : [id] });
+}
+
+/** Deletes the selected sketch geometry with everything that depends on it. */
+export function deleteSketchSelection(): void {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch || sketchSelection.length === 0) return;
+  const next = deleteEntities(sketch.draft.sketch, sketchSelection);
+  setState({ sketchSelection: [], sketchHover: null });
+  recordSketchChange(next);
 }
 
 /** Stores the open sketch in the document without leaving sketch mode (before saving). */
@@ -393,6 +417,7 @@ export function handlePick(pick: Pick | null, additive: boolean): void {
 export function escape(): void {
   const state = getState();
   if (state.choosingSketchPlane) void cancelSketch();
+  else if (state.sketch) setState({ sketchSelection: [] });
   else if (state.activeEdit) cancelEdit();
   else setState({ selection: [] });
 }

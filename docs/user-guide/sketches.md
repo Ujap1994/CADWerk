@@ -2,8 +2,9 @@
 
 > [!NOTE]
 > The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane
-> or planar face, sketch mode with its grid and its own undo history, and editing existing sketches. Drawing tools,
-> relations and dimensions follow in the next updates; the page grows with them.
+> or planar face, sketch mode with its grid and its own undo history, showing, selecting, dragging and
+> deleting sketch geometry, and editing existing sketches. Drawing tools, relations and dimensions follow
+> in the next updates; the page grows with them.
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or
@@ -79,6 +80,38 @@ the right and its y axis up. The command bar switches to the *Sketch* tab.
   features below the sketch appear faded in the feature tree and are rebuilt when you leave sketch mode.
 - **Side panel:** shows the sketch's name, its plane and what it contains. The feature tree stays visible
   below it, but other features cannot be edited, suppressed or deleted until you leave the sketch.
+
+## Working with sketch geometry
+
+![An open sketch on the top face; the line under the cursor is highlighted](../images/screenshots/sketch-geometry.png)
+
+In sketch mode the geometry of the open sketch is drawn in blue on top of the part, so you can see it even
+where the sketch plane runs inside the material. Points (end points, centers and stand-alone points)
+are shown as dots; construction geometry is dashed.
+
+- **Hover:** the entity under the cursor is highlighted in orange, and the status bar shows its exact
+  size: *Line · 64 mm*, *Circle · Ø 18 mm*, *Arc · R 10 mm · 180°* or *Point · X 12 · Y 5*. Points take
+  precedence over the curves they belong to, so end points and centers are always easy to grab.
+- **Select:** click an entity. Hold **Ctrl**, **Shift** or **⌘** to add or remove entities; click empty
+  space or press **Esc** to clear the selection.
+- **Drag:** drag a point, a line or an arc to move it, or the edge of a circle to change its radius. The
+  geometry follows the cursor while all relations stay satisfied; a rectangle stays a rectangle when you
+  drag one of its corners. Geometry that is fully defined (for example fixed) does not move. Each drag is
+  one undo step.
+- **Delete:** **Delete** or **Backspace** removes the selected geometry, together with relations that
+  refer to it. A deleted line takes its own end points with it; corners it shares with other lines stay.
+
+Dragging stays fluid in large sketches: the solver runs in the background, and each drag step (solving,
+updating the display and drawing the frame) takes about 7 ms with 500 and with 2,000 entities on an
+Apple M3, well within the 16.7 ms of a 60 Hz display.
+
+### Sketches in the 3D view
+
+After you leave sketch mode, the sketch stays visible on its plane as thin dark lines, with construction
+geometry dashed and the part hiding what lies behind it. Suppressed sketches are hidden, and so are
+sketches below the feature you are currently editing.
+
+![A sketch on the top face of the part, shown in the 3D view](../images/screenshots/sketch-in-model.png)
 
 ### Undo and redo in sketch mode
 

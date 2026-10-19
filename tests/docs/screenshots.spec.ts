@@ -72,6 +72,50 @@ test('README and user guide screenshots', async () => {
   await page.click('[data-testid="sketch-cancel"]');
   await idle(page);
 
+  // An existing sketch on the top face: geometry, hover information and the other sketches' look.
+  const before = await page.evaluate(() => {
+    const hooks = (window as unknown as { __parawerk: { setState(s: unknown): void; getState(): { history: { features: unknown[] } } } }).__parawerk;
+    const features = hooks.getState().history.features;
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [
+        P('a', -52, -32), P('b', -10, -32), P('c', -10, 32), P('d', -52, 32),
+        { id: 'l1', type: 'line', p1: 'a', p2: 'b' }, { id: 'l2', type: 'line', p1: 'b', p2: 'c' },
+        { id: 'l3', type: 'line', p1: 'c', p2: 'd' }, { id: 'l4', type: 'line', p1: 'd', p2: 'a' },
+        P('m', 42, 0), { id: 'k', type: 'circle', center: 'm', radius: 9 },
+        P('x1', -60, 0), P('x2', 60, 0), { id: 'axis', type: 'line', p1: 'x1', p2: 'x2', construction: true },
+      ],
+      constraints: [
+        { id: 'h1', type: 'horizontal', line: 'l1' }, { id: 'v1', type: 'vertical', line: 'l2' },
+        { id: 'h2', type: 'horizontal', line: 'l3' }, { id: 'v2', type: 'vertical', line: 'l4' },
+      ],
+    };
+    const frame = { origin: [0, 0, 20], xDir: [1, 0, 0], yDir: [0, 1, 0], normal: [0, 0, 1] };
+    const withSketch = [...features, { id: 'doc-sketch', type: 'sketch', plane: { kind: 'face', face: 0, frame }, sketch }];
+    hooks.setState({ history: { features: withSketch, past: [], future: [] } });
+    return features;
+  });
+  await idle(page);
+  await page.dblclick('.tree-item[data-feature-id="doc-sketch"]');
+  await idle(page);
+  await page.waitForTimeout(700);
+  const lineMiddle = await page.evaluate(
+    ([x, y, z]) => (window as unknown as { __parawerk: { viewport: { project(x: number, y: number, z: number): { x: number; y: number } } } }).__parawerk.viewport.project(x, y, z),
+    [-10, 10, 20] as const,
+  );
+  if (canvas) await page.mouse.move(canvas.x + lineMiddle.x, canvas.y + lineMiddle.y);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-geometry.png') });
+  await page.click('[data-testid="sketch-ok"]');
+  await page.evaluate(() => (window as unknown as { __parawerk: { commands: { setView(v: string): void } } }).__parawerk.commands.setView('isometric'));
+  await idle(page);
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: out('sketch-in-model.png') });
+  await page.evaluate((features) => {
+    (window as unknown as { __parawerk: { setState(s: unknown): void } }).__parawerk.setState({ history: { features, past: [], future: [] } });
+  }, before);
+  await idle(page);
+
   await page.click('[data-command="settings"]');
   await page.waitForTimeout(300);
   await page.screenshot({ path: out('settings-dialog.png') });

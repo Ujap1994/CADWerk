@@ -104,7 +104,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Solver worker with latest-wins dragging | ✅ done |
 | Sketch mode: plane choice, normal view, grid, sketch undo, edit from the tree | ✅ done |
 | Sketching on planar faces (exact B-Rep planes from the kernel) | ✅ done |
-| Sketch geometry in the 3D view, drawing tools, inference and snapping | ⏳ next |
+| Sketch geometry in the 3D view, selection, dragging with live solving, delete | ✅ done (drag step 7 ms at 2,000 entities, Apple M3) |
+| Drawing tools, inference lines, snapping and automatic relations | ⏳ next |
 | Relations, dimension tool, status colors, conflict diagnosis | ⏳ planned |
 | Editing tools (trim, extend, offset, mirror, patterns, fillet, chamfer) | ⏳ planned |
 | DXF import and export; benchmarks at 50 → 500 → 2,000 entities | ⏳ planned |

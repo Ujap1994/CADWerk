@@ -1,12 +1,39 @@
 import { useTranslation } from 'react-i18next';
 import type { Language } from '../../../shared/i18n.ts';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
-import { STANDARD_PLANES } from '../../../shared/model/sketch.ts';
-import { formatQuantity } from '../format.ts';
+import { STANDARD_PLANES, type SketchData } from '../../../shared/model/sketch.ts';
+import { formatNumber, formatQuantity } from '../format.ts';
+import { arcGeometry, pointPositions } from '../sketch/geometry.ts';
 import { useAppState, type Pick } from '../state/store.ts';
 
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/** "Line · 42.5 mm", "Circle · Ø 20 mm", ... for the sketch entity under the cursor. */
+function describeSketchEntity(sketch: SketchData, id: string, t: Translate, language: Language): string | null {
+  const entity = sketch.entities.find((candidate) => candidate.id === id);
+  if (!entity) return null;
+  const positions = pointPositions(sketch);
+  const mm = (value: number) => formatQuantity(value, language, 'mm', 3);
+  let text: string | null = null;
+  if (entity.type === 'point') {
+    text = t('status.sketchPoint', { x: formatNumber(entity.x, language), y: formatNumber(entity.y, language) });
+  } else if (entity.type === 'line') {
+    const [a, b] = [positions.get(entity.p1), positions.get(entity.p2)];
+    if (a && b) text = t('status.sketchLine', { length: mm(Math.hypot(b[0] - a[0], b[1] - a[1])) });
+  } else if (entity.type === 'circle') {
+    text = t('status.sketchCircle', { diameter: mm(entity.radius * 2) });
+  } else {
+    const [center, start, end] = [positions.get(entity.center), positions.get(entity.start), positions.get(entity.end)];
+    if (center && start && end) {
+      const arc = arcGeometry(center, start, end);
+      text = t('status.sketchArc', { radius: mm(arc.radius), angle: formatNumber((arc.sweep * 180) / Math.PI, language, 1) });
+    }
+  }
+  return text && entity.construction ? `${text} · ${t('status.construction')}` : text;
+}
+
 /** "Face 3 · Cylinder Ø 40 mm · 3,769.9 mm²" from the exact B-Rep data. */
-function describePick(pick: Pick, mesh: MeshPayload | null, t: (key: string, options?: Record<string, unknown>) => string, language: Language): string {
+function describePick(pick: Pick, mesh: MeshPayload | null, t: Translate, language: Language): string {
   if (pick.kind === 'plane') return t(`planes.${STANDARD_PLANES[pick.index] ?? 'front'}`);
   const label = t(pick.kind === 'face' ? 'status.face' : 'status.edge', { index: pick.index + 1 });
   const info = pick.kind === 'face' ? mesh?.faceInfo[pick.index] : mesh?.edgeInfo[pick.index];
@@ -27,6 +54,9 @@ export function StatusBar() {
   const frameStats = useAppState((state) => state.frameStats);
   const showFrameStats = useAppState((state) => state.settings.showFrameStats);
   const language = useAppState((state) => state.language);
+  const sketch = useAppState((state) => state.sketch?.draft.sketch);
+  const sketchHover = useAppState((state) => state.sketchHover);
+  const sketchSelection = useAppState((state) => state.sketchSelection);
 
   const statusText =
     kernelStatus === 'loading'
@@ -48,7 +78,15 @@ export function StatusBar() {
         {statusText}
       </div>
       <div className="status-item" data-testid="pick-info">
-        {hover
+        {sketch
+          ? sketchHover
+            ? describeSketchEntity(sketch, sketchHover, t, language)
+            : sketchSelection.length === 1 && sketchSelection[0]
+              ? describeSketchEntity(sketch, sketchSelection[0], t, language)
+              : sketchSelection.length > 1
+                ? t('status.selected', { count: sketchSelection.length })
+                : null
+          : hover
           ? describePick(hover, body, t, language)
           : selection.length === 1 && selection[0]
             ? describePick(selection[0], body, t, language)

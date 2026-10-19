@@ -11,6 +11,7 @@ import {
   NoToneMapping,
   OrthographicCamera,
   PerspectiveCamera,
+  Plane,
   Quaternion,
   Raycaster,
   Scene,
@@ -25,7 +26,7 @@ import {
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import type { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import type { MeshPayload } from '../../../kernel/protocol.ts';
-import type { SketchFrame } from '../../../shared/model/sketch.ts';
+import { toSketch, type SketchData, type SketchFrame } from '../../../shared/model/sketch.ts';
 import type { NavigationPreset, Projection } from '../../../shared/settings.ts';
 import type { FrameStats, Pick } from '../state/store.ts';
 import { CameraController } from './camera-controller.ts';
@@ -33,6 +34,7 @@ import { AxisTriad } from './axis-triad.ts';
 import { palettes, type ViewportPalette } from './palette.ts';
 import { disposeOverlay, PartModel } from './part-model.ts';
 import { ReferencePlanes, type PlaneDisplay } from './reference-planes.ts';
+import { NO_HIGHLIGHT, SketchGraphics, SketchMaterials, type SketchHighlight } from './sketch-graphics.ts';
 import { SketchLayer } from './sketch-layer.ts';
 import { createSyntheticAssembly, type SyntheticAssembly } from './synthetic-scene.ts';
 import { ViewCube, type CubeFace } from './view-cube.ts';
@@ -40,6 +42,31 @@ import { VIEW_DIRECTIONS, viewQuaternion, type StandardView } from './views.ts';
 
 /** What a click can pick: everything, only edges (fillet, chamfer), planes and planar faces (choosing a sketch plane) or nothing. */
 export type PickFilter = 'all' | 'edges' | 'planes' | 'none';
+
+/** Pointer position in sketch mode: CSS pixels on the canvas and sketch coordinates on the sketch plane. */
+export interface SketchPointer {
+  x: number;
+  y: number;
+  u: number;
+  v: number;
+  mmPerPixel: number;
+  additive: boolean;
+}
+
+/** Receives the left-button input while a sketch is open (see sketch/controller.ts). */
+export interface SketchInput {
+  hover(pointer: SketchPointer | null): void;
+  down(pointer: SketchPointer): void;
+  move(pointer: SketchPointer): void;
+  up(pointer: SketchPointer, moved: boolean): void;
+}
+
+/** A sketch shown in the 3D view while it is not open. */
+export interface InactiveSketch {
+  id: string;
+  frame: SketchFrame;
+  data: SketchData;
+}
 
 export interface ViewportCallbacks {
   onHover(pick: Pick | null): void;
@@ -57,7 +84,7 @@ export interface BenchmarkResult {
   drawCalls: number;
 }
 
-type DragMode = 'rotate' | 'pan' | 'select' | 'cube';
+type DragMode = 'rotate' | 'pan' | 'select' | 'cube' | 'sketch';
 
 interface DragState {
   mode: DragMode;
@@ -104,7 +131,12 @@ export class ViewportEngine {
   private readonly viewCube: ViewCube;
   private readonly triad = new AxisTriad();
   private readonly referencePlanes = new ReferencePlanes();
-  private readonly sketchLayer = new SketchLayer();
+  private readonly sketchMaterials = new SketchMaterials();
+  private readonly sketchLayer = new SketchLayer(this.sketchMaterials);
+  private readonly inactiveSketches = new Map<string, SketchGraphics>();
+  private readonly inactiveSketchGroup = new Group();
+  private sketchInput: SketchInput | null = null;
+  private lastSketchPointer: SketchPointer | null = null;
   private readonly pivotMarker: Mesh<SphereGeometry, MeshBasicMaterial>;
   private palette: ViewportPalette = palettes.light;
   private readonly materials: {
@@ -181,7 +213,15 @@ export class ViewportEngine {
     };
 
     this.hemisphere = new HemisphereLight(0xffffff, 0x888888, 1.9);
-    this.scene.add(this.hemisphere, this.headlight, this.headlight.target, this.overlays, this.referencePlanes.group, this.sketchLayer.group);
+    this.scene.add(
+      this.hemisphere,
+      this.headlight,
+      this.headlight.target,
+      this.overlays,
+      this.referencePlanes.group,
+      this.inactiveSketchGroup,
+      this.sketchLayer.group,
+    );
 
     this.pivotMarker = new Mesh(new SphereGeometry(1, 16, 12), new MeshBasicMaterial({ depthTest: false }));
     this.pivotMarker.renderOrder = 10;
@@ -282,6 +322,50 @@ export class ViewportEngine {
     this.requestRender();
   }
 
+  /** Geometry of the open sketch, or of an intermediate state while dragging. */
+  setActiveSketch(sketch: SketchData, highlight: SketchHighlight): void {
+    this.sketchLayer.setSketch(sketch, highlight);
+    this.updateBounds();
+    this.requestRender();
+  }
+
+  setSketchHighlight(highlight: SketchHighlight): void {
+    this.sketchLayer.setHighlight(highlight);
+    this.requestRender();
+  }
+
+  /** The sketches shown while they are not open; unchanged ones are kept as they are. */
+  setInactiveSketches(sketches: readonly InactiveSketch[]): void {
+    const shown = new Set<string>();
+    for (const sketch of sketches) {
+      shown.add(sketch.id);
+      let graphics = this.inactiveSketches.get(sketch.id);
+      if (!graphics) {
+        graphics = new SketchGraphics(this.sketchMaterials, 'inactive');
+        this.inactiveSketches.set(sketch.id, graphics);
+        this.inactiveSketchGroup.add(graphics.group);
+      }
+      graphics.setFrame(sketch.frame);
+      if (graphics.data !== sketch.data) graphics.update(sketch.data, NO_HIGHLIGHT, this.mmPerPixel());
+    }
+    for (const [id, graphics] of this.inactiveSketches) {
+      if (shown.has(id)) continue;
+      this.inactiveSketchGroup.remove(graphics.group);
+      graphics.dispose();
+      this.inactiveSketches.delete(id);
+    }
+    this.updateBounds();
+    this.requestRender();
+  }
+
+  setSketchInput(input: SketchInput | null): void {
+    this.sketchInput = input;
+  }
+
+  setCursor(cursor: string): void {
+    this.canvas.style.cursor = cursor;
+  }
+
   /** The next body that appears is framed automatically (new or opened document). */
   requestFitOnNextBody(): void {
     this.fitOnNextBody = true;
@@ -302,6 +386,9 @@ export class ViewportEngine {
     this.pivotMarker.material.color.setHex(p.pivot);
     this.referencePlanes.setPalette(p);
     this.sketchLayer.setPalette(p);
+    this.sketchMaterials.setPalette(p);
+    this.sketchLayer.refresh();
+    for (const graphics of this.inactiveSketches.values()) graphics.refresh();
     this.hemisphere.color = new Color(p.hemisphereSky);
     this.hemisphere.groundColor = new Color(p.hemisphereGround);
     this.viewCube.setPalette(p);
@@ -413,6 +500,16 @@ export class ViewportEngine {
     });
   }
 
+  /** Renders one frame right away and waits for the GPU; returns the time in ms (benchmarks). */
+  renderSynchronously(): number {
+    const start = performance.now();
+    this.controller.update(start);
+    this.renderNow();
+    const gl = this.renderer.getContext();
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.syncPixel);
+    return performance.now() - start;
+  }
+
   debugInfo(): { triangles: number; drawCalls: number; geometries: number; textures: number } {
     return {
       triangles: this.renderer.info.render.triangles,
@@ -464,6 +561,9 @@ export class ViewportEngine {
     this.controller.apply(this.ortho, this.perspective, this.aspect(), this.bounds);
     this.updateHeadlight();
     this.updatePivotMarkerScale();
+    const mmPerPixel = this.mmPerPixel();
+    this.sketchMaterials.setZoom(mmPerPixel);
+    for (const graphics of this.inactiveSketches.values()) graphics.ensureResolution(mmPerPixel);
     if (this.sketchLayer.active) {
       const { target, height } = this.controller.state;
       this.sketchLayer.update({ target, height, aspect: this.aspect(), viewportHeightPx: this.height });
@@ -497,6 +597,10 @@ export class ViewportEngine {
     return this.width / Math.max(1, this.height);
   }
 
+  private mmPerPixel(): number {
+    return this.controller.state.height / Math.max(1, this.height);
+  }
+
   private resize(): void {
     const rect = this.container.getBoundingClientRect();
     this.width = Math.max(1, Math.floor(rect.width));
@@ -511,6 +615,7 @@ export class ViewportEngine {
     }
     this.referencePlanes.setResolution(resolution);
     this.sketchLayer.setResolution(resolution);
+    this.sketchMaterials.setResolution(resolution, this.renderer.getPixelRatio());
     this.requestRender();
   }
 
@@ -541,6 +646,9 @@ export class ViewportEngine {
     this.referencePlanes.setHalfSize(Math.max(MIN_PLANE_HALF_SIZE, Math.ceil((reach * 1.15) / 10) * 10));
     const planes = this.referencePlanes.visibleBounds();
     if (planes) box.union(planes);
+    for (const sketch of [this.sketchLayer.worldBounds(), ...[...this.inactiveSketches.values()].map((graphics) => graphics.worldBounds())]) {
+      if (sketch) box.union(sketch);
+    }
     // The sketch plane must stay inside the camera's depth range.
     const frame = this.sketchLayer.sketchFrame;
     if (frame && !box.isEmpty()) box.expandByPoint(new Vector3(...frame.origin));
@@ -586,6 +694,23 @@ export class ViewportEngine {
     }
     if (planeHit && (!faceHit || planeHit.distance < faceHit.distance)) return { kind: 'plane', index: planeHit.index };
     return null;
+  }
+
+  /** Where the cursor meets the sketch plane, in sketch coordinates. */
+  private sketchPointer(x: number, y: number, additive: boolean): SketchPointer | null {
+    const frame = this.sketchLayer.sketchFrame;
+    if (!frame) return null;
+    const camera = this.camera();
+    this.controller.apply(this.ortho, this.perspective, this.aspect(), this.bounds);
+    camera.updateMatrixWorld();
+    this.raycaster.setFromCamera(this.ndc(x, y), camera);
+    const normal = new Vector3(...frame.normal);
+    const plane = new Plane().setFromNormalAndCoplanarPoint(normal, new Vector3(...frame.origin));
+    const hit = this.raycaster.ray.intersectPlane(plane, new Vector3());
+    if (!hit) return null;
+    const [u, v] = toSketch(frame, [hit.x, hit.y, hit.z]);
+    this.lastSketchPointer = { x, y, u, v, mmPerPixel: this.mmPerPixel(), additive };
+    return this.lastSketchPointer;
   }
 
   /** Surface point under the cursor, used as rotation pivot. */
@@ -666,7 +791,12 @@ export class ViewportEngine {
       if (this.viewCube.setHover(cubeDirection)) this.requestRender();
       if (cubeDirection) {
         this.setHoverPick(null);
+        this.sketchInput?.hover(null);
         this.canvas.style.cursor = 'pointer';
+        return;
+      }
+      if (this.sketchLayer.active && this.sketchInput) {
+        this.sketchInput.hover(this.sketchPointer(x, y, false));
         return;
       }
       this.setHoverPick(this.pickAt(x, y));
@@ -712,7 +842,14 @@ export class ViewportEngine {
     if (this.drag) return;
     this.canvas.focus({ preventScroll: true });
     const { x, y } = this.local(event);
-    const mode = this.dragModeFor(event);
+    let mode = this.dragModeFor(event);
+    if (mode === 'select' && this.sketchLayer.active && this.sketchInput) {
+      const pointer = this.sketchPointer(x, y, event.ctrlKey || event.metaKey || event.shiftKey);
+      if (pointer) {
+        mode = 'sketch';
+        this.sketchInput.down(pointer);
+      }
+    }
     let pivot = this.bounds.center.clone();
     if (mode === 'rotate') {
       pivot = this.surfacePointAt(x, y) ?? this.controller.state.target.clone();
@@ -740,6 +877,10 @@ export class ViewportEngine {
     if (Math.hypot(point.x - drag.startX, point.y - drag.startY) > CLICK_TOLERANCE_PX) drag.moved = true;
     if (drag.mode === 'rotate') this.controller.rotate(dx, dy, drag.pivot);
     else if (drag.mode === 'pan' && drag.moved) this.controller.pan(dx, dy, this.height);
+    else if (drag.mode === 'sketch') {
+      const pointer = this.sketchPointer(point.x, point.y, event.ctrlKey || event.metaKey || event.shiftKey);
+      if (pointer) this.sketchInput?.move(pointer);
+    }
     this.requestRender();
   };
 
@@ -750,7 +891,11 @@ export class ViewportEngine {
     this.pivotMarker.visible = false;
     if (this.canvas.hasPointerCapture(event.pointerId)) this.canvas.releasePointerCapture(event.pointerId);
     const { x, y } = this.local(event);
-    if (!drag.moved && drag.mode === 'cube') {
+    if (drag.mode === 'sketch') {
+      // Seen exactly edge-on the plane has no intersection: finish where the pointer was last.
+      const pointer = this.sketchPointer(x, y, event.ctrlKey || event.metaKey || event.shiftKey) ?? this.lastSketchPointer;
+      if (pointer) this.sketchInput?.up(pointer, drag.moved);
+    } else if (!drag.moved && drag.mode === 'cube') {
       const direction = this.viewCube.hitTest(x, y, this.width, this.controller.state.quaternion);
       if (direction) this.setViewDirection(direction);
     } else if (!drag.moved && drag.mode === 'select') {
@@ -762,7 +907,10 @@ export class ViewportEngine {
   private readonly onPointerLeave = (): void => {
     this.lastPointer = null;
     if (this.viewCube.setHover(null)) this.requestRender();
-    if (!this.drag) this.setHoverPick(null);
+    if (!this.drag) {
+      this.setHoverPick(null);
+      this.sketchInput?.hover(null);
+    }
   };
 
   private readonly onWheel = (event: WheelEvent): void => {
@@ -805,6 +953,8 @@ export class ViewportEngine {
     this.triad.dispose();
     this.referencePlanes.dispose();
     this.sketchLayer.dispose();
+    for (const graphics of this.inactiveSketches.values()) graphics.dispose();
+    this.sketchMaterials.dispose();
     this.pivotMarker.geometry.dispose();
     this.pivotMarker.material.dispose();
     Object.values(this.materials).forEach((material) => material.dispose());

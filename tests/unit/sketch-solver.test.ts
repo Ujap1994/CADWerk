@@ -176,6 +176,22 @@ describe('dragging', () => {
     expect(Math.hypot(bx - 50, by)).toBeLessThan(1e-6);
   });
 
+  it('moves a whole line by dragging both end points together', () => {
+    const sketch: SketchData = {
+      entities: [point('a', 0, 0), point('b', 50, 0), line('l', 'a', 'b')],
+      constraints: [
+        { id: 'h', type: 'horizontal', line: 'l' },
+        { id: 'len', type: 'distance', a: 'a', b: 'b', value: 50, driving: true },
+      ],
+    };
+    const drag = { kind: 'points' as const, points: [{ id: 'a', x: 10, y: 15 }, { id: 'b', x: 60, y: 15 }] };
+    const result = solveSketch(sketch, { drag, analyze: false });
+    expect(result.converged).toBe(true);
+    expect(pointOf(result.sketch, 'a')[0]).toBeCloseTo(10, 6);
+    expect(pointOf(result.sketch, 'a')[1]).toBeCloseTo(15, 6);
+    expect(pointOf(result.sketch, 'b')[0]).toBeCloseTo(60, 6);
+  });
+
   it('changes a circle radius by dragging its edge', () => {
     const sketch: SketchData = { entities: [point('c', 0, 0), { id: 'k', type: 'circle', center: 'c', radius: 10 }], constraints: [] };
     const result = solveSketch(sketch, { drag: { kind: 'radius', id: 'k', radius: 25 } });

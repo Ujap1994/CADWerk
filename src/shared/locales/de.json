@@ -149,6 +149,11 @@
     "area": "Oberfläche",
     "face": "Fläche {{index}}",
     "edge": "Kante {{index}}",
+    "sketchPoint": "Punkt · X {{x}} · Y {{y}}",
+    "sketchLine": "Linie · {{length}}",
+    "sketchCircle": "Kreis · Ø {{diameter}}",
+    "sketchArc": "Bogen · R {{radius}} · {{angle}}°",
+    "construction": "Konstruktionsgeometrie",
     "selected_one": "{{count}} Element ausgewählt",
     "selected_other": "{{count}} Elemente ausgewählt",
     "frameStats": "{{fps}} fps · {{ms}} ms"

@@ -44,6 +44,10 @@ export function App() {
         case 'Enter':
           commands.commitEdit();
           break;
+        case 'Delete':
+        case 'Backspace':
+          commands.deleteSketchSelection();
+          break;
         default:
           return;
       }
