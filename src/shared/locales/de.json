@@ -420,6 +420,7 @@
       "transformNothing": "Wähle zuerst Geometrie aus.",
       "transformNoAxis": "Wähle zusätzlich eine Linie als Spiegelachse: eine Konstruktionslinie, oder wähle die Achse zuletzt.",
       "moveBlocked": "Die Auswahl lässt sich nicht dorthin verschieben: Beziehungen oder Bemaßungen halten sie fest.",
+      "scaleBlocked": "Die Auswahl lässt sich nicht skalieren: Beziehungen oder Bemaßungen zu anderer Geometrie halten ihre Größe fest.",
       "offsetTooLarge": "Der Abstand ist für die ausgewählten Kurven zu groß."
     },
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
@@ -459,6 +460,7 @@
       "linear": "Linear",
       "circular": "Kreisförmig",
       "move": "Verschieben",
+      "scale": "Skalieren",
       "count": "Anzahl",
       "stepX": "Abstand X",
       "stepY": "Abstand Y",
@@ -476,7 +478,11 @@
       "distance": "Abstand",
       "flip": "Andere Seite",
       "offsetHint": "Geschlossene Konturen und Kreise wachsen nach außen (mit „Andere Seite“ nach innen); offene Ketten verschieben sich nach links ihrer Richtung. Linien bleiben parallel, Bögen behalten ihre Mittelpunkte, und die erste Linie erhält den Abstand als Bemaßung.",
-      "offsetAction": "Versetzen"
+      "offsetAction": "Versetzen",
+      "factor": "Faktor",
+      "scaleAction": "Skalieren",
+      "scaledCopyAction": "Skalierte Kopie",
+      "scaleHint": "Bemaßungen innerhalb der Auswahl werden mitskaliert."
     }
   }
 }

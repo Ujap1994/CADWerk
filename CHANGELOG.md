@@ -12,6 +12,9 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   snapping; the fit points are ordinary sketch points that can be dragged, dimensioned and related;
   move, copy, mirror and patterns; DXF export as polylines and import of fit-point splines.
 
+- Scale the selection by a factor around the origin or a selected point, in place (dimensions within the
+  selection scale along) or as a scaled copy.
+
 ### Changed
 - *Line* and *Centerline* share one button with a variant menu (**L** starts the last one used), which
   makes room for *Spline* in the command bar.

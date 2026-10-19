@@ -138,7 +138,7 @@ function DefinitionSection() {
   );
 }
 
-type TransformKind = 'offset' | 'mirror' | 'linear' | 'circular' | 'move';
+type TransformKind = 'offset' | 'mirror' | 'linear' | 'circular' | 'move' | 'scale';
 
 /** Mirror, patterns, move and copy for the selected geometry, with their numbers. */
 function TransformSection() {
@@ -154,9 +154,10 @@ function TransformSection() {
   const [totalAngle, setTotalAngle] = useState(360);
   const [shift, setShift] = useState<[number, number]>([10, 0]);
   const [rotation, setRotation] = useState(0);
+  const [factor, setFactor] = useState(2);
   if (!sketch) return null;
   const aroundPoint = commands.selectionPivot().point !== null;
-  const kinds: TransformKind[] = ['offset', 'mirror', 'linear', 'circular', 'move'];
+  const kinds: TransformKind[] = ['offset', 'mirror', 'linear', 'circular', 'move', 'scale'];
   return (
     <fieldset className="panel-section" data-testid="sketch-transform">
       <legend className="panel-section-title">{t('sketch.transform.title')}</legend>
@@ -232,6 +233,21 @@ function TransformSection() {
             </button>
             <button type="button" className="text-button transform-action" onClick={() => commands.copySketchSelection(shift, rotation)}>
               {t('sketch.transform.copyAction')}
+            </button>
+          </div>
+        </>
+      ) : null}
+      {kind === 'scale' ? (
+        <>
+          <NumberField label={t('sketch.transform.factor')} value={factor} unit="×" step={0.1} testId="scale-factor" onChange={(value) => setFactor(Math.max(1e-3, value))} />
+          <p className="panel-hint is-flush">{t(aroundPoint ? 'sketch.transform.aroundPoint' : 'sketch.transform.aroundOrigin')}</p>
+          <p className="panel-hint is-flush">{t('sketch.transform.scaleHint')}</p>
+          <div className="transform-buttons">
+            <button type="button" className="text-button transform-action" data-testid="scale-apply" onClick={() => void commands.scaleSketchSelection(factor, false)}>
+              {t('sketch.transform.scaleAction')}
+            </button>
+            <button type="button" className="text-button transform-action" data-testid="scale-copy" onClick={() => void commands.scaleSketchSelection(factor, true)}>
+              {t('sketch.transform.scaledCopyAction')}
             </button>
           </div>
         </>

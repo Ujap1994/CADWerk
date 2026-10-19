@@ -420,6 +420,7 @@
       "transformNothing": "Select geometry first.",
       "transformNoAxis": "Select a line as mirror axis as well: a construction line, or select the axis last.",
       "moveBlocked": "The selection cannot move there: relations or dimensions hold it in place.",
+      "scaleBlocked": "The selection cannot be scaled: relations or dimensions to other geometry hold its size.",
       "offsetTooLarge": "The distance is too large for the selected curves."
     },
     "dimensionsSelected_one": "{{count}} dimension selected",
@@ -459,6 +460,7 @@
       "linear": "Linear",
       "circular": "Circular",
       "move": "Move",
+      "scale": "Scale",
       "count": "Instances",
       "stepX": "Step X",
       "stepY": "Step Y",
@@ -476,7 +478,11 @@
       "distance": "Distance",
       "flip": "Other side",
       "offsetHint": "Closed outlines and circles grow outwards (inwards with \"Other side\"); open chains move to the left of their direction. Lines stay parallel, arcs keep their centers, and the first line gets the distance as a dimension.",
-      "offsetAction": "Offset"
+      "offsetAction": "Offset",
+      "factor": "Factor",
+      "scaleAction": "Scale",
+      "scaledCopyAction": "Scaled copy",
+      "scaleHint": "Dimensions within the selection scale along."
     }
   }
 }

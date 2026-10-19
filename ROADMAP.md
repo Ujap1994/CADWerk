@@ -118,7 +118,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | 3-point rectangle and parallelogram | ✅ done |
 | Ellipse | ✅ done |
 | Spline (fit points; points on splines and trimming at splines later) | ✅ done |
-| Scale of the selection; project and convert model edges into the sketch | ⏳ next |
+| Scale of the selection | ✅ done |
+| Project and convert model edges into the sketch | ⏳ next |
 | Global variables and equations (basic) | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |

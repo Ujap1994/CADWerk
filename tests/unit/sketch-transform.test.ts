@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { circularPattern, copySelection, linearPattern, mirrorAxis, mirrorSelection, movedPoints } from '../../src/renderer/src/sketch/transform.ts';
+import { circularPattern, copySelection, linearPattern, mirrorAxis, mirrorSelection, movedPoints, scaledCopy, scaledInPlace } from '../../src/renderer/src/sketch/transform.ts';
+import { ORIGIN_ID } from '../../src/shared/model/sketch.ts';
 import type { SketchData, SketchEntity } from '../../src/shared/model/sketch.ts';
 import { parseSketchData } from '../../src/shared/model/validate-sketch.ts';
 import { solveSketch } from '../../src/sketch/solver/index.ts';
@@ -119,5 +120,55 @@ describe('patterns and copies', () => {
       [15, 0],
     ]);
     expect(linearPattern(sketch, [], [1, 0], 3)).toEqual({ ok: false, error: 'nothing-selected' });
+  });
+});
+
+describe('scale', () => {
+  /** A dimensioned rectangle with a hole, anchored at the origin. */
+  const plate: SketchData = {
+    entities: [
+      point('p1', 10, 10), point('p2', 50, 10), point('p3', 50, 30), point('p4', 10, 30),
+      { id: 'l1', type: 'line', p1: 'p1', p2: 'p2' }, { id: 'l2', type: 'line', p1: 'p2', p2: 'p3' },
+      { id: 'l3', type: 'line', p1: 'p3', p2: 'p4' }, { id: 'l4', type: 'line', p1: 'p4', p2: 'p1' },
+      point('m', 30, 20), { id: 'hole', type: 'circle', center: 'm', radius: 4 },
+    ],
+    constraints: [
+      { id: 'h1', type: 'horizontal', line: 'l1' }, { id: 'v1', type: 'vertical', line: 'l2' },
+      { id: 'h2', type: 'horizontal', line: 'l3' }, { id: 'v2', type: 'vertical', line: 'l4' },
+      { id: 'w', type: 'distance', a: 'p1', b: 'p2', value: 40, driving: true },
+      { id: 'd', type: 'diameter', circle: 'hole', value: 8, driving: true },
+      { id: 'x', type: 'horizontalDistance', a: ORIGIN_ID, b: 'p1', value: 10, driving: true },
+    ],
+  };
+  const all = ['l1', 'l2', 'l3', 'l4', 'hole'];
+
+  it('scales in place around the origin, with the dimensions inside the selection', () => {
+    const result = scaledInPlace(plate, all, 2);
+    if (!result.ok) throw new Error(result.error);
+    const at = (id: string) => result.sketch.entities.find((e) => e.id === id);
+    expect(at('p3')).toMatchObject({ x: 100, y: 60 });
+    expect(at('hole')).toMatchObject({ radius: 8 });
+    const values = Object.fromEntries(result.sketch.constraints.flatMap((c) => ('value' in c ? [[c.id, c.value]] : [])));
+    // The distance from the origin is inside too: the origin is the pivot.
+    expect(values).toEqual({ w: 80, d: 16, x: 20 });
+    expect(solveSketch(result.sketch).unsatisfied).toEqual([]);
+  });
+
+  it('keeps dimensions to geometry outside the selection, so the solver can refuse', () => {
+    // Around a point that is not the origin: the distance from the origin is outside the selection.
+    const result = scaledInPlace(plate, all, 2, [10, 10], 'p1');
+    if (!result.ok) throw new Error(result.error);
+    expect(result.sketch.constraints.find((c) => c.id === 'x')).toMatchObject({ value: 10 });
+    expect(result.sketch.entities.find((e) => e.id === 'p1')).toMatchObject({ x: 10, y: 10 });
+    expect(solveSketch(result.sketch).unsatisfied).toEqual([]);
+  });
+
+  it('makes scaled copies with scaled circles', () => {
+    const result = scaledCopy(sketch, ['k'], 0.5, [40, -20]);
+    if (!result.ok) throw new Error(result.error);
+    const circles = result.sketch.entities.filter((e) => e.type === 'circle');
+    expect(circles.map((c) => (c.type === 'circle' ? c.radius : 0))).toEqual([5, 2.5]);
+    consistent(result.sketch);
+    expect(scaledCopy(sketch, [], 2)).toEqual({ ok: false, error: 'nothing-selected' });
   });
 });

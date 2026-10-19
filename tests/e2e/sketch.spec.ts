@@ -977,7 +977,7 @@ test('trims pieces between crossings and extends lines up to the next curve', as
   await expect(page.locator('.toast')).toContainText('no curve');
 });
 
-test('mirrors, patterns, moves and copies the selection', async () => {
+test('mirrors, patterns, moves, copies and scales the selection', async () => {
   launched = await launchApp();
   const { page } = launched;
   await page.evaluate(() => {
@@ -1049,6 +1049,14 @@ test('mirrors, patterns, moves and copies the selection', async () => {
   await page.locator('[data-testid="offset-distance"]').fill('2');
   await page.click('[data-testid="sketch-transform"] .transform-action');
   expect((await entities()).filter((e) => e.type === 'circle').at(-1)?.radius).toBeCloseTo(6, 9);
+
+  // A scaled copy of the original circle (half size, around the origin).
+  const circles = (await entities()).filter((e) => e.type === 'circle').length;
+  await page.click('[data-transform="scale"]');
+  await page.locator('[data-testid="scale-factor"]').fill('0.5');
+  await page.click('[data-testid="scale-copy"]');
+  await expect.poll(async () => (await entities()).filter((e) => e.type === 'circle').length).toBe(circles + 1);
+  expect((await entities()).filter((e) => e.type === 'circle').at(-1)?.radius).toBeCloseTo(2, 9);
 });
 
 test('imports a DXF outline into the sketch and exports the sketch as DXF', async () => {

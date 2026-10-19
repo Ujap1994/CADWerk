@@ -4,9 +4,9 @@
  * mirrored points stay symmetric, pattern copies of circles and arcs keep an equal radius.
  */
 
-import { ORIGIN_ID, type SketchData, type SketchEntity } from '../../../shared/model/sketch.ts';
+import { isDimension, ORIGIN_ID, type SketchData, type SketchEntity } from '../../../shared/model/sketch.ts';
 import { SketchBuilder } from './builder.ts';
-import { curvePoints, isCurve, pointPositions, type Point2 } from './geometry.ts';
+import { constraintReferences, curvePoints, isCurve, pointPositions, type Point2 } from './geometry.ts';
 
 type Transform = (point: Point2) => Point2;
 
@@ -36,7 +36,7 @@ function copyGeometry(
   builder: SketchBuilder,
   geometry: { curves: SketchEntity[]; points: Set<string> },
   transform: Transform,
-  options: { reverse?: boolean; keep?: (id: string, at: Point2) => boolean } = {},
+  options: { reverse?: boolean; keep?: (id: string, at: Point2) => boolean; radiusScale?: number } = {},
 ): CopyResult {
   const positions = pointPositions(sketch);
   const points = new Map<string, string>();
@@ -51,7 +51,7 @@ function copyGeometry(
   for (const curve of geometry.curves) {
     const construction = curve.construction === true;
     if (curve.type === 'line') curves.set(curve.id, builder.line(mapped(curve.p1), mapped(curve.p2), construction));
-    else if (curve.type === 'circle') curves.set(curve.id, builder.circle(mapped(curve.center), curve.radius, construction));
+    else if (curve.type === 'circle') curves.set(curve.id, builder.circle(mapped(curve.center), curve.radius * (options.radiusScale ?? 1), construction));
     else if (curve.type === 'arc') {
       const [start, end] = options.reverse ? [mapped(curve.end), mapped(curve.start)] : [mapped(curve.start), mapped(curve.end)];
       curves.set(curve.id, builder.arc(mapped(curve.center), start, end, construction));
@@ -154,6 +154,47 @@ export function copySelection(sketch: SketchData, ids: readonly string[], offset
   const builder = new SketchBuilder(sketch);
   copyGeometry(sketch, builder, geometry, transformOf(offset, angle, pivot));
   return { ok: true, sketch: builder.build() };
+}
+
+/** A copy of the selection scaled by `factor` around `pivot`. */
+export function scaledCopy(sketch: SketchData, ids: readonly string[], factor: number, pivot: Point2 = [0, 0]): TransformResult {
+  const geometry = selectedGeometry(sketch, ids);
+  if (geometry.curves.length === 0 && geometry.points.size === 0) return { ok: false, error: 'nothing-selected' };
+  if (!(factor > 0)) return { ok: false, error: 'nothing-selected' };
+  const builder = new SketchBuilder(sketch);
+  copyGeometry(sketch, builder, geometry, scaleAround(pivot, factor), { radiusScale: factor });
+  return { ok: true, sketch: builder.build() };
+}
+
+function scaleAround(pivot: Point2, factor: number): Transform {
+  return ([x, y]) => [pivot[0] + (x - pivot[0]) * factor, pivot[1] + (y - pivot[1]) * factor];
+}
+
+/**
+ * The selection scaled in place by `factor` around `pivot`: its points move, its circles grow, and
+ * the dimensions that lie entirely within it (lengths, radii, diameters; angles stay) take the scaled
+ * values, so they do not pull it back. The pivot point (`pivotId`) counts as part of the selection.
+ * The result still has to be solved: relations to geometry outside the selection may resist.
+ */
+export function scaledInPlace(sketch: SketchData, ids: readonly string[], factor: number, pivot: Point2 = [0, 0], pivotId: string = ORIGIN_ID): TransformResult {
+  const geometry = selectedGeometry(sketch, ids);
+  if ((geometry.curves.length === 0 && geometry.points.size === 0) || !(factor > 0)) return { ok: false, error: 'nothing-selected' };
+  const scale = scaleAround(pivot, factor);
+  const inside = new Set<string>([...geometry.points, ...geometry.curves.map((curve) => curve.id), pivotId]);
+  const entities = sketch.entities.map((entity) => {
+    if (entity.type === 'point' && geometry.points.has(entity.id)) {
+      const [x, y] = scale([entity.x, entity.y]);
+      return { ...entity, x, y };
+    }
+    if (entity.type === 'circle' && inside.has(entity.id)) return { ...entity, radius: entity.radius * factor };
+    return entity;
+  });
+  const constraints = sketch.constraints.map((constraint) => {
+    if (!isDimension(constraint) || constraint.type === 'angle') return constraint;
+    if (!constraintReferences(constraint).every((id) => inside.has(id))) return constraint;
+    return { ...constraint, value: constraint.value * factor };
+  });
+  return { ok: true, sketch: { entities, constraints } };
 }
 
 /** Rotation around `pivot`, then a shift. */

@@ -124,7 +124,7 @@ why.
 
 ![Trim: the piece of the slot's side up to the crossing line is shown in red before it is removed](../images/screenshots/sketch-trim.png)
 
-### Offset, mirror, patterns, move and copy
+### Offset, mirror, patterns, move, copy and scale
 
 Select geometry, and the **Copy and move** section of the side panel offers:
 
@@ -135,6 +135,7 @@ Select geometry, and the **Copy and move** section of the side panel offers:
 | **Linear** | Repeats the selection *Instances* times, shifted by *Step X* and *Step Y* each time. Copies of circles and arcs keep an *equal* radius, so one diameter dimension sizes a whole row of holes. |
 | **Circular** | Repeats the selection evenly around the sketch origin – or around a point you select along with it – over the *Total angle* (360° for a full circle). |
 | **Move** | *Move* shifts and rotates the selection like a drag would: relations and dimensions are kept, and geometry they hold stays where it is. *Copy* places a shifted and rotated copy instead. |
+| **Scale** | *Scale* resizes the selection by the *Factor* around the sketch origin (or around a point you select along with it). Dimensions that lie entirely within the selection – including distances from the pivot – are scaled with it; if relations or dimensions to other geometry hold its size, ParaWerk says so and changes nothing. *Scaled copy* places a resized copy instead. |
 
 ![A row of four holes made with a linear pattern](../images/screenshots/sketch-pattern.png)
 

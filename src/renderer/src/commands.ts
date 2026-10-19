@@ -3,17 +3,17 @@ import type { MenuCommand } from '../../shared/ipc.ts';
 import { PART_FILE_EXTENSION } from '../../shared/app-info.ts';
 import { defaultFeature, isEdgeFeature, type EdgeRef, type Feature, type FeatureType, type SketchFeature } from '../../shared/model/feature.ts';
 import { decodePartFile, encodePartFile, PartFileError } from '../../shared/model/part-file.ts';
-import { frameOnPlane, isDimension, STANDARD_PLANES, type SketchData, type SketchDimension, type SketchPlaneRef } from '../../shared/model/sketch.ts';
+import { frameOnPlane, isDimension, ORIGIN_ID, STANDARD_PLANES, type SketchData, type SketchDimension, type SketchPlaneRef } from '../../shared/model/sketch.ts';
 import type { Settings } from '../../shared/settings.ts';
 import { changeLanguage, t } from './i18n.ts';
 import { SketchBuilder } from './sketch/builder.ts';
 import { storedAngle, type DimensionDraft } from './sketch/dimensions.ts';
-import { deleteEntities } from './sketch/geometry.ts';
+import { curvePoints, deleteEntities, isCurve } from './sketch/geometry.ts';
 import { applicableRelations, type RelationKind } from './sketch/relations.ts';
 import { sketchSolver } from './sketch/solver.ts';
 import { dxfToSketch, sketchToDxf } from './sketch/dxf.ts';
 import { offsetSelection } from './sketch/offset.ts';
-import { circularPattern, copySelection, linearPattern, mirrorSelection, movedPoints, type TransformResult } from './sketch/transform.ts';
+import { circularPattern, copySelection, linearPattern, mirrorSelection, movedPoints, scaledCopy, scaledInPlace, type TransformResult } from './sketch/transform.ts';
 import { sameGeometry } from './sketch/drag.ts';
 import type { Point2 } from './sketch/geometry.ts';
 import {
@@ -555,12 +555,8 @@ export function selectionPivot(): { at: Point2; point: string | null } {
   const data = sketch?.draft.sketch;
   if (!data) return { at: [0, 0], point: null };
   const selected = new Set(sketchSelection);
-  const curvePoints = new Set(
-    data.entities.flatMap((entity) =>
-      selected.has(entity.id) ? (entity.type === 'line' ? [entity.p1, entity.p2] : entity.type === 'circle' ? [entity.center] : entity.type === 'arc' ? [entity.center, entity.start, entity.end] : []) : [],
-    ),
-  );
-  const points = data.entities.filter((entity) => entity.type === 'point' && selected.has(entity.id) && !curvePoints.has(entity.id));
+  const ofSelectedCurves = new Set(data.entities.flatMap((entity) => (isCurve(entity) && selected.has(entity.id) ? curvePoints(entity) : [])));
+  const points = data.entities.filter((entity) => entity.type === 'point' && selected.has(entity.id) && !ofSelectedCurves.has(entity.id));
   const [only] = points;
   return points.length === 1 && only?.type === 'point' && sketchSelection.length > 1 ? { at: [only.x, only.y], point: only.id } : { at: [0, 0], point: null };
 }
@@ -659,6 +655,35 @@ export async function moveSketchSelection(offset: Point2, angle: number): Promis
     if (getState().sketch?.draft.sketch !== base) return;
     if (solution.converged && !sameGeometry(solution.sketch, base)) recordSketchChange(solution.sketch);
     else showToast('info', t('sketch.messages.moveBlocked'));
+  } catch (error) {
+    showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
+  }
+}
+
+/**
+ * Scales the selection by `factor` around the pivot: as a copy, or in place (dimensions within the
+ * selection scale along; relations to other geometry may refuse it).
+ */
+export async function scaleSketchSelection(factor: number, copy: boolean): Promise<void> {
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  const base = sketch.draft.sketch;
+  const pivot = selectionPivot();
+  const ids = sketchSelection.filter((id) => id !== pivot.point);
+  if (copy) {
+    applyTransform(scaledCopy(base, ids, factor, pivot.at));
+    return;
+  }
+  const result = scaledInPlace(base, ids, factor, pivot.at, pivot.point ?? ORIGIN_ID);
+  if (!result.ok) {
+    applyTransform(result);
+    return;
+  }
+  try {
+    const solution = await sketchSolver().solve(result.sketch, { analyze: false });
+    if (getState().sketch?.draft.sketch !== base) return;
+    if (solution.converged && solution.unsatisfied.length === 0) recordSketchChange(solution.sketch);
+    else showToast('info', t('sketch.messages.scaleBlocked'));
   } catch (error) {
     showToast('error', t('errors.unknown', { detail: error instanceof Error ? error.message : String(error) }));
   }
