@@ -1,7 +1,7 @@
 {
   "name": "parawerk",
   "productName": "ParaWerk",
-  "version": "0.1.0-alpha.0",
+  "version": "0.2.0-alpha.0",
   "description": "Parametric 2D/3D CAD for the desktop: parts, assemblies, standard parts and drawings.",
   "license": "GPL-3.0-or-later",
   "author": {

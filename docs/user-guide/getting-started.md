@@ -12,9 +12,14 @@ Download the package for your system from the
 | Linux | AppImage (any distribution), `.deb` (Debian, Ubuntu), `.rpm` (Fedora, openSUSE), `.pacman` (Arch), Snap, Flatpak or `.tar.gz`, each for x64 and arm64 |
 
 > [!NOTE]
-> Preview builds are not code-signed yet.
-> - **macOS:** right-click ParaWerk in *Applications*, choose *Open* and confirm once.
+> Preview builds are not signed with a developer certificate yet, so the system asks once before the
+> first start:
+> - **macOS:** open the `.dmg` and drag ParaWerk into *Applications*. On macOS 14 and earlier,
+>   Control-click ParaWerk in *Applications*, choose *Open* and confirm. On macOS 15 and later, open it
+>   once (macOS refuses), then go to *System Settings* → *Privacy & Security*, click *Open Anyway* next to
+>   the message about ParaWerk and confirm.
 > - **Windows:** in the SmartScreen dialog choose *More info* → *Run anyway*.
+> - **Linux (AppImage):** make the file executable (`chmod +x ParaWerk-*.AppImage`) and start it.
 
 ParaWerk starts in your system language (English or German). You can change it any time in
 **Settings**.

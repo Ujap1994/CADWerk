@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="Status: pre-alpha" src="https://img.shields.io/badge/status-pre--alpha%20(Phase%200)-orange">
+  <img alt="Status: pre-alpha" src="https://img.shields.io/badge/status-pre--alpha%20(Phase%201%3A%20sketcher)-orange">
   <a href="https://github.com/Ujap1994/ParaWerk/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Ujap1994/ParaWerk/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-blue">
   <img alt="UI languages" src="https://img.shields.io/badge/UI-English%20%7C%20Deutsch-informational">
@@ -18,8 +18,9 @@
 </p>
 
 > [!WARNING]
-> **ParaWerk is under active development (Phase 0: foundation and technical spikes).** It is a technical
-> preview, not a usable CAD system yet. Please read the [disclaimer](#disclaimer) first.
+> **ParaWerk is under active development (Phase 1: the 2D sketcher).** It is a technical preview, not a
+> usable CAD system yet: sketches cannot be turned into solids before Phase 2. Please read the
+> [disclaimer](#disclaimer) first.
 
 ---
 
@@ -83,9 +84,9 @@ makers, students and small workshops that covers the everyday mechanical design 
 
 ## Available now
 
-The Phase 0 preview proves the technology stack end to end:
+Preview 0.2 adds the 2D sketcher (Phase 1) to the foundation of Phase 0:
 
-![ParaWerk main window](docs/images/screenshots/main-window.png)
+![A fully defined bracket profile in sketch mode](docs/images/screenshots/sketch-bracket.png)
 
 - **Geometry kernel:** Open CASCADE Technology 8 (own WebAssembly build) in a background worker; box and cylinder (add or remove
   material), fillet and chamfer; incremental rebuild that only recomputes from the first changed feature;
@@ -95,18 +96,28 @@ The Phase 0 preview proves the technology stack end to end:
   presets, hover and selection highlighting of faces and edges.
 - **Feature tree and property panels:** live preview while editing, rollback of later features,
   suppress, delete, undo and redo; clear error messages when a feature cannot be built.
-- **Sketch mode (Phase 1, in progress):** sketches on the front, top and right plane and on planar faces; the view turns
-  normal to the plane, an adaptive grid and the sketch origin are shown; lines, rectangles, circles, arcs
-  and points are drawn with snapping and automatic relations; relations and dimensions are checked by the
-  solver (over-defining dimensions become reference dimensions); geometry can be dragged with live
-  constraint solving; status colors show under-, fully and over-defined geometry and conflicts are
-  listed; undo works step by step inside the sketch.
+- **2D sketcher:** sketches on the front, top and right plane and on planar faces, with their own undo
+  history.
+  - *Drawing:* lines and centerlines, rectangles (corner, center, 3-point, parallelogram), circles
+    (center, 3-point), ellipses, arcs (center, 3-point, tangent), slots, polygons and points, with
+    snapping, inference lines and automatic relations.
+  - *Relations and dimensions:* thirteen relation types, offered for the selection and checked by the
+    solver, shown as symbols next to the geometry; one smart dimension tool for lengths, distances,
+    angles, radii and diameters; over-defining dimensions become reference dimensions.
+  - *Definition status:* under-defined geometry is blue, fully defined dark, conflicts red and listed.
+  - *Editing:* trim, extend, sketch fillet and chamfer, offset, mirror, linear and circular patterns,
+    move and copy; dragging with live constraint solving (about 7 ms per step at 2,000 entities).
+  - *DXF:* import into a sketch and export for laser cutting and CNC.
 - **Files:** native `.pwpart` files, STEP and binary STL export.
 - **Interface:** English and German (switchable at runtime, system language by default), light and dark
   theme, own icon set and visual design.
 
-| Fillet with live preview | Dark theme, German interface |
+| Drawing tools with relation symbols | Trim with preview |
 |---|---|
+| ![Drawing tools](docs/images/screenshots/sketch-tools.png) | ![Trim](docs/images/screenshots/sketch-trim.png) |
+| **Relation symbols: point at one to see its geometry** | **Conflicts are red and listed** |
+| ![Relation symbols](docs/images/screenshots/sketch-relation-symbols.png) | ![Over-defined sketch](docs/images/screenshots/sketch-conflict.png) |
+| **Fillet with live preview** | **Dark theme, German interface** |
 | ![Fillet preview](docs/images/screenshots/fillet-preview.png) | ![Dark theme](docs/images/screenshots/dark-theme-german.png) |
 
 See the [user guide](docs/user-guide/README.md) for details.
@@ -115,13 +126,10 @@ See the [user guide](docs/user-guide/README.md) for details.
 
 > Everything below is **planned**. Each item moves to "Available now", with screenshots, once it ships.
 
-### 2D sketcher
-- Lines, arcs, circles, rectangles, slots, polygons, ellipses, splines, points and construction geometry
-- Trim, extend, offset, mirror, sketch fillet and chamfer, sketch patterns, project and convert edges
-- Geometric relations (coincident, horizontal, vertical, parallel, perpendicular, tangent, concentric,
-  equal, symmetric, midpoint, fix) and dimensions (one tool, type inferred from the selection)
-- Live constraint solving with clear status colors for under-, fully and over-defined sketches
-- Snapping and inference lines while drawing, automatic relations, global variables and equations
+### 2D sketcher (rest of Phase 1)
+- Splines
+- Scale the selection; project and convert model edges into a sketch
+- Global variables and equations
 
 ### Part modeling
 - Feature tree with rollback bar, suppress, reorder and edit-in-place
@@ -243,7 +251,8 @@ Every release is built and published automatically by GitHub Actions
 | macOS | `.dmg`, `.zip` | Universal, Apple Silicon (arm64), Intel (x64) |
 | Linux | AppImage, `.deb`, `.rpm`, pacman, Snap, Flatpak, `.tar.gz` | x64, arm64 |
 
-Preview builds are not code-signed yet; see the [getting started guide](docs/user-guide/getting-started.md).
+Preview builds are not signed with a developer certificate yet, so macOS and Windows ask once before the
+first start; the [getting started guide](docs/user-guide/getting-started.md) shows how to confirm.
 
 ## Build from source
 

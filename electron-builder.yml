@@ -32,8 +32,11 @@ fileAssociations:
 mac:
   category: public.app-category.graphics-design
   icon: build/icon.png
-  # Unsigned until an Apple Developer ID is configured (see ROADMAP.md, open decisions).
-  identity: null
+  # Ad-hoc signed until an Apple Developer ID is configured (see ROADMAP.md, open decisions): a complete
+  # ad-hoc signature lets macOS show its "unidentified developer" prompt instead of reporting the app as
+  # damaged. The hardened runtime only matters for notarization, which needs a Developer ID.
+  identity: '-'
+  hardenedRuntime: false
   target:
     - target: dmg
       arch: [universal, arm64, x64]

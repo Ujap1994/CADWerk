@@ -1,11 +1,8 @@
 # Sketches
 
 > [!NOTE]
-> The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane
-> or planar face, sketch mode with its grid and its own undo history, the drawing tools with snapping and
-> automatic relations, relations, dimensions, selecting, dragging and deleting sketch geometry, and editing
-> existing sketches, and the definition status with conflict diagnosis. More drawing and editing tools
-> follow; the page grows with them.
+> This page describes the sketcher of preview 0.2. Splines, projecting model edges into a sketch and
+> equations follow, and so do the features that turn sketches into solids (extrude, revolve; Phase 2).
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or

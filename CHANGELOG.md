@@ -7,68 +7,81 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
 
 ## [Unreleased]
 
-### Added
-- Sketch mode (Phase 1, first part): the front, top and right planes in the feature tree and, while
-  choosing a sketch plane, in the 3D view; sketches on planar faces, placed exactly on the face's B-Rep
-  plane; the **Sketch** command; the view turns normal to the sketch
-  plane; adaptive grid and sketch origin; undo and redo step by step inside a sketch, with the whole
-  session as one step of the part history; editing existing sketches with rollback of later features.
-- Sketch geometry in the 3D view: open sketches on top of the part with points and dashed construction
-  geometry, other sketches on their planes; hover with exact sizes in the status bar, click selection,
-  dragging with live solving in the background (about 7 ms per step with 2,000 entities), deleting with
-  dependent relations.
-- Drawing tools: line chains, centerline, corner and center rectangle, circle, center and 3-point arc,
-  point; snapping to points, midpoints and curves, inference lines, automatic coincident, midpoint,
-  on-curve, horizontal and vertical relations; measurements next to the cursor; drawing by clicking or
-  dragging; keyboard shortcuts; construction geometry toggle.
-- Relations for selected sketch geometry (horizontal, vertical, coincident, on curve, midpoint, parallel,
-  perpendicular, collinear, equal, tangent, concentric, symmetric, fix), offered according to the
-  selection and checked by the solver: over-defining or conflicting relations are refused with a
-  message; existing relations of the selection are listed and can be deleted.
-- Smart dimension (key D): lengths, horizontal and vertical distances, point-to-line and parallel-line
-  distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
-  values typed right at the dimension; dimensions that would over-define the sketch become reference
-  dimensions; double-click to change, drag to move, Delete to remove.
-- 3-point rectangle (at any angle, sides kept perpendicular) and parallelogram, in the rectangle menu.
-- Ellipses (in the circle menu): center and two axis points, axes kept perpendicular by the solver,
-  dimensioned from the center; points on ellipses, lines tangent to them, snapping, trimming and
-  extending other curves up to them, patterns and mirroring; DXF export as fine polylines (R12) and
-  import of full ellipses.
-- Phase 1 exit check as an end-to-end test: an L-shaped bracket profile with two holes is drawn and
-  fully defined with mouse and keyboard only in the smallest window (64 clicks and key presses); the
-  user guide walks through the same steps.
-- Drawing benchmark: snapping, tool preview and frame per mouse movement while drawing a line across
-  sketches of 50 to 2,000 entities (`npm run bench:render`).
-- Relation symbols next to sketch geometry (H, V, ∥, ⊥, =, …), outside closed outlines (convex or not),
-  one symbol per tangent joint, at a constant distance on screen: pointing at one highlights the related geometry, clicking selects the relation,
-  Delete removes it; conflicting relations are red. A view toolbar button, the View menu and the settings
-  hide and show them.
-- DXF import into the open sketch (lines, circles, arcs, points, polylines with arc segments; units
-  converted; coinciding ends joined; unsupported entities listed) and DXF export of the sketch (R12,
-  millimeters, without construction geometry).
-- Offset of lines, arcs and circles: chains stay connected (sharp corners at the crossings of the offset
-  curves, tangent transitions kept), closed outlines grow outwards or inwards, lines stay parallel, arcs
-  keep their centers.
-- Mirror (with symmetric relations), linear and circular patterns (equal radii for copied circles and
-  arcs), move (keeping relations, like a drag) and copy of selected sketch geometry, from the side panel.
-- Trim and extend: remove the piece of a curve between its crossings (red preview under the cursor;
-  middle pieces leave collinear lines or equal arcs, circles become arcs) or lengthen a line or arc up to
-  the next curve (dashed preview), keeping new ends on the crossing curve.
-- Sketch fillet and chamfer: round or bevel the corner of two lines; lines are shortened, the arc is
-  tangent and dimensioned, the corner stays as a virtual sharp so dimensions to it keep working.
-- Tangency at a shared end point uses a well-conditioned equation, so tangent arcs and fillets are
-  correctly reported as fully defined.
-- More drawing tools: tangent arc (continues a line or arc from its end point), 3-point circle, straight
-  slot (tangent sides, equal end arcs) and regular polygon (3 to 64 sides, on a construction circle).
-- Definition status of sketches: under-defined geometry is blue, fully defined dark, over-defined red;
-  status in the side panel, the status bar and the feature tree; conflicting relations and dimensions are
-  listed (and shown in red) and can be deleted. The solver analyzes sketches in the background after
-  every change.
-- The command bar adapts to the available width: tighter buttons, then icons only (the names stay in the
-  tooltips). Its height stays the same, so the 3D view never jumps, and the layout never grows wider than
-  the window.
-- Command bar tabs *Features* and *Sketch*.
-- Own sparse 2D constraint solver running in a worker (the basis for relations and dimensions).
+## [0.2.0-alpha.0] - 2026-10-19
+
+Second technical preview: the **2D sketcher** (Phase 1). Sketches can be drawn, constrained, fully
+defined, edited and exchanged as DXF. Turning them into solids (extrude, revolve) follows in Phase 2.
+Not ready for productive use; see the disclaimer in the README.
+
+### Added – sketch mode
+- The front, top and right planes in the feature tree and, while choosing a sketch plane, in the 3D view;
+  sketches on planar faces of the part, placed exactly on the face's B-Rep plane.
+- The **Sketch** command: the view turns normal to the sketch plane; adaptive grid and sketch origin;
+  command bar tabs *Features* and *Sketch*.
+- Undo and redo step by step inside a sketch; the whole session becomes one step of the part history;
+  **✓** keeps, **✕** discards (after asking); existing sketches are edited from the feature tree, with
+  later features rolled back.
+- Sketch geometry in the 3D view: the open sketch on top of the part with points and dashed construction
+  geometry, other sketches on their planes; hover with exact sizes in the status bar, click and
+  Shift/Ctrl/⌘-click selection, deleting with dependent relations.
+- Dragging under-defined geometry with live solving in a background worker (about 7 ms per step with
+  2,000 entities, Apple M3).
+
+### Added – drawing tools
+- Line chains and centerlines; corner, center and 3-point rectangles and parallelograms; circles from
+  center and radius or through three points; ellipses; center, 3-point and tangent arcs; straight slots;
+  regular polygons (3 to 64 sides); points; construction geometry toggle.
+- Snapping to end points, midpoints and curves (also where an inference line crosses a curve) and
+  inference lines; the matching relations (coincident, midpoint, on curve, horizontal, vertical) are added
+  automatically.
+- Measurements next to the cursor; drawing by clicking or by press-drag-release; keyboard shortcuts
+  (L, R, C, A, P, D, T); tool variants in drop-down menus that remember the last variant.
+- Ellipses: center and two axis points, axes kept perpendicular by the solver and dimensioned from the
+  center; points on ellipses and lines tangent to them.
+
+### Added – relations and dimensions
+- Relations for the selection (horizontal, vertical, coincident, on curve, midpoint, parallel,
+  perpendicular, collinear, equal, tangent, concentric, symmetric, fix), offered according to what is
+  selected and checked by the solver first: over-defining or contradicting relations are refused with a
+  message. The relations of the selection are listed and can be deleted.
+- Relation symbols next to the geometry (H, V, ∥, ⊥, =, …), outside closed outlines, one symbol per
+  tangent joint, at a constant distance on screen. Pointing at a symbol highlights the related geometry,
+  clicking selects the relation, Delete removes it; conflicting relations are red. A view toolbar button,
+  the View menu and the settings hide and show them.
+- Smart dimension (D): lengths, horizontal and vertical distances, point-to-line and parallel-line
+  distances, diameters, radii and angles, inferred from the picked geometry and where the value is
+  placed; values typed right at the dimension; double-click to change, drag to move, Delete to remove.
+  Dimensions that would over-define the sketch become reference dimensions in parentheses.
+- Definition status: under-defined geometry is blue, fully defined dark, over-defined red; the status is
+  shown in the side panel, the status bar and the feature tree; conflicting relations and dimensions are
+  listed and can be deleted. The solver analyzes every change in the background.
+- Own sparse 2D constraint solver in a worker ([ADR 0005](docs/adr/0005-sketch-solver.md)), with
+  well-conditioned tangency at shared end points so tangent arcs and fillets count as fully defined.
+
+### Added – editing tools
+- Trim (T) removes the piece of a curve between its crossings (red preview under the cursor; middle
+  pieces leave collinear lines or equal arcs, circles become arcs); extend lengthens a line or arc up to
+  the next curve. New ends stay on the crossing curve.
+- Sketch fillet and chamfer round or bevel the corner of two lines; the corner stays as a virtual sharp
+  so dimensions to it keep working.
+- Offset of lines, arcs and circles: connected chains stay connected, closed outlines grow outwards or
+  inwards.
+- Mirror (with symmetric relations), linear and circular patterns (equal radii for copies), move (keeping
+  relations) and copy of the selection.
+
+### Added – DXF exchange
+- DXF import into the open sketch: lines, circles, arcs, full ellipses, points and polylines with arc
+  segments; units converted to millimeters; coinciding ends joined; unsupported entities listed.
+- DXF export of the sketch (R12, millimeters, without construction geometry); ellipses become closed
+  polylines within 0.005 mm.
+
+### Added – interface, quality and documentation
+- The command bar adapts to the window width (tighter buttons, then icons only) without changing its
+  height; its variant menus are never cut off.
+- End-to-end test of the Phase 1 exit criterion: an L-shaped bracket with two holes is drawn and fully
+  defined with mouse and keyboard only, in the smallest window, in at most 64 clicks and key presses.
+- Sketch benchmarks for dragging and drawing in sketches of 50, 500 and 2,000 entities.
+- User guide chapter on sketches with a step-by-step example and screenshots of every tool.
 
 ### Changed
 - New geometry kernel: Open CASCADE Technology 8.0.1 compiled to WebAssembly with ParaWerk's own C++
@@ -119,5 +132,6 @@ First technical preview (Phase 0). Not ready for productive use; see the disclai
 ### Removed
 - DWG from the planned formats, because it is a closed, proprietary format. DXF covers 2D exchange.
 
-[Unreleased]: https://github.com/Ujap1994/ParaWerk/compare/v0.1.0-alpha.0...HEAD
+[Unreleased]: https://github.com/Ujap1994/ParaWerk/compare/v0.2.0-alpha.0...HEAD
+[0.2.0-alpha.0]: https://github.com/Ujap1994/ParaWerk/compare/v0.1.0-alpha.0...v0.2.0-alpha.0
 [0.1.0-alpha.0]: https://github.com/Ujap1994/ParaWerk/releases/tag/v0.1.0-alpha.0
