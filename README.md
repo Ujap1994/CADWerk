@@ -99,7 +99,8 @@ The Phase 0 preview proves the technology stack end to end:
   normal to the plane, an adaptive grid and the sketch origin are shown; lines, rectangles, circles, arcs
   and points are drawn with snapping and automatic relations; relations and dimensions are checked by the
   solver (over-defining dimensions become reference dimensions); geometry can be dragged with live
-  constraint solving; undo works step by step inside the sketch. Status colors follow next.
+  constraint solving; status colors show under-, fully and over-defined geometry and conflicts are
+  listed; undo works step by step inside the sketch.
 - **Files:** native `.pwpart` files, STEP and binary STL export.
 - **Interface:** English and German (switchable at runtime, system language by default), light and dark
   theme, own icon set and visual design.

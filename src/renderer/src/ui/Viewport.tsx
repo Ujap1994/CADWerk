@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { isEdgeFeature } from '../../../shared/model/feature.ts';
 import { frameOf, STANDARD_PLANES } from '../../../shared/model/sketch.ts';
 import * as commands from '../commands.ts';
-import { SketchController, sketchHighlight } from '../sketch/controller.ts';
+import { SketchController, sketchHighlight, statusColors } from '../sketch/controller.ts';
 import { sketchSolver } from '../sketch/solver.ts';
 import { setState, store, type AppState, type Pick } from '../state/store.ts';
 import { ViewportEngine, type InactiveSketch, type PickFilter } from '../viewport/engine.ts';
@@ -122,8 +122,8 @@ export function Viewport() {
         engine.setSketchFrame(plane ? frameOf(plane) : null, plane !== undefined && !previous?.sketch);
       }
       const sketch = state.sketch?.draft.sketch;
-      if (sketch && (sketch !== previous?.sketch?.draft.sketch || plane !== previous.sketch.draft.plane)) {
-        engine.setActiveSketch(sketch, sketchHighlight(state));
+      if (sketch && (sketch !== previous?.sketch?.draft.sketch || plane !== previous.sketch.draft.plane || state.sketchAnalysis !== previous.sketchAnalysis)) {
+        engine.setActiveSketch(sketch, sketchHighlight(state), statusColors(state));
       } else if (sketch && (state.sketchHover !== previous?.sketchHover || state.sketchSelection !== previous.sketchSelection)) {
         engine.setSketchHighlight(sketchHighlight(state));
       }

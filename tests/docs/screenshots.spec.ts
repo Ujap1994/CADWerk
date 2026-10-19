@@ -167,6 +167,22 @@ test('README and user guide screenshots', async () => {
   if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
   await page.waitForTimeout(500);
   await page.screenshot({ path: out('sketch-dimensions.png') });
+
+  // A conflicting dimension: the sketch is over defined, the conflict is red and listed.
+  await page.evaluate(() => {
+    const hooks = (window as unknown as {
+      __parawerk: { getState(): { sketch: { draft: { sketch: { entities: unknown[]; constraints: unknown[] } } } }; commands: { recordSketchChange(s: unknown): void } };
+    }).__parawerk;
+    const sketch = hooks.getState().sketch.draft.sketch;
+    hooks.commands.recordSketchChange({
+      ...sketch,
+      constraints: [...sketch.constraints, { id: 'conflict', type: 'horizontalDistance', a: 'a', b: 'b', value: 35, driving: true, offset: [0, -20] }],
+    });
+  });
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: out('sketch-conflict.png') });
+  await page.click('[data-command="undo"]');
+  await page.waitForTimeout(300);
   await page.click('[data-testid="sketch-ok"]');
   await page.evaluate(() => (window as unknown as { __parawerk: { commands: { setView(v: string): void } } }).__parawerk.commands.setView('isometric'));
   await idle(page);

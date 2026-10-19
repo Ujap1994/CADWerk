@@ -142,7 +142,9 @@
     "moreActions": "Weitere Aktionen",
     "statusError": "Fehler beim Neuaufbau",
     "statusSuppressed": "Unterdrückt",
-    "rolledBack": "Nicht Teil der aktuellen Bearbeitung"
+    "rolledBack": "Nicht Teil der aktuellen Bearbeitung",
+    "sketchUnder": "Skizze ist unterbestimmt",
+    "sketchOver": "Skizze ist überbestimmt"
   },
   "panel": {
     "ok": "OK",
@@ -358,6 +360,27 @@
     },
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
     "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",
-    "dimensionHint": "Doppelklick auf eine Bemaßung ändert ihren Wert, Ziehen verschiebt die Maßzahl. Entf entfernt sie."
+    "dimensionHint": "Doppelklick auf eine Bemaßung ändert ihren Wert, Ziehen verschiebt die Maßzahl. Entf entfernt sie.",
+    "definition": "Bestimmtheit",
+    "status": {
+      "under": "Unterbestimmt",
+      "full": "Vollständig bestimmt",
+      "over": "Überbestimmt"
+    },
+    "statusHint": {
+      "under": "Blaue Geometrie kann sich noch bewegen. Füge Beziehungen und Bemaßungen hinzu, bis alles dunkel ist.",
+      "full": "Jeder Punkt und jede Kurve ist durch Beziehungen und Bemaßungen bestimmt.",
+      "over": "Beziehungen oder Bemaßungen widersprechen sich; die betroffene Geometrie ist rot. Lösche einen der widersprüchlichen Einträge unten."
+    },
+    "conflicts": "Widersprüchliche Beziehungen und Bemaßungen",
+    "deleteConflict": "Löschen",
+    "dimensionNames": {
+      "distance": "Abstand",
+      "horizontalDistance": "Horizontaler Abstand",
+      "verticalDistance": "Vertikaler Abstand",
+      "radius": "Radius",
+      "diameter": "Durchmesser",
+      "angle": "Winkel"
+    }
   }
 }

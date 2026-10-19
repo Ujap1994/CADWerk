@@ -142,7 +142,9 @@
     "moreActions": "More actions",
     "statusError": "Rebuild error",
     "statusSuppressed": "Suppressed",
-    "rolledBack": "Not part of the current edit"
+    "rolledBack": "Not part of the current edit",
+    "sketchUnder": "Sketch is under defined",
+    "sketchOver": "Sketch is over defined"
   },
   "panel": {
     "ok": "OK",
@@ -358,6 +360,27 @@
     },
     "dimensionsSelected_one": "{{count}} dimension selected",
     "dimensionsSelected_other": "{{count}} dimensions selected",
-    "dimensionHint": "Double-click a dimension to change its value, drag it to move the value. Delete removes it."
+    "dimensionHint": "Double-click a dimension to change its value, drag it to move the value. Delete removes it.",
+    "definition": "Definition",
+    "status": {
+      "under": "Under defined",
+      "full": "Fully defined",
+      "over": "Over defined"
+    },
+    "statusHint": {
+      "under": "Blue geometry can still move. Add relations and dimensions until everything is dark.",
+      "full": "Every point and curve is determined by relations and dimensions.",
+      "over": "Relations or dimensions contradict each other; the affected geometry is red. Delete one of the conflicting entries below."
+    },
+    "conflicts": "Conflicting relations and dimensions",
+    "deleteConflict": "Delete",
+    "dimensionNames": {
+      "distance": "Distance",
+      "horizontalDistance": "Horizontal distance",
+      "verticalDistance": "Vertical distance",
+      "radius": "Radius",
+      "diameter": "Diameter",
+      "angle": "Angle"
+    }
   }
 }

@@ -6,6 +6,7 @@ import type { Feature } from '../../../shared/model/feature.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../../../shared/settings.ts';
 import type { FeatureResult, MassProperties, MeshPayload } from '../../../kernel/protocol.ts';
 import type { SketchSession } from '../sketch/session.ts';
+import type { SketchAnalysis } from './sketch-status.ts';
 import type { SketchToolName } from '../sketch/tools.ts';
 import { emptyHistory, type ActiveEdit, type History } from './document.ts';
 
@@ -67,6 +68,10 @@ export interface AppState {
   sketchSelection: string[];
   /** Entity of the open sketch under the cursor. */
   sketchHover: string | null;
+  /** Definition status of the open sketch (null until the solver has analyzed the current geometry). */
+  sketchAnalysis: SketchAnalysis | null;
+  /** Definition status of every sketch in the document, by feature id. */
+  sketchStatuses: Readonly<Record<string, SketchAnalysis['status']>>;
   /** Active drawing tool in sketch mode; null selects and drags. */
   sketchTool: SketchToolName | null;
   /** Last used variant of the tools with variants, offered first in the command bar. */
@@ -99,6 +104,8 @@ export const initialState: AppState = {
   sketch: null,
   sketchSelection: [],
   sketchHover: null,
+  sketchAnalysis: null,
+  sketchStatuses: {},
   sketchTool: null,
   sketchToolVariants: { rectangle: 'cornerRectangle', arc: 'centerArc' },
   selection: [],

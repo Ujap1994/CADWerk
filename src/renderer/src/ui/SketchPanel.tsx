@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { STANDARD_PLANES, type SketchPlaneRef } from '../../../shared/model/sketch.ts';
 import * as commands from '../commands.ts';
-import { isDimension } from '../../../shared/model/sketch.ts';
+import { isDimension, type SketchConstraint } from '../../../shared/model/sketch.ts';
 import { applicableRelations, relationKindOf, relationsOf } from '../sketch/relations.ts';
 import { useAppState } from '../state/store.ts';
 import { useFeatureName } from './FeatureTree.tsx';
@@ -46,6 +46,57 @@ function PlaneChoice() {
         </div>
       </fieldset>
     </section>
+  );
+}
+
+/** "Horizontal", "Distance 25", ... for lists of constraints. */
+function useConstraintName() {
+  const { t } = useTranslation();
+  return (constraint: SketchConstraint): string => {
+    if (isDimension(constraint)) return t(`sketch.dimensionNames.${constraint.type}`);
+    const kind = relationKindOf(constraint);
+    return kind ? t(`sketch.relationNames.${kind}`) : constraint.type;
+  };
+}
+
+/** Under, fully or over defined, with what to do about it; conflicting constraints can be deleted. */
+function DefinitionSection() {
+  const { t } = useTranslation();
+  const sketch = useAppState((state) => state.sketch?.draft.sketch);
+  const analysis = useAppState((state) => state.sketchAnalysis);
+  const nameOf = useConstraintName();
+  if (!sketch || sketch.entities.length === 0 || !analysis) return null;
+  const conflicts = analysis.conflicts.flatMap((id) => sketch.constraints.filter((constraint) => constraint.id === id));
+  return (
+    <fieldset className="panel-section">
+      <legend className="panel-section-title">{t('sketch.definition')}</legend>
+      <p className={`sketch-status is-${analysis.status}`} data-testid="sketch-status" data-status={analysis.status}>
+        <span className="sketch-status-dot" aria-hidden="true" />
+        {t(`sketch.status.${analysis.status}`)}
+      </p>
+      <p className="panel-hint is-flush">{t(`sketch.statusHint.${analysis.status}`)}</p>
+      {conflicts.length > 0 ? (
+        <>
+          <span className="field-label">{t('sketch.conflicts')}</span>
+          <ul className="relation-list" data-testid="sketch-conflicts">
+            {conflicts.map((constraint) => (
+              <li key={constraint.id} className="relation-item" data-constraint={constraint.id}>
+                <span>{nameOf(constraint)}</span>
+                <button
+                  type="button"
+                  className="icon-button is-danger"
+                  title={t('sketch.deleteConflict')}
+                  aria-label={t('sketch.deleteConflict')}
+                  onClick={() => commands.deleteSketchConstraint(constraint.id)}
+                >
+                  <TrashIcon />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </fieldset>
   );
 }
 
@@ -140,6 +191,7 @@ function OpenSketch() {
           </button>
         </div>
       </div>
+      <DefinitionSection />
       <fieldset className="panel-section">
         <legend className="panel-section-title">{t('sketch.plane')}</legend>
         <div className="sketch-plane" data-testid="sketch-plane">

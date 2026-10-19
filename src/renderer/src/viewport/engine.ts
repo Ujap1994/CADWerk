@@ -35,7 +35,14 @@ import { AxisTriad } from './axis-triad.ts';
 import { palettes, type ViewportPalette } from './palette.ts';
 import { disposeOverlay, PartModel } from './part-model.ts';
 import { ReferencePlanes, type PlaneDisplay } from './reference-planes.ts';
-import { defaultDimensionFormat, NO_HIGHLIGHT, SketchGraphics, SketchMaterials, type SketchHighlight } from './sketch-graphics.ts';
+import {
+  defaultDimensionFormat,
+  NO_HIGHLIGHT,
+  SketchGraphics,
+  SketchMaterials,
+  type SketchHighlight,
+  type SketchStatusColors,
+} from './sketch-graphics.ts';
 import { SketchLayer, type SketchToolDisplay } from './sketch-layer.ts';
 import { createSyntheticAssembly, type SyntheticAssembly } from './synthetic-scene.ts';
 import { ViewCube, type CubeFace } from './view-cube.ts';
@@ -328,8 +335,8 @@ export class ViewportEngine {
   }
 
   /** Geometry of the open sketch, or of an intermediate state while dragging. */
-  setActiveSketch(sketch: SketchData, highlight: SketchHighlight): void {
-    this.sketchLayer.setSketch(sketch, highlight);
+  setActiveSketch(sketch: SketchData, highlight: SketchHighlight, status: SketchStatusColors | null = null): void {
+    this.sketchLayer.setSketch(sketch, highlight, status);
     this.updateBounds();
     this.requestRender();
   }

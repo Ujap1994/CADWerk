@@ -1,6 +1,7 @@
 /* ParaWerk design tokens: light theme by default, dark via [data-theme='dark']. */
 :root {
   --dimension: #1e293b;
+  --sketch-under: #1f56c4;
   --font: system-ui, -apple-system, 'Segoe UI Variable', 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif;
   --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
 
@@ -36,6 +37,7 @@
 
 :root[data-theme='dark'] {
   --dimension: #e2e8f0;
+  --sketch-under: #7eaaff;
   --bg-app: #0f1318;
   --bg-panel: #171c23;
   --bg-sunken: #12161c;
@@ -591,6 +593,55 @@ input {
   font-size: 12.5px;
 }
 
+.sketch-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.sketch-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sketch-under);
+}
+
+.sketch-status.is-under {
+  color: var(--sketch-under);
+}
+
+.sketch-status.is-full {
+  color: var(--text);
+}
+
+.sketch-status.is-full .sketch-status-dot {
+  background: var(--text);
+}
+
+.sketch-status.is-over {
+  color: var(--danger);
+}
+
+.sketch-status.is-over .sketch-status-dot {
+  background: var(--danger);
+}
+
+.status-bar .sketch-status {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* An under-defined sketch in the feature tree: a hollow blue ring. */
+.tree-sketch-status {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--sketch-under);
+  border-radius: 50%;
+  flex: none;
+}
+
 .sketch-tool-name {
   margin: 0 0 4px;
   font-weight: 600;
@@ -883,6 +934,10 @@ input {
 
 .dimension-label.is-driven {
   color: var(--text-faint);
+}
+
+.dimension-label.is-conflict {
+  color: var(--danger);
 }
 
 .dimension-label.is-hovered {

@@ -69,6 +69,7 @@ export function FeatureTree() {
   const results = useAppState((state) => state.rebuild?.results);
   const activeEdit = useAppState((state) => state.activeEdit ?? state.sketch);
   const locked = useAppState((state) => state.sketch !== null || state.choosingSketchPlane);
+  const sketchStatuses = useAppState((state) => state.sketchStatuses);
   const nameOf = useFeatureName();
 
   return (
@@ -102,6 +103,12 @@ export function FeatureTree() {
               <Icon className="tree-icon" />
               <span className="tree-name">{nameOf(features, index)}</span>
               {error ? <AlertIcon className="tree-status is-error" aria-label={t('tree.statusError')} /> : null}
+              {feature.type === 'sketch' && sketchStatuses[feature.id] === 'under' ? (
+                <span className="tree-sketch-status is-under" title={t('tree.sketchUnder')} aria-label={t('tree.sketchUnder')} data-sketch-status="under" />
+              ) : null}
+              {feature.type === 'sketch' && sketchStatuses[feature.id] === 'over' ? (
+                <AlertIcon className="tree-status is-error" aria-label={t('tree.sketchOver')} data-sketch-status="over" />
+              ) : null}
               <span className="tree-actions" hidden={locked}>
                 <button type="button" className="icon-button" title={t('tree.edit')} aria-label={t('tree.edit')} onClick={() => commands.editFeature(feature.id)}>
                   <EditIcon />

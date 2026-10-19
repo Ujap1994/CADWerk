@@ -6,7 +6,7 @@ import { toSketch, type SketchData, type SketchFrame } from '../../../shared/mod
 import { gridSpacing } from './grid.ts';
 import type { ViewportPalette } from './palette.ts';
 import type { Point2 } from '../sketch/geometry.ts';
-import { frameMatrix, NO_HIGHLIGHT, setSegments, SketchGraphics, type SketchHighlight, type SketchMaterials } from './sketch-graphics.ts';
+import { frameMatrix, NO_HIGHLIGHT, setSegments, SketchGraphics, type SketchHighlight, type SketchMaterials, type SketchStatusColors } from './sketch-graphics.ts';
 
 /** What a drawing tool shows: the shape being drawn, where the cursor snapped and inference lines. */
 export interface SketchToolDisplay {
@@ -189,8 +189,8 @@ export class SketchLayer {
   }
 
   /** Shows the geometry of the open sketch (also intermediate states while dragging). */
-  setSketch(sketch: SketchData, highlight: SketchHighlight = NO_HIGHLIGHT): void {
-    this.graphics.update(sketch, highlight, this.mmPerPixel);
+  setSketch(sketch: SketchData, highlight: SketchHighlight = NO_HIGHLIGHT, status: SketchStatusColors | null = null): void {
+    this.graphics.update(sketch, highlight, this.mmPerPixel, status);
   }
 
   setHighlight(highlight: SketchHighlight): void {

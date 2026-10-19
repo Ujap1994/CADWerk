@@ -58,6 +58,7 @@ export function StatusBar() {
   const sketch = useAppState((state) => state.sketch?.draft.sketch);
   const sketchHover = useAppState((state) => state.sketchHover);
   const sketchSelection = useAppState((state) => state.sketchSelection);
+  const sketchStatus = useAppState((state) => (state.sketch && state.sketch.draft.sketch.entities.length > 0 ? state.sketchAnalysis?.status : undefined));
 
   const statusText =
     kernelStatus === 'loading'
@@ -78,6 +79,12 @@ export function StatusBar() {
         <span className="status-dot" aria-hidden="true" />
         {statusText}
       </div>
+      {sketchStatus ? (
+        <div className={`status-item sketch-status is-${sketchStatus}`} data-testid="status-sketch">
+          <span className="sketch-status-dot" aria-hidden="true" />
+          {t(`sketch.status.${sketchStatus}`)}
+        </div>
+      ) : null}
       <div className="status-item" data-testid="pick-info">
         {sketch
           ? sketchHover

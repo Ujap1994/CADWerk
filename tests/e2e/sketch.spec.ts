@@ -601,3 +601,59 @@ test('dimensions: placing with a value, reference dimensions, editing, moving an
   await page.keyboard.press('Delete');
   expect((await dimensions()).map((d) => d.type)).toEqual(['distance', 'diameter', 'distance']);
 });
+
+test('shows under, fully and over defined sketches and lets conflicts be deleted', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const rect = [
+      P('r1', 0, 0), P('r2', 50, 0), P('r3', 50, 30), P('r4', 0, 30),
+      { id: 'l1', type: 'line', p1: 'r1', p2: 'r2' }, { id: 'l2', type: 'line', p1: 'r2', p2: 'r3' },
+      { id: 'l3', type: 'line', p1: 'r3', p2: 'r4' }, { id: 'l4', type: 'line', p1: 'r4', p2: 'r1' },
+    ];
+    const defined = [
+      { id: 'o', type: 'coincident', a: 'r1', b: 'origin' },
+      { id: 'h1', type: 'horizontal', line: 'l1' }, { id: 'h2', type: 'horizontal', line: 'l3' },
+      { id: 'v1', type: 'vertical', line: 'l2' }, { id: 'v2', type: 'vertical', line: 'l4' },
+      { id: 'w', type: 'distance', a: 'r1', b: 'r2', value: 50, driving: true },
+      { id: 'hh', type: 'distance', a: 'r2', b: 'r3', value: 30, driving: true },
+    ];
+    const features = [
+      { id: 'under', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch: { entities: rect, constraints: defined.slice(0, 6) } },
+      { id: 'full', type: 'sketch', plane: { kind: 'standard', plane: 'front' }, sketch: { entities: rect, constraints: defined } },
+      {
+        id: 'over',
+        type: 'sketch',
+        plane: { kind: 'standard', plane: 'right' },
+        sketch: { entities: rect, constraints: [...defined, { id: 'bad', type: 'horizontalDistance', a: 'r1', b: 'r2', value: 40, driving: true }] },
+      },
+    ];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+
+  // The feature tree marks sketches that are not fully defined.
+  await expect(page.locator('.tree-item[data-feature-id="under"] [data-sketch-status="under"]')).toBeVisible();
+  await expect(page.locator('.tree-item[data-feature-id="over"] [data-sketch-status="over"]')).toBeVisible();
+  await expect(page.locator('.tree-item[data-feature-id="full"] [data-sketch-status]')).toHaveCount(0);
+
+  await page.dblclick('.tree-item[data-feature-id="under"]');
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Under defined');
+  await expect(page.locator('[data-testid="status-sketch"]')).toHaveText('Under defined');
+  await page.click('[data-testid="sketch-ok"]');
+
+  await page.dblclick('.tree-item[data-feature-id="full"]');
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
+  await page.click('[data-testid="sketch-ok"]');
+
+  // Over defined: both conflicting dimensions are listed and shown in red; deleting one solves it.
+  await page.dblclick('.tree-item[data-feature-id="over"]');
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Over defined');
+  await expect(page.locator('[data-testid="sketch-conflicts"] .relation-item')).toHaveText(['Distance', 'Horizontal distance']);
+  await expect(page.locator('.dimension-label.is-conflict')).toHaveCount(2);
+  await page.click('[data-testid="sketch-conflicts"] .relation-item[data-constraint="bad"] .icon-button');
+  await expect(page.locator('[data-testid="sketch-status"]')).toHaveText('Fully defined');
+  await expect(page.locator('.dimension-label.is-conflict')).toHaveCount(0);
+  await page.click('[data-testid="sketch-ok"]');
+  await expect(page.locator('.tree-item[data-feature-id="over"] [data-sketch-status]')).toHaveCount(0);
+});

@@ -29,6 +29,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- Definition status of sketches: under-defined geometry is blue, fully defined dark, over-defined red;
+  status in the side panel, the status bar and the feature tree; conflicting relations and dimensions are
+  listed (and shown in red) and can be deleted. The solver analyzes sketches in the background after
+  every change.
 - Compact command bar on smaller windows (tighter buttons below 1,500 px, icons only below 1,280 px); the
   layout never grows wider than the window.
 - Command bar tabs *Features* and *Sketch*.

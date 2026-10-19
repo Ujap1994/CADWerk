@@ -106,10 +106,10 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Sketching on planar faces (exact B-Rep planes from the kernel) | ✅ done |
 | Sketch geometry in the 3D view, selection, dragging with live solving, delete | ✅ done (drag step 7 ms at 2,000 entities, Apple M3) |
 | Drawing tools (line, centerline, rectangles, circle, arcs, point), inference lines, snapping and automatic relations | ✅ done |
-| More tools: 3-point and parallelogram rectangles, 3-point circle, tangent arc, slot, polygon, ellipse, spline | ⏳ planned |
+| More tools: 3-point and parallelogram rectangles, 3-point circle, tangent arc, slot, polygon, ellipse, spline | ⏳ next |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |
-| Status colors, conflict diagnosis | ⏳ next |
+| Status colors, conflict diagnosis | ✅ done |
 | Editing tools (trim, extend, offset, mirror, patterns, fillet, chamfer) | ⏳ planned |
 | DXF import and export; benchmarks at 50 → 500 → 2,000 entities | ⏳ planned |
 

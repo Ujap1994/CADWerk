@@ -4,7 +4,7 @@ import { formatNumber, parseNumber } from '../format.ts';
 import { t } from '../i18n.ts';
 import { getState, setState, store, type AppState } from '../state/store.ts';
 import type { SketchInput, SketchPointer, ViewportEngine } from '../viewport/engine.ts';
-import type { SketchHighlight } from '../viewport/sketch-graphics.ts';
+import type { SketchHighlight, SketchStatusColors } from '../viewport/sketch-graphics.ts';
 import type { SketchToolDisplay } from '../viewport/sketch-layer.ts';
 import type { SketchToolControl } from '../viewport/registry.ts';
 import { displayValue, type DimensionDraft } from './dimensions.ts';
@@ -49,6 +49,14 @@ export interface CursorInfo {
 
 export function sketchHighlight(state: AppState): SketchHighlight {
   return { hovered: state.sketchHover, selected: state.sketchSelection };
+}
+
+/**
+ * Definition status colors of the open sketch. While the analysis of new geometry is still
+ * running, the previous one is used: entity ids stay the same, so nothing flickers.
+ */
+export function statusColors(state: AppState): SketchStatusColors | null {
+  return state.sketchAnalysis?.colors ?? null;
 }
 
 function toolEvent(pointer: SketchPointer): ToolEvent {
@@ -183,7 +191,7 @@ export class SketchController implements SketchInput, SketchToolControl {
     const target = dragTarget(gesture.base, gesture.hit, gesture.start, pointer);
     if (!target) return;
     void gesture.session.move(target).then((solution) => {
-      if (solution && this.gesture === gesture) this.engine.setActiveSketch(solution.sketch, sketchHighlight(getState()));
+      if (solution && this.gesture === gesture) this.engine.setActiveSketch(solution.sketch, sketchHighlight(getState()), statusColors(getState()));
     });
   }
 
@@ -214,7 +222,7 @@ export class SketchController implements SketchInput, SketchToolControl {
     const offset: [number, number] = [ox + pointer.u - gesture.start.u, oy + pointer.v - gesture.start.v];
     const constraints = gesture.base.constraints.map((constraint) => (constraint.id === dimension.id ? { ...dimension, offset } : constraint));
     gesture.moved = { ...gesture.base, constraints };
-    this.engine.setActiveSketch(gesture.moved, sketchHighlight(getState()));
+    this.engine.setActiveSketch(gesture.moved, sketchHighlight(getState()), statusColors(getState()));
   }
 
   /** A click selects a dimension; a second click on it opens the value editor. */
@@ -340,10 +348,10 @@ export class SketchController implements SketchInput, SketchToolControl {
   /** Draws the dimension the tool proposes (or would place) into the open sketch. */
   private showDraft(sketch: SketchData, draft: DimensionDraft | undefined): void {
     if (draft) {
-      this.engine.setActiveSketch({ ...sketch, constraints: [...sketch.constraints, { ...draft, id: DRAFT_ID } as SketchDimension] }, sketchHighlight(getState()));
+      this.engine.setActiveSketch({ ...sketch, constraints: [...sketch.constraints, { ...draft, id: DRAFT_ID } as SketchDimension] }, sketchHighlight(getState()), statusColors(getState()));
       this.draftShown = true;
     } else if (this.draftShown) {
-      this.engine.setActiveSketch(sketch, sketchHighlight(getState()));
+      this.engine.setActiveSketch(sketch, sketchHighlight(getState()), statusColors(getState()));
       this.draftShown = false;
     }
   }
@@ -380,7 +388,7 @@ export class SketchController implements SketchInput, SketchToolControl {
     const state = getState();
     // The sketch changed meanwhile (undo, exit): this drag no longer applies.
     if (state.sketch?.draft.sketch !== gesture.base) return;
-    if (sameGeometry(result, gesture.base)) this.engine.setActiveSketch(gesture.base, sketchHighlight(state));
+    if (sameGeometry(result, gesture.base)) this.engine.setActiveSketch(gesture.base, sketchHighlight(state), statusColors(state));
     else commands.recordSketchChange(result);
   }
 

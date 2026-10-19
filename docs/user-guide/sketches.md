@@ -4,8 +4,8 @@
 > The sketcher is being built in Phase 1. This page describes what works today: choosing a sketch plane
 > or planar face, sketch mode with its grid and its own undo history, the drawing tools with snapping and
 > automatic relations, relations, dimensions, selecting, dragging and deleting sketch geometry, and editing
-> existing sketches. Status colors for fully defined geometry and more tools follow; the page grows with
-> them.
+> existing sketches, and the definition status with conflict diagnosis. More drawing and editing tools
+> follow; the page grows with them.
 
 A sketch is a 2D drawing on a plane. Sketches are the starting point of most features: in a typical
 workflow you sketch a profile, fully define it with relations and dimensions, and then extrude or
@@ -187,6 +187,31 @@ example *(60)*, updates when the geometry changes, and cannot be edited. If the 
 with a typed value, ParaWerk keeps the previous value and says so.
 
 ![A dimensioned sketch: width, height and diameter, and their extension lines](../images/screenshots/sketch-dimensions.png)
+
+## Fully defined sketches
+
+A sketch is *fully defined* when its relations and dimensions determine every point and curve: nothing
+can move anymore. Fully defined sketches keep their shape when you change a dimension, which is what makes
+a part reliable to edit. ParaWerk shows the state at all times:
+
+| Color | Status | Meaning |
+|---|---|---|
+| Blue | **Under defined** | This geometry can still move (try dragging it). Add relations or dimensions. |
+| Dark | **Fully defined** | This geometry is completely determined. |
+| Red | **Over defined** | Relations or dimensions contradict each other here. |
+
+- The **Definition** section at the top of the side panel and the status bar show the state of the whole
+  sketch; each entity has its own color in the 3D view.
+- In the feature tree, an under-defined sketch carries a blue ring and an over-defined one a red warning
+  sign.
+- When a sketch is over defined – for example because it was opened from a file with contradicting
+  dimensions – the side panel lists the **conflicting relations and dimensions**, which are also red in
+  the view. Delete one of them with its trash button.
+
+![An over-defined sketch: the two contradicting dimensions are red and listed in the side panel](../images/screenshots/sketch-conflict.png)
+
+ParaWerk avoids conflicts while you work: relations that contradict the sketch are refused, and
+dimensions that would over-define it become reference dimensions.
 
 ## Working with sketch geometry
 

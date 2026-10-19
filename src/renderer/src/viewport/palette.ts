@@ -11,8 +11,10 @@ export interface ViewportPalette {
   grid: number;
   axisX: number;
   axisY: number;
-  /** Geometry of the open sketch. */
+  /** Geometry of the open sketch: under-defined (can still move), fully defined, over-defined. */
   sketch: number;
+  sketchFull: number;
+  sketchOver: number;
   /** Other sketches. */
   sketchInactive: number;
   /** Inference lines while drawing. */
@@ -41,6 +43,8 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     axisX: 0xe5484d,
     axisY: 0x30a46c,
     sketch: 0x1f56c4,
+    sketchFull: 0x111827,
+    sketchOver: 0xd12d2d,
     sketchInactive: 0x3d4a5c,
     guide: 0x5f6e84,
     dimension: 0x1e293b,
@@ -64,6 +68,8 @@ export const palettes: Record<'light' | 'dark', ViewportPalette> = {
     axisX: 0xf06368,
     axisY: 0x4cc38a,
     sketch: 0x7eaaff,
+    sketchFull: 0xf1f5f9,
+    sketchOver: 0xff6b6b,
     sketchInactive: 0xa9b5c6,
     guide: 0x9fb0c8,
     dimension: 0xe2e8f0,

@@ -3,9 +3,10 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { isDimension, ORIGIN_ID, type SketchData, type SketchDimension, type SketchFrame } from '../../../shared/model/sketch.ts';
+import { isDimension, ORIGIN_ID, type SketchData, type SketchDimension, type SketchEntity, type SketchFrame } from '../../../shared/model/sketch.ts';
+import type { DefinitionStatus } from '../../../sketch/solver/index.ts';
 import { arrowStrokes, dimensionGraphic, displayValue } from '../sketch/dimensions.ts';
-import { curvePointIds, curvePolyline, isCurve, pointPositions, type Point2 } from '../sketch/geometry.ts';
+import { curvePointIds, curvePoints, curvePolyline, isCurve, pointPositions, type Point2 } from '../sketch/geometry.ts';
 import type { ViewportPalette } from './palette.ts';
 
 /** The open sketch is drawn on top of everything; other sketches are ordinary 3D geometry. */
@@ -17,6 +18,9 @@ export interface SketchHighlight {
 }
 
 export const NO_HIGHLIGHT: SketchHighlight = { hovered: null, selected: [] };
+
+/** Definition status of the open sketch's entities, from the solver's analysis. */
+export type SketchStatusColors = Readonly<Record<string, DefinitionStatus>>;
 
 const POINT_SIZE_PX = 6;
 const HIGHLIGHT_POINT_SIZE_PX = 9;
@@ -82,6 +86,8 @@ export class SketchMaterials {
   readonly points: Record<SketchLook, ShaderMaterial>;
   readonly colors = {
     active: new Color(),
+    full: new Color(),
+    over: new Color(),
     inactive: new Color(),
     hovered: new Color(),
     selected: new Color(),
@@ -96,6 +102,8 @@ export class SketchMaterials {
         linewidth: look === 'active' ? 1.8 : 1.3,
         worldUnits: false,
         dashed,
+        // Colors come per entity (definition status), so the material itself stays white.
+        vertexColors: true,
         depthTest: look === 'inactive',
         transparent: look === 'active',
       });
@@ -118,6 +126,8 @@ export class SketchMaterials {
 
   setPalette(palette: ViewportPalette): void {
     this.colors.active.setHex(palette.sketch);
+    this.colors.full.setHex(palette.sketchFull);
+    this.colors.over.setHex(palette.sketchOver);
     this.colors.inactive.setHex(palette.sketchInactive);
     this.colors.hovered.setHex(palette.hover);
     this.colors.selected.setHex(palette.selected);
@@ -125,10 +135,6 @@ export class SketchMaterials {
     this.colors.dimension.setHex(palette.dimension);
     this.colors.dimensionDriven.setHex(palette.dimensionDriven);
     this.guide.color.copy(this.colors.guide);
-    for (const look of ['active', 'inactive'] as const) {
-      this.lines[look].color.copy(this.colors[look]);
-      this.construction[look].color.copy(this.colors[look]);
-    }
   }
 
   setResolution(resolution: Vector2, pixelRatio: number): void {
@@ -177,6 +183,7 @@ export class SketchGraphics {
   private dimensionsAt = 0;
   private sketch: SketchData | null = null;
   private highlightState: SketchHighlight = NO_HIGHLIGHT;
+  private status: SketchStatusColors | null = null;
   private tessellatedAt = 0;
   private readonly localBounds = new Box3();
 
@@ -208,9 +215,10 @@ export class SketchGraphics {
   }
 
   /** Shows `sketch`; curves are tessellated for the given zoom level. */
-  update(sketch: SketchData, highlight: SketchHighlight, mmPerPixel: number): void {
+  update(sketch: SketchData, highlight: SketchHighlight, mmPerPixel: number, status: SketchStatusColors | null = null): void {
     this.sketch = sketch;
     this.highlightState = highlight;
+    this.status = status;
     this.tessellatedAt = mmPerPixel;
     this.rebuild();
   }
@@ -285,14 +293,17 @@ export class SketchGraphics {
         const graphic = dimensionGraphic(sketch, constraint, mmPerPixel, positions);
         const value = displayValue(sketch, constraint, positions);
         if (!graphic || value === null) continue;
+        const conflict = this.status?.[constraint.id] === 'over';
         const color =
           constraint.id === hovered
             ? this.materials.colors.hovered
             : selected.has(constraint.id)
               ? this.materials.colors.selected
-              : constraint.driving
-                ? this.materials.colors.dimension
-                : this.materials.colors.dimensionDriven;
+              : conflict
+                ? this.materials.colors.over
+                : constraint.driving
+                  ? this.materials.colors.dimension
+                  : this.materials.colors.dimensionDriven;
         const strokes = [...graphic.lines, ...graphic.arrows.flatMap((arrow) => arrowStrokes(arrow, ARROW_PX * mmPerPixel))];
         for (const [a, b] of strokes) {
           lines.push(a[0], a[1], 0, b[0], b[1], 0);
@@ -312,6 +323,7 @@ export class SketchGraphics {
         const element = label.element;
         element.textContent = this.materials.format(constraint, value);
         element.classList.toggle('is-driven', !constraint.driving);
+        element.classList.toggle('is-conflict', conflict);
         element.classList.toggle('is-hovered', constraint.id === hovered);
         element.classList.toggle('is-selected', selected.has(constraint.id));
       }
@@ -324,6 +336,15 @@ export class SketchGraphics {
     }
   }
 
+  /** Blue while an entity can still move, dark when fully defined, red when over-defined. */
+  private colorOf(entity: SketchEntity): Color {
+    if (this.look === 'inactive') return this.materials.colors.inactive;
+    const status = this.status?.[entity.id];
+    // A curve through an over-defined point is part of the conflict, too.
+    const over = status === 'over' || (isCurve(entity) && curvePoints(entity).some((id) => this.status?.[id] === 'over'));
+    return over ? this.materials.colors.over : status === 'full' ? this.materials.colors.full : this.materials.colors.active;
+  }
+
   private rebuild(): void {
     const sketch = this.sketch;
     if (!sketch) return;
@@ -331,7 +352,9 @@ export class SketchGraphics {
     const { hovered, selected } = this.highlightState;
     const selectedSet = new Set(selected);
     const lines: number[] = [];
+    const lineColors: number[] = [];
     const construction: number[] = [];
+    const constructionColors: number[] = [];
     const highlight: number[] = [];
     const highlightColors: number[] = [];
     this.localBounds.makeEmpty();
@@ -341,7 +364,11 @@ export class SketchGraphics {
       const polyline = curvePolyline(entity, positions, this.tessellatedAt);
       if (!polyline) continue;
       for (const [x, y] of polyline) this.localBounds.expandByPoint(new Vector3(x, y, 0));
-      segmentsOf(polyline, entity.construction ? construction : lines);
+      const [target, targetColors] = entity.construction ? [construction, constructionColors] : [lines, lineColors];
+      const start = target.length;
+      segmentsOf(polyline, target);
+      const own = this.colorOf(entity);
+      for (let i = start; i < target.length; i += 3) targetColors.push(own.r, own.g, own.b);
       const color = entity.id === hovered ? this.materials.colors.hovered : selectedSet.has(entity.id) ? this.materials.colors.selected : null;
       if (color) {
         const start = highlight.length;
@@ -349,8 +376,8 @@ export class SketchGraphics {
         for (let i = start; i < highlight.length; i += 3) highlightColors.push(color.r, color.g, color.b);
       }
     }
-    setSegments(this.lines, lines);
-    setSegments(this.construction, construction);
+    setSegments(this.lines, lines, lineColors);
+    setSegments(this.construction, construction, constructionColors);
     if (this.construction.visible) this.construction.computeLineDistances();
     setSegments(this.highlight, highlight, highlightColors);
 
@@ -365,7 +392,7 @@ export class SketchGraphics {
       if (entity.type !== 'point' || owned?.has(entity.id)) continue;
       this.localBounds.expandByPoint(new Vector3(entity.x, entity.y, 0));
       const emphasized = entity.id === hovered ? this.materials.colors.hovered : selectedSet.has(entity.id) ? this.materials.colors.selected : null;
-      const color = emphasized ?? this.materials.colors[this.look];
+      const color = emphasized ?? this.colorOf(entity);
       pointPositionsOut.push(entity.x, entity.y, 0);
       pointColors.push(color.r, color.g, color.b);
       pointSizes.push(emphasized ? HIGHLIGHT_POINT_SIZE_PX : POINT_SIZE_PX);
