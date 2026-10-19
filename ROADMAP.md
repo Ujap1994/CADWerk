@@ -111,7 +111,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Trim and extend | ✅ done |
 | Mirror, linear and circular patterns, move / rotate / copy | ✅ done |
 | Offset entities | ✅ done |
-| DXF import and export of sketches | ⏳ next |
+| DXF import and export of sketches | ✅ done |
+| Relation symbols in the view, drawing benchmarks, exit check with a bracket profile | ⏳ next |
 | 3-point and parallelogram rectangles, ellipse, spline | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |

@@ -18,5 +18,18 @@ The format is documented in [ADR 0003](../adr/0003-native-file-format.md).
 | **STEP** (`.step`) | Exchange with other CAD systems | AP214, millimeters, exact B-Rep geometry |
 | **STL** (`.stl`) | 3D printing | Binary STL in millimeters; tessellation is finer than in the 3D view and adapts to the part size |
 
-More formats (3MF, DXF, PDF, IGES, glTF) and STEP import follow according to the
+## Sketches as DXF
+
+In sketch mode, the **DXF** group of the *Sketch* tab exchanges sketch geometry with 2D CAD, laser
+cutting and CNC software:
+
+- **Export** saves the open sketch as a DXF file (R12, millimeters) with its lines, circles and arcs.
+  Construction geometry and sketch points are left out, so only the real outline gets cut.
+- **Import** adds the geometry of a DXF file to the open sketch, at its coordinates: lines, circles,
+  arcs, points and polylines (also with arc segments). End points that coincide are joined, so imported
+  outlines are connected. Drawings in inches, centimeters or meters are converted to millimeters (from
+  the file's unit setting). Texts, dimensions, splines, ellipses, hatches and blocks are not imported;
+  a message lists what was left out.
+
+More formats (3MF, PDF, IGES, glTF) and STEP import follow according to the
 [roadmap](../../ROADMAP.md).

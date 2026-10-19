@@ -56,7 +56,8 @@
       "edit": "Bearbeiten",
       "define": "Bestimmen",
       "draw": "Zeichnen",
-      "modify": "Ändern"
+      "modify": "Ändern",
+      "exchange": "DXF"
     },
     "new": "Neu",
     "open": "Öffnen",
@@ -88,7 +89,9 @@
       "undo": "Rückgängig (Strg+Z)",
       "redo": "Wiederholen (Strg+Y)",
       "settings": "Sprache, Design, Navigation",
-      "about": "Version und Lizenz"
+      "about": "Version und Lizenz",
+      "importDxf": "Linien, Kreise und Bögen einer DXF-Datei zur Skizze hinzufügen",
+      "exportDxf": "Skizze als DXF speichern, z. B. zum Laserschneiden (ohne Konstruktionsgeometrie)"
     },
     "tabs": {
       "label": "Befehlsregister",
@@ -137,7 +140,9 @@
       "sketchChamfer": "Ecke zwischen zwei Linien anfasen",
       "trim": "Das Stück einer Kurve zwischen ihren Schnittpunkten entfernen (T)",
       "extend": "Linie oder Bogen bis zur nächsten Kurve verlängern (T)"
-    }
+    },
+    "importDxf": "Import",
+    "exportDxf": "Export"
   },
   "features": {
     "sketch": "Skizze",
@@ -262,7 +267,9 @@
     "stlFiles": "STL-Dateien",
     "openTitle": "Teil öffnen",
     "saveTitle": "Teil speichern",
-    "exportTitle": "Exportieren"
+    "exportTitle": "Exportieren",
+    "importDxfTitle": "DXF importieren",
+    "dxfFiles": "DXF-Zeichnungen"
   },
   "toasts": {
     "saved": "„{{name}}“ gespeichert.",
@@ -272,7 +279,9 @@
     "saveFailed": "Die Datei konnte nicht gespeichert werden: {{message}}",
     "exportFailed": "Export fehlgeschlagen: {{message}}",
     "nothingToExport": "Es gibt noch keinen Körper zum Exportieren.",
-    "kernelRestarted": "Der Geometriekern wurde nach einem Fehler neu gestartet. Dein Dokument ist unverändert."
+    "kernelRestarted": "Der Geometriekern wurde nach einem Fehler neu gestartet. Dein Dokument ist unverändert.",
+    "dxfImported": "{{count}} Elemente importiert.",
+    "dxfImportedSkipped": "{{count}} Elemente importiert; nicht unterstützt und ausgelassen: {{skipped}}."
   },
   "errors": {
     "no-body": "Es gibt noch keinen Körper, der verändert werden kann.",

@@ -135,6 +135,11 @@ Select geometry, and the **Copy and move** section of the side panel offers:
 
 ![A row of four holes made with a linear pattern](../images/screenshots/sketch-pattern.png)
 
+### DXF
+
+The **DXF** group of the *Sketch* tab imports the geometry of a DXF file into the open sketch and exports
+the sketch as DXF – for example for laser cutting. See [Files, import and export](files.md#sketches-as-dxf).
+
 ### Fillets and chamfers in a sketch
 
 **Fillet** and **Chamfer** (in the *Modify* group) round or bevel the corner where two lines meet: set the

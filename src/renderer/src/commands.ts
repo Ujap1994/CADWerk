@@ -11,6 +11,7 @@ import { storedAngle, type DimensionDraft } from './sketch/dimensions.ts';
 import { deleteEntities } from './sketch/geometry.ts';
 import { applicableRelations, type RelationKind } from './sketch/relations.ts';
 import { sketchSolver } from './sketch/solver.ts';
+import { dxfToSketch, sketchToDxf } from './sketch/dxf.ts';
 import { offsetSelection } from './sketch/offset.ts';
 import { circularPattern, copySelection, linearPattern, mirrorSelection, movedPoints, type TransformResult } from './sketch/transform.ts';
 import { sameGeometry } from './sketch/drag.ts';
@@ -561,6 +562,50 @@ export function selectionPivot(): { at: Point2; point: string | null } {
   const points = data.entities.filter((entity) => entity.type === 'point' && selected.has(entity.id) && !curvePoints.has(entity.id));
   const [only] = points;
   return points.length === 1 && only?.type === 'point' && sketchSelection.length > 1 ? { at: [only.x, only.y], point: only.id } : { at: [0, 0], point: null };
+}
+
+/** Name of the open sketch for file names: its own name or "Sketch2". */
+function openSketchName(): string {
+  const { sketch, history } = getState();
+  if (!sketch) return t('features.sketch');
+  const before = history.features.slice(0, sketch.index).filter((feature) => feature.type === 'sketch').length;
+  return sketch.draft.name ?? `${t('features.sketch')}${before + 1}`;
+}
+
+/** Adds the lines, circles, arcs and polylines of a DXF file to the open sketch. */
+export async function importDxfIntoSketch(): Promise<void> {
+  if (!getState().sketch) return;
+  const result = await api().openFile({ title: t('dialogs.importDxfTitle'), filters: [{ name: t('dialogs.dxfFiles'), extensions: ['dxf'] }] });
+  if (result.status === 'error') showToast('error', t('toasts.openFailed', { message: result.message }));
+  if (result.status !== 'opened') return;
+  const session = getState().sketch;
+  if (!session) return;
+  try {
+    const imported = dxfToSketch(new TextDecoder().decode(result.data), session.draft.sketch);
+    recordSketchChange(imported.sketch);
+    const skipped = Object.entries(imported.skipped)
+      .map(([type, count]) => `${count} × ${type}`)
+      .join(', ');
+    showToast('success', t(skipped ? 'toasts.dxfImportedSkipped' : 'toasts.dxfImported', { count: imported.imported, skipped }));
+    viewport()?.zoomToFit();
+  } catch (error) {
+    showToast('error', t('toasts.openFailed', { message: error instanceof Error ? error.message : String(error) }));
+  }
+}
+
+/** Saves the open sketch as DXF (without construction geometry). */
+export async function exportSketchDxf(): Promise<void> {
+  const session = getState().sketch;
+  if (!session) return;
+  const { text } = sketchToDxf(session.draft.sketch);
+  const result = await api().saveFile({
+    title: t('dialogs.exportTitle'),
+    defaultName: `${openSketchName()}.dxf`,
+    filters: [{ name: t('dialogs.dxfFiles'), extensions: ['dxf'] }],
+    data: new TextEncoder().encode(text),
+  });
+  if (result.status === 'saved') showToast('success', t('toasts.exported', { name: result.path.split(/[\\/]/).pop() ?? result.path }));
+  else if (result.status === 'error') showToast('error', t('toasts.exportFailed', { message: result.message }));
 }
 
 /** Offsets the selected curves; closed outlines grow outwards unless `flip`. */

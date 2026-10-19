@@ -25,7 +25,9 @@ import {
   CylinderIcon,
   DimensionIcon,
   ExitSketchIcon,
+  ExportDxfIcon,
   ExportStepIcon,
+  ImportDxfIcon,
   ExportStlIcon,
   FilletIcon,
   InfoIcon,
@@ -239,6 +241,10 @@ function SketchTab() {
         <ToolButton tool="slot" disabled={off} />
         <ToolButton tool="polygon" disabled={off} />
         <ToolButton tool="point" disabled={off} />
+      </Group>
+      <Group label={t('commands.groups.exchange')}>
+        <CommandButton id="import-dxf" icon={ImportDxfIcon} label={t('commands.importDxf')} tooltip={t('commands.tooltips.importDxf')} disabled={off} onClick={() => void commands.importDxfIntoSketch()} />
+        <CommandButton id="export-dxf" icon={ExportDxfIcon} label={t('commands.exportDxf')} tooltip={t('commands.tooltips.exportDxf')} disabled={off} onClick={() => void commands.exportSketchDxf()} />
       </Group>
       <Group label={t('commands.groups.modify')}>
         <SplitToolButton tools={['trim', 'extend']} current={variants.trim} disabled={off} />

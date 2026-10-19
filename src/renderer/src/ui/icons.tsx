@@ -82,6 +82,24 @@ export const ExportStepIcon = (p: P) => (
   </Icon>
 );
 
+/** A flat outline (2D drawing) with an arrow out of it. */
+export const ExportDxfIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3 5h11v9H3z" />
+    <path d="M6 11.5a2 2 0 1 0 0-.1M10 8h2" strokeWidth={1.3} />
+    <path d="M15 19h6m-2.5-2.5L21 19l-2.5 2.5" />
+  </Icon>
+);
+
+/** A flat outline (2D drawing) with an arrow into it. */
+export const ImportDxfIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M10 5h11v9H10z" />
+    <path d="M14 11.5a2 2 0 1 0 0-.1M17.5 8h1.5" strokeWidth={1.3} />
+    <path d="M3 19h7m-2.5-2.5L10 19l-2.5 2.5" />
+  </Icon>
+);
+
 export const ExportStlIcon = (p: P) => (
   <Icon {...p}>
     <path d="M3 17 9 5l6 12zM9 5v12M6 11h6" />

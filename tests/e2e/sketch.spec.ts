@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readdir } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { idle, launchApp, type LaunchedApp } from './harness.ts';
 
 interface SketchState {
@@ -506,7 +508,7 @@ test('fits the smallest window in sketch mode: nothing overflows, the whole view
   expect(layout.barOverflow).toBeLessThanOrEqual(1);
   expect(layout.canvasRight).toBeLessThanOrEqual(layout.innerWidth);
   // Every command of the sketch tab is on screen.
-  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'tool-trim', 'tool-sketchFillet', 'construction', 'delete-sketch', 'settings', 'about']) {
+  for (const command of ['exit-sketch', 'tool-dimension', 'tool-line', 'tool-slot', 'tool-polygon', 'tool-point', 'tool-trim', 'tool-sketchFillet', 'import-dxf', 'export-dxf', 'construction', 'delete-sketch', 'settings', 'about']) {
     const box = await page.locator(`[data-command="${command}"]`).boundingBox();
     expect(box && box.x + box.width <= layout.innerWidth).toBe(true);
   }
@@ -921,4 +923,35 @@ test('mirrors, patterns, moves and copies the selection', async () => {
   await page.locator('[data-testid="offset-distance"]').fill('2');
   await page.click('[data-testid="sketch-transform"] .transform-action');
   expect((await entities()).filter((e) => e.type === 'circle').at(-1)?.radius).toBeCloseTo(6, 9);
+});
+
+test('imports a DXF outline into the sketch and exports the sketch as DXF', async () => {
+  // A 50 × 20 rectangle as a closed polyline with one rounded corner, plus a text that is not imported.
+  const folder = await mkdtemp(path.join(tmpdir(), 'parawerk-dxf-'));
+  const input = path.join(folder, 'bracket.dxf');
+  const pairs = [0, 'SECTION', 2, 'HEADER', 9, '$INSUNITS', 70, 4, 0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES',
+    0, 'LWPOLYLINE', 8, 0, 90, 4, 70, 1, 10, 0, 20, 0, 10, 50, 20, 0, 10, 50, 20, 20, 10, 0, 20, 20,
+    0, 'CIRCLE', 8, 0, 10, 25, 20, 10, 30, 0, 40, 4,
+    0, 'TEXT', 8, 0, 1, 'Bracket', 0, 'ENDSEC', 0, 'EOF'];
+  await writeFile(input, `${pairs.join('\n')}\n`);
+  launched = await launchApp({ env: { PARAWERK_E2E_OPEN_FILE: input } });
+  const { page, outputDir } = launched;
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  await page.click('[data-command="import-dxf"]');
+  await expect(page.locator('.toast')).toContainText('Imported 2 entities');
+  await expect(page.locator('.toast')).toContainText('1 × TEXT');
+  const sketch = (await state(page)).sketch?.draft.sketch;
+  expect(sketch?.entities.filter((e) => e.type === 'line')).toHaveLength(4);
+  expect(sketch?.entities.filter((e) => e.type === 'circle')).toHaveLength(1);
+  // The polyline's corners are shared: four points for four lines (plus the circle's center).
+  expect(sketch?.entities.filter((e) => e.type === 'point')).toHaveLength(5);
+
+  await page.click('[data-command="export-dxf"]');
+  await expect(page.locator('.toast').last()).toContainText('Exported');
+  const [file] = await readdir(outputDir);
+  expect(file).toBe('Sketch1.dxf');
+  const text = await readFile(path.join(outputDir, file as string), 'utf8');
+  expect(text.match(/\nLINE\n/g)).toHaveLength(4);
+  expect(text).toContain('\nCIRCLE\n');
 });

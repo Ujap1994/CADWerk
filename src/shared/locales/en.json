@@ -56,7 +56,8 @@
       "edit": "Edit",
       "define": "Define",
       "draw": "Draw",
-      "modify": "Modify"
+      "modify": "Modify",
+      "exchange": "DXF"
     },
     "new": "New",
     "open": "Open",
@@ -88,7 +89,9 @@
       "undo": "Undo (Ctrl+Z)",
       "redo": "Redo (Ctrl+Y)",
       "settings": "Language, theme, navigation",
-      "about": "Version and license"
+      "about": "Version and license",
+      "importDxf": "Add the lines, circles and arcs of a DXF file to the sketch",
+      "exportDxf": "Save the sketch as DXF, e.g. for laser cutting (without construction geometry)"
     },
     "tabs": {
       "label": "Command tabs",
@@ -137,7 +140,9 @@
       "sketchChamfer": "Bevel the corner where two lines meet",
       "trim": "Remove the piece of a curve between its crossings (T)",
       "extend": "Lengthen a line or arc up to the next curve (T)"
-    }
+    },
+    "importDxf": "Import",
+    "exportDxf": "Export"
   },
   "features": {
     "sketch": "Sketch",
@@ -262,7 +267,9 @@
     "stlFiles": "STL files",
     "openTitle": "Open part",
     "saveTitle": "Save part",
-    "exportTitle": "Export"
+    "exportTitle": "Export",
+    "importDxfTitle": "Import DXF",
+    "dxfFiles": "DXF drawings"
   },
   "toasts": {
     "saved": "Saved “{{name}}”.",
@@ -272,7 +279,9 @@
     "saveFailed": "Could not save the file: {{message}}",
     "exportFailed": "Export failed: {{message}}",
     "nothingToExport": "There is no body to export yet.",
-    "kernelRestarted": "The geometry kernel was restarted after an error. Your document is unchanged."
+    "kernelRestarted": "The geometry kernel was restarted after an error. Your document is unchanged.",
+    "dxfImported": "Imported {{count}} entities.",
+    "dxfImportedSkipped": "Imported {{count}} entities; not supported and left out: {{skipped}}."
   },
   "errors": {
     "no-body": "There is no body to modify yet.",

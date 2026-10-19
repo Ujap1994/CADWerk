@@ -288,9 +288,13 @@ input {
   padding: 0 2px;
 }
 
+.command-bar[data-density='dense'] {
+  padding-inline: 4px;
+}
+
 .command-bar[data-density='dense'] .command-button {
-  min-width: 30px;
-  padding: 6px 3px 4px;
+  min-width: 28px;
+  padding: 6px 2px 4px;
 }
 
 .command-bar[data-density='dense'] .command-icon {
@@ -306,7 +310,13 @@ input {
 }
 
 .command-bar[data-density='dense'] .command-tab {
-  padding: 4px 7px;
+  padding: 4px 5px;
+  font-size: 11.5px;
+}
+
+.command-bar[data-density='dense'] .command-group-label {
+  font-size: 10px;
+  letter-spacing: 0;
 }
 
 /* Vertical tab switch between the command sets (Features, Sketch). */

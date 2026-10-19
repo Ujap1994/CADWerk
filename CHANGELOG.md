@@ -29,6 +29,9 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- DXF import into the open sketch (lines, circles, arcs, points, polylines with arc segments; units
+  converted; coinciding ends joined; unsupported entities listed) and DXF export of the sketch (R12,
+  millimeters, without construction geometry).
 - Offset of lines, arcs and circles: chains stay connected (sharp corners at the crossings of the offset
   curves, tangent transitions kept), closed outlines grow outwards or inwards, lines stay parallel, arcs
   keep their centers.
