@@ -152,6 +152,48 @@ describe('rectangle tools', () => {
     expectConsistent(sketch);
   });
 
+  it('draws a rectangle at an angle from one side and its width', () => {
+    // One side from (0, 0) to (30, 40), the cursor 10 to the left of it (plus a bit along the side).
+    const sketch = draw(createTool('threePointRectangle'), [[10, 10], [40, 50], [40 - 8 + 3, 50 + 6 + 4]]);
+    const lines = sketch.entities.filter((e) => e.type === 'line');
+    expect(lines).toHaveLength(4);
+    expect(types(sketch)).toEqual(['parallel', 'parallel', 'perpendicular']);
+    const corners = sketch.entities.flatMap((e) => (e.type === 'point' ? [[e.x, e.y]] : []));
+    expect(corners).toEqual([
+      [10, 10],
+      [40, 50],
+      [expect.closeTo(32), expect.closeTo(56)],
+      [expect.closeTo(2), expect.closeTo(16)],
+    ]);
+    expectConsistent(sketch);
+  });
+
+  it('keeps the first side of an angled rectangle horizontal when it was drawn so', () => {
+    const sketch = draw(createTool('threePointRectangle'), [[0, 0], [40, 0.1], [35, 15]]);
+    expect(types(sketch)).toEqual(['horizontal', 'parallel', 'parallel', 'perpendicular']);
+    expectConsistent(sketch);
+  });
+
+  it('draws a parallelogram from three corners; the third snaps', () => {
+    const base = draw(createTool('point'), [[50, 20]]);
+    const sketch = draw(createTool('parallelogram'), [[0, 0], [40, 0.1], [50.2, 20.1]], base);
+    expect(types(sketch)).toEqual(['horizontal', 'parallel', 'parallel']);
+    const corners = sketch.entities.flatMap((e) => (e.type === 'point' ? [[e.id, e.x, e.y]] : []));
+    // The clicked point is reused as the third corner; the fourth completes the parallelogram.
+    expect(corners).toEqual([
+      ['p1', 50, 20],
+      ['p2', 40, 0],
+      ['p3', expect.closeTo(10), expect.closeTo(20)],
+    ]);
+    expectConsistent(sketch);
+  });
+
+  it('ignores flat parallelograms', () => {
+    const tool = createTool('parallelogram');
+    expect(draw(tool, [[0, 0], [40, 0], [80, 0.05]])).toBe(EMPTY);
+    expect(tool.busy).toBe(true);
+  });
+
   it('ignores degenerate rectangles', () => {
     const tool = createTool('cornerRectangle');
     expect(draw(tool, [[5, 5], [45, 5.1]])).toBe(EMPTY);

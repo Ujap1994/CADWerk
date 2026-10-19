@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { FeatureType } from '../../../shared/model/feature.ts';
 import * as commands from '../commands.ts';
@@ -9,6 +10,7 @@ import {
   CenterArcIcon,
   CenterlineIcon,
   CenterRectangleIcon,
+  ParallelogramIcon,
   ChamferIcon,
   ChevronDownIcon,
   CircleIcon,
@@ -20,6 +22,7 @@ import {
   SlotIcon,
   TangentArcIcon,
   ThreePointCircleIcon,
+  ThreePointRectangleIcon,
   ConstructionIcon,
   CornerRectangleIcon,
   CylinderIcon,
@@ -51,6 +54,8 @@ const TOOL_ICONS: Record<SketchToolName, IconType> = {
   centerline: CenterlineIcon,
   cornerRectangle: CornerRectangleIcon,
   centerRectangle: CenterRectangleIcon,
+  threePointRectangle: ThreePointRectangleIcon,
+  parallelogram: ParallelogramIcon,
   circle: CircleIcon,
   threePointCircle: ThreePointCircleIcon,
   centerArc: CenterArcIcon,
@@ -153,20 +158,54 @@ function ToolButton({ tool, disabled }: { tool: SketchToolName; disabled: boolea
   );
 }
 
-/** A tool with variants: the button runs the last used variant, the arrow offers all of them. */
+/** Width the variant menu needs at most; it stays inside the window. */
+const MENU_WIDTH_PX = 220;
+
+/**
+ * A tool with variants: the button runs the last used variant, the arrow offers all of them. The menu
+ * is placed on the document body: the command bar clips its content (it scrolls sideways as a last
+ * resort on tiny windows), which would cut the menu off.
+ */
 function SplitToolButton({ tools, current, disabled }: { tools: readonly SketchToolName[]; current: SketchToolName; disabled: boolean }) {
   const { t } = useTranslation();
   const activeTool = useAppState((state) => state.sketchTool);
-  const [open, setOpen] = useState(false);
+  const [menuAt, setMenuAt] = useState<{ left: number; top: number } | null>(null);
   const anchor = useRef<HTMLDivElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const open = menuAt !== null;
   useEffect(() => {
     if (!open) return;
     const close = (event: PointerEvent) => {
-      if (!anchor.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!anchor.current?.contains(target) && !menu.current?.contains(target)) setMenuAt(null);
     };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      // The menu takes this Esc; it must not also leave the sketch tool.
+      event.stopPropagation();
+      setMenuAt(null);
+    };
+    const dismiss = () => setMenuAt(null);
     window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
+    window.addEventListener('keydown', closeOnEscape, true);
+    // The menu does not follow the bar when the window changes or the bar scrolls sideways.
+    window.addEventListener('resize', dismiss);
+    window.addEventListener('scroll', dismiss, true);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('keydown', closeOnEscape, true);
+      window.removeEventListener('resize', dismiss);
+      window.removeEventListener('scroll', dismiss, true);
+    };
   }, [open]);
+  const toggle = () => {
+    const rect = anchor.current?.getBoundingClientRect();
+    if (open || !rect) {
+      setMenuAt(null);
+      return;
+    }
+    setMenuAt({ left: Math.max(4, Math.min(rect.left, window.innerWidth - MENU_WIDTH_PX - 4)), top: rect.bottom + 4 });
+  };
   return (
     <div className="split-command popover-anchor" ref={anchor}>
       <ToolButton tool={current} disabled={disabled} />
@@ -179,36 +218,39 @@ function SplitToolButton({ tools, current, disabled }: { tools: readonly SketchT
         aria-expanded={open}
         data-variants={tools.join(' ')}
         disabled={disabled}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggle}
       >
         <ChevronDownIcon />
       </button>
-      {open ? (
-        <div className="popover-menu is-below" role="menu">
-          {tools.map((tool) => {
-            const Icon = TOOL_ICONS[tool];
-            return (
-              <button
-                key={tool}
-                type="button"
-                role="menuitemradio"
-                aria-checked={activeTool === tool}
-                className="menu-item"
-                data-tool={tool}
-                onClick={() => {
-                  commands.setSketchTool(activeTool === tool ? null : tool);
-                  setOpen(false);
-                }}
-              >
-                <span className="menu-item-label">
-                  <Icon className="menu-item-icon" />
-                  {t(`commands.sketchTools.${tool}`)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+      {menuAt
+        ? createPortal(
+            <div className="popover-menu is-fixed" role="menu" ref={menu} style={{ left: menuAt.left, top: menuAt.top }}>
+              {tools.map((tool) => {
+                const Icon = TOOL_ICONS[tool];
+                return (
+                  <button
+                    key={tool}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={activeTool === tool}
+                    className="menu-item"
+                    data-tool={tool}
+                    onClick={() => {
+                      commands.setSketchTool(activeTool === tool ? null : tool);
+                      setMenuAt(null);
+                    }}
+                  >
+                    <span className="menu-item-label">
+                      <Icon className="menu-item-icon" />
+                      {t(`commands.sketchTools.${tool}`)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
@@ -235,7 +277,7 @@ function SketchTab() {
       <Group label={t('commands.groups.draw')}>
         <ToolButton tool="line" disabled={off} />
         <ToolButton tool="centerline" disabled={off} />
-        <SplitToolButton tools={['cornerRectangle', 'centerRectangle']} current={variants.rectangle} disabled={off} />
+        <SplitToolButton tools={['cornerRectangle', 'centerRectangle', 'threePointRectangle', 'parallelogram']} current={variants.rectangle} disabled={off} />
         <SplitToolButton tools={['circle', 'threePointCircle']} current={variants.circle} disabled={off} />
         <SplitToolButton tools={['centerArc', 'threePointArc', 'tangentArc']} current={variants.arc} disabled={off} />
         <ToolButton tool="slot" disabled={off} />

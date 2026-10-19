@@ -18,6 +18,8 @@ export type SketchToolName =
   | 'centerline'
   | 'cornerRectangle'
   | 'centerRectangle'
+  | 'threePointRectangle'
+  | 'parallelogram'
   | 'circle'
   | 'threePointCircle'
   | 'centerArc'
@@ -37,6 +39,8 @@ export const SKETCH_TOOLS: readonly SketchToolName[] = [
   'centerline',
   'cornerRectangle',
   'centerRectangle',
+  'threePointRectangle',
+  'parallelogram',
   'circle',
   'threePointCircle',
   'centerArc',
@@ -703,6 +707,109 @@ export class TangentArcTool implements SketchTool {
   }
 }
 
+/**
+ * Rectangles at any angle and parallelograms: the first two clicks set one side, the third the
+ * other side (for the rectangle only its length counts, it stays perpendicular).
+ */
+export class SkewRectangleTool implements SketchTool {
+  readonly name: 'threePointRectangle' | 'parallelogram';
+  private first: PlacedPoint | null = null;
+  private second: SnapResult | null = null;
+
+  constructor(name: 'threePointRectangle' | 'parallelogram') {
+    this.name = name;
+  }
+
+  get busy(): boolean {
+    return this.first !== null;
+  }
+
+  /** The four corners for the third click: a, b, then the two corners of the opposite side. */
+  private corners(a: Point2, b: Point2, third: Point2): [Point2, Point2, Point2, Point2] {
+    if (this.name === 'parallelogram') return [a, b, third, [a[0] + third[0] - b[0], a[1] + third[1] - b[1]]];
+    const d = unit(sub(b, a));
+    const n: Point2 = [-d[1], d[0]];
+    const width = dot(sub(third, b), n);
+    return [a, b, [b[0] + n[0] * width, b[1] + n[1] * width], [a[0] + n[0] * width, a[1] + n[1] * width]];
+  }
+
+  private info(corners: [Point2, Point2, Point2, Point2]): ToolInfo {
+    const [a, b, c] = corners;
+    const side = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const other = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    if (this.name === 'threePointRectangle') return { width: side, height: other, relations: [] };
+    const angle = Math.acos(Math.max(-1, Math.min(1, dot(sub(a, b), sub(c, b)) / Math.max(1e-12, side * other))));
+    return { length: other, angle: (angle * 180) / Math.PI, relations: [] };
+  }
+
+  hover(sketch: SketchData, event: ToolEvent): ToolPreview {
+    const first = this.first;
+    const second = this.second;
+    const snap = snapAt(sketch, event, first && !second ? at(first) : null);
+    if (!first) return { geometry: EMPTY, snap, info: { relations: snapRelations(snap, false) } };
+    const preview = new Preview();
+    if (!second) {
+      preview.line(at(first), at(snap));
+      const du = snap.u - first.u;
+      const dv = snap.v - first.v;
+      return { geometry: preview.build(), snap, info: { length: Math.hypot(du, dv), angle: (Math.atan2(dv, du) * 180) / Math.PI, relations: snapRelations(snap, true) } };
+    }
+    // The rectangle's third corner follows from the side and the distance, so only the parallelogram snaps.
+    const third = this.name === 'parallelogram' ? at(snap) : [event.u, event.v] as Point2;
+    const corners = this.corners(at(first), at(second), third);
+    for (let i = 0; i < 4; i++) preview.line(corners[i] as Point2, corners[(i + 1) % 4] as Point2);
+    const shownSnap = this.name === 'parallelogram' ? snap : { ...snap, target: { kind: 'none' as const }, alignments: [] };
+    const info = this.info(corners);
+    if (this.name === 'parallelogram') info.relations = snapRelations(snap, false);
+    return { geometry: preview.build(), snap: shownSnap, info };
+  }
+
+  click(sketch: SketchData, event: ToolEvent): ToolStep {
+    const first = this.first;
+    const snap = snapAt(sketch, event, first && !this.second ? at(first) : null);
+    const minimum = event.tolerance * MIN_SIZE_FACTOR;
+    if (!first) {
+      this.first = placed(snap);
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    if (!this.second) {
+      if (Math.hypot(snap.u - first.u, snap.v - first.v) < minimum) return { commit: null, preview: this.hover(sketch, event) };
+      this.second = snap;
+      return { commit: null, preview: this.hover(sketch, event) };
+    }
+    const second = this.second;
+    const third = this.name === 'parallelogram' ? at(snap) : [event.u, event.v] as Point2;
+    const corners = this.corners(at(first), at(second), third);
+    if (Math.hypot(corners[2][0] - corners[1][0], corners[2][1] - corners[1][1]) < minimum) return { commit: null, preview: this.hover(sketch, event) };
+    // A parallelogram with its sides in line would collapse.
+    const d = unit(sub(corners[1], corners[0]));
+    if (Math.abs(dot(sub(corners[2], corners[1]), [-d[1], d[0]])) < minimum) return { commit: null, preview: this.hover(sketch, event) };
+    const builder = new SketchBuilder(sketch);
+    const points = [
+      builder.point(first),
+      builder.point(placed(second)),
+      this.name === 'parallelogram' ? builder.point(placed(snap)) : builder.freePoint(...corners[2]),
+      builder.freePoint(...corners[3]),
+    ];
+    const [s0, s1, s2, s3] = points.map((p, i) => builder.line(p, points[(i + 1) % 4] as string)) as [string, string, string, string];
+    builder.relation({ type: 'parallel', a: s0, b: s2 });
+    builder.relation({ type: 'parallel', a: s1, b: s3 });
+    if (this.name === 'threePointRectangle') builder.relation({ type: 'perpendicular', a: s0, b: s1 });
+    for (const alignment of second.alignments) if (alignment.anchor) builder.relation({ type: alignment.axis, line: s0 });
+    this.first = null;
+    this.second = null;
+    const commit = builder.build();
+    return { commit, preview: this.hover(commit, event) };
+  }
+
+  cancel(): boolean {
+    const busy = this.busy;
+    this.first = null;
+    this.second = null;
+    return busy;
+  }
+}
+
 /** Circles through three points. */
 export class ThreePointCircleTool implements SketchTool {
   readonly name = 'threePointCircle' as const;
@@ -1042,6 +1149,9 @@ export function createTool(name: SketchToolName, options: ToolOptions = DEFAULT_
     case 'cornerRectangle':
     case 'centerRectangle':
       return new RectangleTool(name);
+    case 'threePointRectangle':
+    case 'parallelogram':
+      return new SkewRectangleTool(name);
     case 'circle':
       return new CircleTool();
     case 'threePointCircle':

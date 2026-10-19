@@ -416,7 +416,7 @@ test('draws with the tools: snapping, automatic relations, drag drawing, Esc and
   expect(await relations()).toContain('midpoint');
 
   // Center rectangle from the variants menu, then turned into construction geometry.
-  await page.click('.split-toggle[data-variants="cornerRectangle centerRectangle"]');
+  await page.click('.split-toggle[data-variants="cornerRectangle centerRectangle threePointRectangle parallelogram"]');
   await page.click('.menu-item[data-tool="centerRectangle"]');
   await clickAt(-40, 40);
   await clickAt(-30, 46);
@@ -539,6 +539,39 @@ test('shows relation symbols: hovering highlights, clicking selects, Delete remo
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await toggle.click();
   await expect.poll(async () => (await glyphs()).length).toBe(2);
+});
+
+test('variant menus of the command bar are fully visible above the view, also in the smallest window', async () => {
+  launched = await launchApp({ width: 960, height: 600 });
+  const { page } = launched;
+  await page.click('[data-command="sketch"]');
+  await page.click('.plane-choice[data-plane="top"]');
+  await expect(page.locator('[data-testid="sketch-ok"]')).toBeVisible();
+  const toggles = page.locator('.split-toggle');
+  const count = await toggles.count();
+  expect(count).toBeGreaterThanOrEqual(5);
+  for (let i = 0; i < count; i++) {
+    const toggle = toggles.nth(i);
+    if (await toggle.isDisabled()) continue;
+    await toggle.click();
+    const items = page.locator('.popover-menu .menu-item');
+    await expect(items.first()).toBeVisible();
+    // Every entry is inside the window and is what the mouse would hit there (not clipped or covered).
+    const hidden = await items.evaluateAll((elements) =>
+      elements.flatMap((element) => {
+        const rect = element.getBoundingClientRect();
+        const [x, y] = [rect.left + rect.width / 2, rect.top + rect.height / 2];
+        const inside = rect.left >= 0 && rect.top >= 0 && rect.right <= window.innerWidth && rect.bottom <= window.innerHeight;
+        const hit = document.elementFromPoint(x, y)?.closest('.menu-item');
+        return inside && hit === element ? [] : [(element as HTMLElement).dataset.tool];
+      }),
+    );
+    expect(hidden).toEqual([]);
+    // Esc closes the menu and keeps sketch mode.
+    await page.keyboard.press('Escape');
+    await expect(items).toHaveCount(0);
+    expect((await state(page)).sketch).not.toBeNull();
+  }
 });
 
 test('fits the smallest window in sketch mode: nothing overflows, the whole view is reachable', async () => {
@@ -722,7 +755,7 @@ test('shows under, fully and over defined sketches and lets conflicts be deleted
   await expect(page.locator('.tree-item[data-feature-id="over"] [data-sketch-status]')).toHaveCount(0);
 });
 
-test('draws tangent arcs, three-point circles, slots and polygons', async () => {
+test('draws tangent arcs, three-point circles, slots, polygons, angled rectangles and parallelograms', async () => {
   launched = await launchApp();
   const { page } = launched;
   await page.click('[data-command="sketch"]');
@@ -775,6 +808,23 @@ test('draws tangent arcs, three-point circles, slots and polygons', async () => 
   await clickAt(55, 33);
   expect(await count('line')).toBe(1 + 2 + 5);
   expect(await count('circle', true)).toBe(1);
+
+  // Rectangle ▾ > 3-point rectangle at an angle, then a parallelogram.
+  const rectangles = '.split-toggle[data-variants="cornerRectangle centerRectangle threePointRectangle parallelogram"]';
+  await page.click(rectangles);
+  await page.click('.menu-item[data-tool="threePointRectangle"]');
+  await clickAt(-62, -8);
+  await clickAt(-42, -2);
+  await clickAt(-45, 6);
+  expect(await count('line')).toBe(8 + 4);
+  expect((await relations()).filter((type) => type === 'perpendicular')).toHaveLength(1);
+  await page.click(rectangles);
+  await page.click('.menu-item[data-tool="parallelogram"]');
+  await clickAt(5, -6);
+  await clickAt(25, -6);
+  await clickAt(32, 6);
+  expect(await count('line')).toBe(8 + 4 + 4);
+  expect((await relations()).filter((type) => type === 'parallel')).toHaveLength(4);
   await page.click('[data-testid="sketch-ok"]');
   expect((await state(page)).history.features).toHaveLength(1);
 });

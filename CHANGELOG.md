@@ -29,6 +29,7 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- 3-point rectangle (at any angle, sides kept perpendicular) and parallelogram, in the rectangle menu.
 - Phase 1 exit check as an end-to-end test: an L-shaped bracket profile with two holes is drawn and
   fully defined with mouse and keyboard only in the smallest window (64 clicks and key presses); the
   user guide walks through the same steps.

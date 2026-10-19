@@ -115,7 +115,8 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Relation symbols in the view (hover, select, delete, show/hide) | ✅ done |
 | Drawing benchmarks (snapping and preview: 1.3 ms per mouse movement at 2,000 entities) | ✅ done |
 | Exit check: drawing and fully defining a bracket profile (E2E test, 64 clicks and key presses) | ✅ done |
-| 3-point and parallelogram rectangles, ellipse, spline | ⏳ next |
+| 3-point rectangle and parallelogram | ✅ done |
+| Ellipse and spline | ⏳ next |
 | Scale of the selection; project and convert model edges into the sketch | ⏳ planned |
 | Global variables and equations (basic) | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |

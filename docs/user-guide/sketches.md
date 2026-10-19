@@ -94,6 +94,8 @@ explains the active tool.
 | **Centerline** | | Like a line, but the result is construction geometry (dashed), for example a symmetry axis. |
 | **Rectangle** | R | Click one corner, then the opposite corner (or drag). The sides get horizontal and vertical relations. |
 | **Center rectangle** | R | Click the center, then a corner. Dashed diagonals keep the center in the middle. |
+| **3-point rectangle** | R | A rectangle at any angle: click both ends of one side, then move sideways to set the width and click. Opposite sides stay parallel and the corners square; a side drawn horizontally or vertically keeps that relation. |
+| **Parallelogram** | R | Click both ends of one side, then the third corner (it snaps like any point). Opposite sides stay parallel. |
 | **Circle** | C | Click the center, then a point on the circle (or drag). |
 | **3-point circle** | C | Click three points the circle passes through. |
 | **Arc** | A | Click the center and the start point, then move in the direction the arc should run and click the end point. |
@@ -105,6 +107,8 @@ explains the active tool.
 
 **R**, **C** and **A** start the variant you used last; the small arrow next to *Rectangle*, *Circle* and
 *Arc* offers all variants.
+
+![The rectangle variants: corner, center, 3-point rectangle and parallelogram](../images/screenshots/sketch-rectangle-variants.png)
 
 ### Trim and extend
 

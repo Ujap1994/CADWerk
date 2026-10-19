@@ -399,10 +399,11 @@ input {
   cursor: default;
 }
 
-.popover-menu.is-below {
-  top: calc(100% + 4px);
-  left: 0;
+/* Menus of the command bar live on the document body (the bar clips its content); placed by script. */
+.popover-menu.is-fixed {
+  position: fixed;
   transform: none;
+  z-index: 50;
 }
 
 .menu-item-label {

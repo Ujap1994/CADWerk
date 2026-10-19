@@ -271,6 +271,24 @@ export const CornerRectangleIcon = (p: P) => (
   </Icon>
 );
 
+export const ThreePointRectangleIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 14 13 5l5.7 5.7-9 9z" />
+    {dot(4, 14, 1.8)}
+    {dot(13, 5, 1.8)}
+    {dot(18.7, 10.7, 1.8)}
+  </Icon>
+);
+
+export const ParallelogramIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3 18 8 6h13l-5 12z" />
+    {dot(3, 18, 1.8)}
+    {dot(8, 6, 1.8)}
+    {dot(21, 6, 1.8)}
+  </Icon>
+);
+
 export const CenterRectangleIcon = (p: P) => (
   <Icon {...p}>
     <rect x="4" y="6" width="16" height="12" />

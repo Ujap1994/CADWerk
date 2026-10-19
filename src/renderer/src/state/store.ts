@@ -76,7 +76,7 @@ export interface AppState {
   sketchTool: SketchToolName | null;
   /** Last used variant of the tools with variants, offered first in the command bar. */
   sketchToolVariants: {
-    rectangle: 'cornerRectangle' | 'centerRectangle';
+    rectangle: 'cornerRectangle' | 'centerRectangle' | 'threePointRectangle' | 'parallelogram';
     circle: 'circle' | 'threePointCircle';
     arc: 'centerArc' | 'threePointArc' | 'tangentArc';
     corner: 'sketchFillet' | 'sketchChamfer';

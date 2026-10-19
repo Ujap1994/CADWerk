@@ -248,6 +248,12 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: out('sketch-tools.png') });
 
+  // The rectangle variants.
+  await page.click('.split-toggle[data-variants="cornerRectangle centerRectangle threePointRectangle parallelogram"]');
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: out('sketch-rectangle-variants.png') });
+  await page.keyboard.press('Escape');
+
   // Trim: a line across the slot; the piece of the slot's top side left of it turns red under the cursor.
   // (Right of the middle: the view toolbar floats above the slot.)
   await page.keyboard.press('l');
