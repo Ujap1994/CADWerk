@@ -75,14 +75,14 @@ Draw calls include the view cube and the axis indicator (about 41).
 ### Dragging in sketches (1600 × 1000 window, Retina)
 
 Each step is what one mouse movement costs: the solver round trip to its worker, updating the sketch
-graphics and drawing a GPU-synchronized frame. The sketches are chains of linked rectangles without
-dimensions, so the dragged point can move; a corner at the far end is dragged.
+graphics (including the relation symbols) and drawing a GPU-synchronized frame. The sketches are chains
+of linked rectangles without dimensions, so the dragged point can move; a corner at the far end is dragged.
 
 | Sketch entities | Step (median) | Solver | Graphics update | Steps per second |
 |---|---|---|---|---|
-| 50 | 7.0 ms | 0.4 ms | 0.07 ms | 143 |
-| 500 | 7.0 ms | 1.4 ms | 0.22 ms | 143 |
-| 2,000 | 7.3 ms | 3.1 ms | 0.41 ms | 137 |
+| 50 | 6.8 ms | 0.4 ms | 0.14 ms | 148 |
+| 500 | 6.5 ms | 1.2 ms | 0.58 ms | 155 |
+| 2,000 | 7.7 ms | 3.1 ms | 1.39 ms | 129 |
 
 The Phase 1 target (60 fps with 500 entities) is met with a wide margin; most of each step is the frame
 itself. Solver-only numbers are in [ADR 0005](../adr/0005-sketch-solver.md).
@@ -107,5 +107,6 @@ itself. Solver-only numbers are in [ADR 0005](../adr/0005-sketch-solver.md).
 - Instancing keeps assemblies with thousands of identical parts fast. Beyond about 10,000 components,
   level of detail and culling are needed to reach the v1.0 target of 30 fps for 50,000 instances.
 - PlaneGCS ran out of memory at about 1,000 constraints, so ParaWerk got its own sparse solver
-  ([ADR 0005](../adr/0005-sketch-solver.md)); dragging stays above 130 steps per second at 2,000 sketch
-  entities.
+  ([ADR 0005](../adr/0005-sketch-solver.md)); dragging stays at about 130 steps per second at 2,000 sketch
+  entities. Relation symbols are GPU sprites from one symbol atlas: as HTML labels they slowed a drag
+  step at 2,000 entities from 7 ms to 114 ms.

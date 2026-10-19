@@ -14,7 +14,7 @@ describe('settings', () => {
   });
 
   it('keeps valid values', () => {
-    const custom = { language: 'de', theme: 'light', navigation: 'trackpad', projection: 'perspective', showFrameStats: true } as const;
+    const custom = { language: 'de', theme: 'light', navigation: 'trackpad', projection: 'perspective', showFrameStats: true, showSketchRelations: false } as const;
     expect(sanitizeSettings(custom)).toEqual(custom);
   });
 });

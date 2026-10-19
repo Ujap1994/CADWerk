@@ -4,6 +4,7 @@ import type { MeshPayload } from '../../../kernel/protocol.ts';
 import { ORIGIN_ID, STANDARD_PLANES, type SketchData } from '../../../shared/model/sketch.ts';
 import { formatNumber, formatQuantity } from '../format.ts';
 import { arcGeometry, pointPositions } from '../sketch/geometry.ts';
+import { relationKindOf } from '../sketch/relations.ts';
 import { useAppState, type Pick } from '../state/store.ts';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
@@ -12,7 +13,11 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 function describeSketchEntity(sketch: SketchData, id: string, t: Translate, language: Language): string | null {
   if (id === ORIGIN_ID) return t('features.origin');
   const entity = sketch.entities.find((candidate) => candidate.id === id);
-  if (!entity) return null;
+  if (!entity) {
+    const constraint = sketch.constraints.find((candidate) => candidate.id === id);
+    const kind = constraint ? relationKindOf(constraint) : null;
+    return kind ? t('status.sketchRelation', { name: t(`sketch.relationNames.${kind}`) }) : null;
+  }
   const positions = pointPositions(sketch);
   const mm = (value: number) => formatQuantity(value, language, 'mm', 3);
   let text: string | null = null;

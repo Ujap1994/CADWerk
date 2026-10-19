@@ -29,6 +29,10 @@ and this project will adhere to [Semantic Versioning](https://semver.org/spec/v2
   distances, diameters, radii and angles, chosen from the picked geometry and where the value is placed;
   values typed right at the dimension; dimensions that would over-define the sketch become reference
   dimensions; double-click to change, drag to move, Delete to remove.
+- Relation symbols next to sketch geometry (H, V, ∥, ⊥, =, …), outside closed outlines and at a constant
+  distance on screen: pointing at one highlights the related geometry, clicking selects the relation,
+  Delete removes it; conflicting relations are red. A view toolbar button, the View menu and the settings
+  hide and show them.
 - DXF import into the open sketch (lines, circles, arcs, points, polylines with arc segments; units
   converted; coinciding ends joined; unsupported entities listed) and DXF export of the sketch (R12,
   millimeters, without construction geometry).

@@ -37,6 +37,7 @@ import { disposeOverlay, PartModel } from './part-model.ts';
 import { ReferencePlanes, type PlaneDisplay } from './reference-planes.ts';
 import {
   defaultDimensionFormat,
+  GLYPH_SIZE_PX,
   NO_HIGHLIGHT,
   SketchGraphics,
   SketchMaterials,
@@ -382,6 +383,14 @@ export class ViewportEngine {
     this.requestRender();
   }
 
+  /** Relation symbols next to the geometry of the open sketch on or off. */
+  setShowRelations(show: boolean): void {
+    if (this.sketchMaterials.showRelations === show) return;
+    this.sketchMaterials.showRelations = show;
+    this.sketchLayer.refresh();
+    this.requestRender();
+  }
+
   /** The dimension whose label is under a canvas position (CSS pixels), if any. */
   dimensionAt(x: number, y: number): string | null {
     if (!this.sketchLayer.active) return null;
@@ -393,6 +402,28 @@ export class ViewportEngine {
       if (x >= left - 3 && x <= left + rect.width + 3 && y >= top - 3 && y <= top + rect.height + 3) return id;
     }
     return null;
+  }
+
+  /** The relation symbols of the open sketch at their screen positions (CSS pixels on the canvas). */
+  relationGlyphsOnScreen(): { relation: string; kind: string; symbol: string; x: number; y: number }[] {
+    if (!this.sketchLayer.active) return [];
+    return this.sketchLayer.relationGlyphs().flatMap((glyph) => {
+      const at = this.sketchToScreen(glyph.at[0], glyph.at[1]);
+      return at ? [{ relation: glyph.relation, kind: glyph.kind, symbol: glyph.symbol, ...at }] : [];
+    });
+  }
+
+  /** The relation whose symbol is under a canvas position (CSS pixels), if any; the nearest one wins. */
+  relationAt(x: number, y: number): string | null {
+    const reach = GLYPH_SIZE_PX / 2 + 2;
+    let best: { relation: string; distance: number } | null = null;
+    for (const glyph of this.relationGlyphsOnScreen()) {
+      const [dx, dy] = [Math.abs(glyph.x - x), Math.abs(glyph.y - y)];
+      if (dx > reach || dy > reach) continue;
+      const distance = Math.hypot(dx, dy);
+      if (!best || distance < best.distance) best = { relation: glyph.relation, distance };
+    }
+    return best?.relation ?? null;
   }
 
   dimensionLabel(id: string): HTMLElement | null {

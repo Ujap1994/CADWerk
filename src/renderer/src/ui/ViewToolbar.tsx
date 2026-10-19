@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import * as commands from '../commands.ts';
 import { useAppState } from '../state/store.ts';
 import { STANDARD_VIEWS } from '../viewport/views.ts';
-import { ProjectionIcon, ViewsIcon, ZoomFitIcon } from './icons.tsx';
+import { ProjectionIcon, RelationsIcon, ViewsIcon, ZoomFitIcon } from './icons.tsx';
 
 const SHORTCUTS: Record<string, string> = {
   front: '1',
@@ -18,6 +18,8 @@ const SHORTCUTS: Record<string, string> = {
 export function ViewToolbar() {
   const { t } = useTranslation();
   const projection = useAppState((state) => state.settings.projection);
+  const showRelations = useAppState((state) => state.settings.showSketchRelations);
+  const sketching = useAppState((state) => state.sketch !== null);
   const platform = useAppState((state) => state.appInfo?.platform);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -79,6 +81,19 @@ export function ViewToolbar() {
       >
         <ProjectionIcon />
       </button>
+      {sketching ? (
+        <button
+          type="button"
+          className={`icon-button${showRelations ? ' is-active' : ''}`}
+          title={t('viewbar.relations')}
+          aria-label={t('viewbar.relations')}
+          aria-pressed={showRelations}
+          data-testid="toggle-relations"
+          onClick={() => commands.runMenuCommand('view.toggleSketchRelations')}
+        >
+          <RelationsIcon />
+        </button>
+      ) : null}
     </div>
   );
 }

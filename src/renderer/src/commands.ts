@@ -665,8 +665,15 @@ export async function moveSketchSelection(offset: Point2, angle: number): Promis
 
 /** Removes one relation or dimension of the open sketch. */
 export function deleteSketchConstraint(id: string): void {
-  const sketch = getState().sketch;
-  if (sketch) recordSketchChange(deleteEntities(sketch.draft.sketch, [id]));
+  const { sketch, sketchSelection } = getState();
+  if (!sketch) return;
+  setState({ sketchSelection: sketchSelection.filter((other) => other !== id), sketchHover: null });
+  recordSketchChange(deleteEntities(sketch.draft.sketch, [id]));
+}
+
+/** Highlights sketch geometry or a relation from outside the view (e.g. the relation list). */
+export function hoverSketchEntity(id: string | null): void {
+  if (getState().sketch && getState().sketchHover !== id) setState({ sketchHover: id });
 }
 
 /** Deletes the selected sketch geometry with everything that depends on it. */
@@ -809,6 +816,9 @@ export function runMenuCommand(command: MenuCommand): void {
       break;
     case 'view.toggleFrameStats':
       void updateSettings({ showFrameStats: !getState().settings.showFrameStats });
+      break;
+    case 'view.toggleSketchRelations':
+      void updateSettings({ showSketchRelations: !getState().settings.showSketchRelations });
       break;
     case 'app.settings':
       openDialog('settings');

@@ -6,6 +6,7 @@ import { toSketch, type SketchData, type SketchFrame } from '../../../shared/mod
 import { gridSpacing } from './grid.ts';
 import type { ViewportPalette } from './palette.ts';
 import type { Point2 } from '../sketch/geometry.ts';
+import type { RelationGlyph } from '../sketch/glyphs.ts';
 import { frameMatrix, NO_HIGHLIGHT, setSegments, SketchGraphics, type SketchHighlight, type SketchMaterials, type SketchStatusColors } from './sketch-graphics.ts';
 
 /** What a drawing tool shows: the shape being drawn, where the cursor snapped and inference lines. */
@@ -223,6 +224,11 @@ export class SketchLayer {
     return (function* () {
       for (const [id, label] of labels) yield [id, label.element] as [string, HTMLElement];
     })();
+  }
+
+  /** The relation symbols of the open sketch, in sketch coordinates. */
+  relationGlyphs(): readonly RelationGlyph[] {
+    return this.graphics.relationGlyphs;
   }
 
   refresh(): void {

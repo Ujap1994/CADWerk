@@ -1,4 +1,4 @@
-import { Box3, BufferAttribute, BufferGeometry, Color, Group, Matrix4, Points, ShaderMaterial, Vector3, type Vector2 } from 'three';
+import { Box3, BufferAttribute, BufferGeometry, CanvasTexture, Color, Group, Matrix4, Points, ShaderMaterial, Vector3, type Texture, type Vector2 } from 'three';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
@@ -6,7 +6,9 @@ import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { isDimension, ORIGIN_ID, type SketchData, type SketchDimension, type SketchEntity, type SketchFrame } from '../../../shared/model/sketch.ts';
 import type { DefinitionStatus } from '../../../sketch/solver/index.ts';
 import { arrowStrokes, dimensionGraphic, displayValue } from '../sketch/dimensions.ts';
-import { curvePointIds, curvePoints, curvePolyline, isCurve, pointPositions, type Point2 } from '../sketch/geometry.ts';
+import { constraintReferences, curvePointIds, curvePoints, curvePolyline, isCurve, pointPositions, type Point2 } from '../sketch/geometry.ts';
+import { RELATION_SYMBOLS, relationGlyphs, type RelationGlyph } from '../sketch/glyphs.ts';
+import type { RelationKind } from '../sketch/relations.ts';
 import type { ViewportPalette } from './palette.ts';
 
 /** The open sketch is drawn on top of everything; other sketches are ordinary 3D geometry. */
@@ -31,6 +33,12 @@ const RETESSELLATE_FACTOR = 1.6;
 /** Dimension arrows and gaps keep their size on screen within this factor. */
 const DIMENSION_ZOOM_FACTOR = 1.15;
 const ARROW_PX = 9;
+/** Size of a relation symbol on screen, in pixels. */
+export const GLYPH_SIZE_PX = 15;
+/** Relation kinds in the order of their cells in the symbol atlas. */
+const GLYPH_KINDS = Object.keys(RELATION_SYMBOLS) as RelationKind[];
+/** Atlas cell size: four times the size on screen, so mip levels 1 and 2 match pixel ratios 2 and 1 exactly. */
+const GLYPH_CELL_PX = GLYPH_SIZE_PX * 4;
 
 /** Label text of a dimension: "25.4", "Ø20", "R5", "30°"; driven dimensions in parentheses. */
 export type DimensionFormat = (dimension: SketchDimension, value: number) => string;
@@ -73,6 +81,80 @@ void main() {
 }
 `;
 
+const GLYPH_VERTEX = /* glsl */ `
+attribute vec3 glyphColor;
+attribute float glyphCell;
+attribute float glyphSelected;
+uniform float uPixelRatio;
+uniform float uSize;
+varying vec3 vColor;
+varying float vCell;
+varying float vSelected;
+void main() {
+  vColor = glyphColor;
+  vCell = glyphCell;
+  vSelected = glyphSelected;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  gl_PointSize = uSize * uPixelRatio;
+}
+`;
+
+// The atlas holds the symbol (red), the badge outline (green) and the badge area (blue) of each
+// relation kind; they are layered here in the symbol's color over the view-colored badge.
+const GLYPH_FRAGMENT = /* glsl */ `
+uniform sampler2D uAtlas;
+uniform float uCells;
+uniform vec3 uFill;
+varying vec3 vColor;
+varying float vCell;
+varying float vSelected;
+void main() {
+  vec2 uv = vec2((vCell + gl_PointCoord.x) / uCells, 1.0 - gl_PointCoord.y);
+  vec3 mask = texture2D(uAtlas, uv).rgb;
+  vec3 fill = mix(uFill, vColor, 0.16 * vSelected);
+  vec4 color = vec4(fill, 1.0) * 0.88 * mask.b;
+  float outline = mask.g * mix(0.55, 1.0, vSelected);
+  color = vec4(vColor, 1.0) * outline + color * (1.0 - outline);
+  color = vec4(vColor, 1.0) * mask.r + color * (1.0 - mask.r);
+  if (color.a <= 0.01) discard;
+  gl_FragColor = vec4(color.rgb / color.a, color.a);
+  #include <colorspace_fragment>
+}
+`;
+
+/** Draws the symbol atlas: one cell per relation kind, in the order of GLYPH_KINDS. */
+function glyphAtlas(): Texture {
+  const cell = GLYPH_CELL_PX;
+  const canvas = document.createElement('canvas');
+  canvas.width = cell * GLYPH_KINDS.length;
+  canvas.height = cell;
+  const context = canvas.getContext('2d');
+  if (context) {
+    // Opaque black, then each layer added into its own channel.
+    context.fillStyle = '#000';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.globalCompositeOperation = 'lighter';
+    const unit = cell / GLYPH_SIZE_PX;
+    GLYPH_KINDS.forEach((kind, i) => {
+      const x = i * cell;
+      const inset = unit * 0.75;
+      context.beginPath();
+      context.roundRect(x + inset, inset, cell - 2 * inset, cell - 2 * inset, unit * 3);
+      context.fillStyle = '#00f';
+      context.fill();
+      context.lineWidth = unit;
+      context.strokeStyle = '#0f0';
+      context.stroke();
+      context.fillStyle = '#f00';
+      context.font = `700 ${Math.round(unit * 10)}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(RELATION_SYMBOLS[kind], x + cell / 2, cell / 2 + unit * 0.5);
+    });
+  }
+  return new CanvasTexture(canvas);
+}
+
 /** Materials shared by all sketches; colors follow the theme, dashes and dots the zoom. */
 export class SketchMaterials {
   readonly lines: Record<SketchLook, LineMaterial>;
@@ -85,7 +167,11 @@ export class SketchMaterials {
   /** What the trim tool would remove. */
   readonly removal: LineMaterial;
   format: DimensionFormat = defaultDimensionFormat('en');
+  /** Relation symbols next to the geometry of the open sketch. */
+  showRelations = true;
   readonly points: Record<SketchLook, ShaderMaterial>;
+  /** Relation symbols (point sprites from a symbol atlas). */
+  readonly glyphs: ShaderMaterial;
   readonly colors = {
     active: new Color(),
     full: new Color(),
@@ -96,6 +182,7 @@ export class SketchMaterials {
     guide: new Color(),
     dimension: new Color(),
     dimensionDriven: new Color(),
+    relation: new Color(),
   };
 
   constructor() {
@@ -125,6 +212,20 @@ export class SketchMaterials {
         depthWrite: false,
       });
     this.points = { active: points('active'), inactive: points('inactive') };
+    this.glyphs = new ShaderMaterial({
+      vertexShader: GLYPH_VERTEX,
+      fragmentShader: GLYPH_FRAGMENT,
+      uniforms: {
+        uAtlas: { value: glyphAtlas() },
+        uCells: { value: GLYPH_KINDS.length },
+        uFill: { value: new Color() },
+        uSize: { value: GLYPH_SIZE_PX },
+        uPixelRatio: { value: 1 },
+      },
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
   }
 
   setPalette(palette: ViewportPalette): void {
@@ -137,6 +238,8 @@ export class SketchMaterials {
     this.colors.guide.setHex(palette.guide);
     this.colors.dimension.setHex(palette.dimension);
     this.colors.dimensionDriven.setHex(palette.dimensionDriven);
+    this.colors.relation.setHex(palette.relation);
+    (this.glyphs.uniforms.uFill as { value: Color }).value.setHex(palette.relationFill);
     this.removal.color.setHex(palette.sketchOver);
     this.guide.color.copy(this.colors.guide);
   }
@@ -145,7 +248,7 @@ export class SketchMaterials {
     for (const material of [...Object.values(this.lines), ...Object.values(this.construction), this.highlight, this.guide, this.dimension, this.removal]) {
       material.resolution.copy(resolution);
     }
-    for (const material of Object.values(this.points)) (material.uniforms.uPixelRatio as { value: number }).value = pixelRatio;
+    for (const material of [...Object.values(this.points), this.glyphs]) (material.uniforms.uPixelRatio as { value: number }).value = pixelRatio;
   }
 
   /** Dashes keep their length on screen. */
@@ -167,9 +270,11 @@ export class SketchMaterials {
       this.dimension,
       this.removal,
       ...Object.values(this.points),
+      this.glyphs,
     ]) {
       material.dispose();
     }
+    (this.glyphs.uniforms.uAtlas as { value: Texture }).value.dispose();
   }
 }
 
@@ -192,6 +297,8 @@ export class SketchGraphics {
   private readonly points: Points<BufferGeometry, ShaderMaterial>;
   private readonly dimensionLines: LineSegments2;
   private readonly labels = new Map<string, CSS2DObject>();
+  private readonly glyphPoints: Points<BufferGeometry, ShaderMaterial>;
+  private glyphs: RelationGlyph[] = [];
   private dimensionsAt = 0;
   private sketch: SketchData | null = null;
   private highlightState: SketchHighlight = NO_HIGHLIGHT;
@@ -207,8 +314,10 @@ export class SketchGraphics {
     this.highlight = new LineSegments2(new LineSegmentsGeometry(), materials.highlight);
     this.points = new Points(new BufferGeometry(), materials.points[look]);
     this.dimensionLines = new LineSegments2(new LineSegmentsGeometry(), materials.dimension);
+    this.glyphPoints = new Points(new BufferGeometry(), materials.glyphs);
+    this.glyphPoints.visible = false;
     const order = look === 'active' ? 30 : 5;
-    [this.construction, this.lines, this.highlight, this.points, this.dimensionLines].forEach((object, i) => {
+    [this.construction, this.lines, this.highlight, this.points, this.dimensionLines, this.glyphPoints].forEach((object, i) => {
       object.renderOrder = order + i;
       object.frustumCulled = false;
       object.raycast = () => undefined;
@@ -250,7 +359,7 @@ export class SketchGraphics {
   ensureResolution(mmPerPixel: number): boolean {
     if (!this.sketch || this.tessellatedAt <= 0) return false;
     // Dimension arrows keep their size on screen.
-    if (this.labels.size > 0) {
+    if (this.labels.size > 0 || this.glyphs.length > 0) {
       const zoom = mmPerPixel / this.dimensionsAt;
       if (zoom > DIMENSION_ZOOM_FACTOR || zoom < 1 / DIMENSION_ZOOM_FACTOR) {
         this.tessellatedAt = mmPerPixel;
@@ -285,14 +394,46 @@ export class SketchGraphics {
     return this.labels;
   }
 
+  /** The relation symbols shown, in sketch coordinates (for hit testing). */
+  get relationGlyphs(): readonly RelationGlyph[] {
+    return this.glyphs;
+  }
+
   dispose(): void {
     for (const object of [this.lines, this.construction, this.highlight, this.dimensionLines]) object.geometry.dispose();
     this.points.geometry.dispose();
+    this.glyphPoints.geometry.dispose();
     for (const label of this.labels.values()) this.group.remove(label);
     this.labels.clear();
+    this.glyphs = [];
   }
 
-  /** Dimension lines, arrows and labels; only the open sketch shows dimensions. */
+  /** Symbols of the relations next to their geometry (open sketch only), drawn as one set of sprites. */
+  private rebuildGlyphs(sketch: SketchData, positions: ReturnType<typeof pointPositions>, hovered: string | null, selected: ReadonlySet<string>): void {
+    this.glyphs = this.look === 'active' && this.materials.showRelations ? relationGlyphs(sketch, positions, this.tessellatedAt) : [];
+    const count = this.glyphs.length;
+    this.glyphPoints.visible = count > 0;
+    if (count === 0) return;
+    const position = new Float32Array(count * 3);
+    const color = new Float32Array(count * 3);
+    const cell = new Float32Array(count);
+    const emphasis = new Float32Array(count);
+    const { colors } = this.materials;
+    this.glyphs.forEach((glyph, i) => {
+      const state = glyph.relation === hovered ? colors.hovered : selected.has(glyph.relation) ? colors.selected : null;
+      const own = state ?? (this.status?.[glyph.relation] === 'over' ? colors.over : colors.relation);
+      position.set([glyph.at[0], glyph.at[1], 0], i * 3);
+      color.set([own.r, own.g, own.b], i * 3);
+      cell[i] = GLYPH_KINDS.indexOf(glyph.kind);
+      emphasis[i] = state ? 1 : 0;
+    });
+    const geometry = this.glyphPoints.geometry;
+    geometry.setAttribute('position', new BufferAttribute(position, 3));
+    geometry.setAttribute('glyphColor', new BufferAttribute(color, 3));
+    geometry.setAttribute('glyphCell', new BufferAttribute(cell, 1));
+    geometry.setAttribute('glyphSelected', new BufferAttribute(emphasis, 1));
+  }
+
   private rebuildDimensions(sketch: SketchData, positions: ReturnType<typeof pointPositions>, hovered: string | null, selected: ReadonlySet<string>): void {
     const lines: number[] = [];
     const colors: number[] = [];
@@ -363,6 +504,14 @@ export class SketchGraphics {
     const positions = pointPositions(sketch);
     const { hovered, selected } = this.highlightState;
     const selectedSet = new Set(selected);
+    // A hovered or selected relation or dimension highlights the geometry it refers to.
+    const referenced = new Map<string, 'hovered' | 'selected'>();
+    for (const constraint of sketch.constraints) {
+      const state = constraint.id === hovered ? 'hovered' : selectedSet.has(constraint.id) ? 'selected' : null;
+      if (!state) continue;
+      for (const id of constraintReferences(constraint)) if (referenced.get(id) !== 'hovered') referenced.set(id, state);
+    }
+    const emphasis = (id: string) => (id === hovered || referenced.get(id) === 'hovered' ? 'hovered' : selectedSet.has(id) || referenced.get(id) === 'selected' ? 'selected' : null);
     const lines: number[] = [];
     const lineColors: number[] = [];
     const construction: number[] = [];
@@ -381,7 +530,8 @@ export class SketchGraphics {
       segmentsOf(polyline, target);
       const own = this.colorOf(entity);
       for (let i = start; i < target.length; i += 3) targetColors.push(own.r, own.g, own.b);
-      const color = entity.id === hovered ? this.materials.colors.hovered : selectedSet.has(entity.id) ? this.materials.colors.selected : null;
+      const state = emphasis(entity.id);
+      const color = state === 'hovered' ? this.materials.colors.hovered : state === 'selected' ? this.materials.colors.selected : null;
       if (color) {
         const start = highlight.length;
         segmentsOf(polyline, highlight);
@@ -394,6 +544,7 @@ export class SketchGraphics {
     setSegments(this.highlight, highlight, highlightColors);
 
     this.rebuildDimensions(sketch, positions, hovered, selectedSet);
+    this.rebuildGlyphs(sketch, positions, hovered, selectedSet);
 
     // The open sketch shows every point; other sketches only their stand-alone points.
     const owned = this.look === 'inactive' ? curvePointIds(sketch) : null;
@@ -403,14 +554,16 @@ export class SketchGraphics {
     for (const entity of sketch.entities) {
       if (entity.type !== 'point' || owned?.has(entity.id)) continue;
       this.localBounds.expandByPoint(new Vector3(entity.x, entity.y, 0));
-      const emphasized = entity.id === hovered ? this.materials.colors.hovered : selectedSet.has(entity.id) ? this.materials.colors.selected : null;
+      const state = emphasis(entity.id);
+      const emphasized = state === 'hovered' ? this.materials.colors.hovered : state === 'selected' ? this.materials.colors.selected : null;
       const color = emphasized ?? this.colorOf(entity);
       pointPositionsOut.push(entity.x, entity.y, 0);
       pointColors.push(color.r, color.g, color.b);
       pointSizes.push(emphasized ? HIGHLIGHT_POINT_SIZE_PX : POINT_SIZE_PX);
     }
     // The origin is shown by its arrows; it only gets a dot while hovered or selected.
-    const origin = hovered === ORIGIN_ID ? this.materials.colors.hovered : selectedSet.has(ORIGIN_ID) ? this.materials.colors.selected : null;
+    const originState = emphasis(ORIGIN_ID);
+    const origin = originState === 'hovered' ? this.materials.colors.hovered : originState === 'selected' ? this.materials.colors.selected : null;
     if (origin && this.look === 'active') {
       pointPositionsOut.push(0, 0, 0);
       pointColors.push(origin.r, origin.g, origin.b);

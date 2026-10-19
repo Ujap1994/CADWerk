@@ -31,6 +31,7 @@
     "bottom": "Unten",
     "isometric": "Isometrisch",
     "toggleProjection": "Perspektive umschalten",
+    "toggleSketchRelations": "Skizzenbeziehungen anzeigen",
     "toggleFrameStats": "Bildstatistik anzeigen",
     "toggleFullScreen": "Vollbild",
     "toggleDevTools": "Entwicklerwerkzeuge",
@@ -206,6 +207,7 @@
     "sketchLine": "Linie · {{length}}",
     "sketchCircle": "Kreis · Ø {{diameter}}",
     "sketchArc": "Bogen · R {{radius}} · {{angle}}°",
+    "sketchRelation": "Beziehung · {{name}}",
     "construction": "Konstruktionsgeometrie",
     "selected_one": "{{count}} Element ausgewählt",
     "selected_other": "{{count}} Elemente ausgewählt",
@@ -223,6 +225,7 @@
     "zoomToFit": "Alles anzeigen (F)",
     "views": "Standardansichten",
     "projection": "Perspektive umschalten",
+    "relations": "Beziehungssymbole anzeigen",
     "isometric": "Isometrisch"
   },
   "settings": {
@@ -242,6 +245,7 @@
     "projectionOrthographic": "Orthografisch",
     "projectionPerspective": "Perspektivisch",
     "frameStats": "Bildstatistik anzeigen",
+    "sketchRelations": "Beziehungssymbole in Skizzen anzeigen",
     "close": "Schließen"
   },
   "about": {
@@ -405,6 +409,9 @@
     "dimensionsSelected_one": "{{count}} Bemaßung ausgewählt",
     "dimensionsSelected_other": "{{count}} Bemaßungen ausgewählt",
     "dimensionHint": "Doppelklick auf eine Bemaßung ändert ihren Wert, Ziehen verschiebt die Maßzahl. Entf entfernt sie.",
+    "relationsSelected_one": "{{count}} Beziehung ausgewählt",
+    "relationsSelected_other": "{{count}} Beziehungen ausgewählt",
+    "relationHint": "Zeigt man auf ein Symbol, wird die zugehörige Geometrie hervorgehoben. Entf entfernt die ausgewählten Beziehungen.",
     "definition": "Bestimmtheit",
     "status": {
       "under": "Unterbestimmt",

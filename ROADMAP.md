@@ -112,12 +112,13 @@ serves all platforms, and the kernel runs sandboxed). First preview released as
 | Mirror, linear and circular patterns, move / rotate / copy | ✅ done |
 | Offset entities | ✅ done |
 | DXF import and export of sketches | ✅ done |
-| Relation symbols in the view, drawing benchmarks, exit check with a bracket profile | ⏳ next |
+| Relation symbols in the view (hover, select, delete, show/hide) | ✅ done |
+| Drawing benchmarks, exit check with a bracket profile | ⏳ next |
 | 3-point and parallelogram rectangles, ellipse, spline | ⏳ planned |
 | Relations for the selection, checked by the solver; relation list | ✅ done |
 | Smart dimension (with driven dimensions for redundant ones) | ✅ done |
 | Status colors, conflict diagnosis | ✅ done |
-| Editing tools (trim, extend, offset, mirror, patterns, fillet, chamfer) | ⏳ planned |
+| Editing tools (trim, extend, offset, mirror, patterns, fillet, chamfer) | ✅ done |
 | DXF import and export; benchmarks at 50 → 500 → 2,000 entities | ⏳ planned |
 
 ## 2. Guiding principles

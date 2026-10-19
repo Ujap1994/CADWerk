@@ -159,6 +159,17 @@ export const ProjectionIcon = (p: P) => (
   </Icon>
 );
 
+/** A line with a relation badge next to it. */
+export const RelationsIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3.5 20.5 12 12" />
+    <circle cx="3.5" cy="20.5" r="0.6" fill="currentColor" />
+    <circle cx="12" cy="12" r="0.6" fill="currentColor" />
+    <rect x="13" y="3" width="8" height="8" rx="2" />
+    <path d="M15.4 6h3.2M15.4 8.2h3.2" />
+  </Icon>
+);
+
 export const EditIcon = (p: P) => (
   <Icon {...p}>
     <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" />

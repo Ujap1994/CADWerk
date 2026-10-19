@@ -168,6 +168,16 @@ test('README and user guide screenshots', async () => {
   await page.waitForTimeout(500);
   await page.screenshot({ path: out('sketch-dimensions.png') });
 
+  // Relation symbols: pointing at one highlights the geometry it relates.
+  const symbols = await page.evaluate(() =>
+    (window as unknown as { __parawerk: { viewport: { relationGlyphs(): { kind: string; x: number; y: number }[] } } }).__parawerk.viewport.relationGlyphs(),
+  );
+  const symbol = symbols.find((glyph) => glyph.kind === 'horizontal');
+  if (symbol && canvas) await page.mouse.move(canvas.x + symbol.x, canvas.y + symbol.y);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: out('sketch-relation-symbols.png') });
+  if (canvas) await page.mouse.move(canvas.x + 40, canvas.y + 40);
+
   // A conflicting dimension: the sketch is over defined, the conflict is red and listed.
   await page.evaluate(() => {
     const hooks = (window as unknown as {

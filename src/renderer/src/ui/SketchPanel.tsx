@@ -256,6 +256,17 @@ function SelectionSection() {
       </fieldset>
     );
   }
+  const selectedRelations = sketch.constraints.filter((constraint) => selection.includes(constraint.id) && !isDimension(constraint));
+  if (selectedRelations.length === selection.length) {
+    return (
+      <fieldset className="panel-section" data-testid="sketch-selection">
+        <legend className="panel-section-title">{t('sketch.selection')}</legend>
+        <p className="sketch-count">{t('sketch.relationsSelected', { count: selection.length })}</p>
+        <RelationList constraints={selectedRelations} />
+        <p className="panel-hint is-flush">{t('sketch.relationHint')}</p>
+      </fieldset>
+    );
+  }
   const options = applicableRelations(sketch, selection);
   const existing = relationsOf(sketch, selection);
   return (
@@ -275,30 +286,40 @@ function SelectionSection() {
         <p className="panel-hint is-flush">{t('sketch.noApplicableRelation')}</p>
       )}
       <span className="field-label">{t('sketch.existingRelations')}</span>
-      {existing.length > 0 ? (
-        <ul className="relation-list">
-          {existing.map((constraint) => {
-            const kind = relationKindOf(constraint);
-            return (
-              <li key={constraint.id} className="relation-item" data-constraint={constraint.id}>
-                <span>{kind ? t(`sketch.relationNames.${kind}`) : constraint.type}</span>
-                <button
-                  type="button"
-                  className="icon-button is-danger"
-                  title={t('sketch.deleteRelation')}
-                  aria-label={t('sketch.deleteRelation')}
-                  onClick={() => commands.deleteSketchConstraint(constraint.id)}
-                >
-                  <TrashIcon />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="panel-hint is-flush">{t('sketch.noRelations')}</p>
-      )}
+      {existing.length > 0 ? <RelationList constraints={existing} /> : <p className="panel-hint is-flush">{t('sketch.noRelations')}</p>}
     </fieldset>
+  );
+}
+
+/** Relations by name, each with a delete button; hovering an entry highlights its geometry. */
+function RelationList({ constraints }: { constraints: readonly SketchConstraint[] }) {
+  const { t } = useTranslation();
+  return (
+    <ul className="relation-list">
+      {constraints.map((constraint) => {
+        const kind = relationKindOf(constraint);
+        return (
+          <li
+            key={constraint.id}
+            className="relation-item"
+            data-constraint={constraint.id}
+            onPointerEnter={() => commands.hoverSketchEntity(constraint.id)}
+            onPointerLeave={() => commands.hoverSketchEntity(null)}
+          >
+            <span>{kind ? t(`sketch.relationNames.${kind}`) : constraint.type}</span>
+            <button
+              type="button"
+              className="icon-button is-danger"
+              title={t('sketch.deleteRelation')}
+              aria-label={t('sketch.deleteRelation')}
+              onClick={() => commands.deleteSketchConstraint(constraint.id)}
+            >
+              <TrashIcon />
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

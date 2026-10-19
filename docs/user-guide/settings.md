@@ -11,6 +11,7 @@ Open **Settings** from the command bar (or Ctrl/⌘ + ,).
 | **3D navigation** | Mouse or trackpad (see [navigation](navigation.md)) |
 | **Projection** | Orthographic or perspective |
 | **Show frame statistics** | Shows frames per second and render time in the status bar |
+| **Show relation symbols in sketches** | Symbols of the relations (H, V, ∥, …) next to the geometry of the open sketch |
 
 ![Dark theme in German](../images/screenshots/dark-theme-german.png)
 

@@ -38,6 +38,8 @@ interface Gesture {
   dimension: SketchDimension | null;
   /** The sketch with the moved label, while dragging it. */
   moved: SketchData | null;
+  /** A relation symbol was pressed: releasing selects the relation. */
+  relation: string | null;
 }
 
 /** Text and position of the measurement shown next to the cursor while drawing. */
@@ -154,9 +156,10 @@ export class SketchController implements SketchInput, SketchToolControl {
     }
     const sketch = getState().sketch?.draft.sketch;
     const dimension = pointer ? this.engine.dimensionAt(pointer.x, pointer.y) : null;
-    const hit = dimension ? null : pointer && sketch ? this.hitAt(sketch, pointer) : null;
-    this.setHover(dimension ?? hit?.id ?? null);
-    this.engine.setCursor(dimension ? 'move' : hit ? 'pointer' : '');
+    const relation = pointer && !dimension ? this.engine.relationAt(pointer.x, pointer.y) : null;
+    const hit = dimension || relation ? null : pointer && sketch ? this.hitAt(sketch, pointer) : null;
+    this.setHover(dimension ?? relation ?? hit?.id ?? null);
+    this.engine.setCursor(dimension ? 'move' : relation || hit ? 'pointer' : '');
   }
 
   down(pointer: SketchPointer): void {
@@ -166,14 +169,16 @@ export class SketchController implements SketchInput, SketchToolControl {
     const labelId = tool ? null : this.engine.dimensionAt(pointer.x, pointer.y);
     const label = labelId ? sketch.constraints.find((constraint) => constraint.id === labelId) : undefined;
     const dimension = label && isDimension(label) ? label : null;
+    const relation = tool || dimension ? null : this.engine.relationAt(pointer.x, pointer.y);
     this.gesture = {
       start: pointer,
-      hit: tool || dimension ? null : this.hitAt(sketch, pointer),
+      hit: tool || dimension || relation ? null : this.hitAt(sketch, pointer),
       base: sketch,
       session: null,
       drawing: tool !== null && !tool.busy,
       dimension,
       moved: null,
+      relation,
     };
   }
 
@@ -222,7 +227,7 @@ export class SketchController implements SketchInput, SketchToolControl {
       return;
     }
     if (gesture.session) void this.finishDrag(gesture, gesture.session);
-    else commands.selectSketchEntity(gesture.hit?.id ?? null, pointer.additive);
+    else commands.selectSketchEntity(gesture.relation ?? gesture.hit?.id ?? null, pointer.additive);
   }
 
   /** Moves a dimension label with the mouse; stored on release (one undo step). */

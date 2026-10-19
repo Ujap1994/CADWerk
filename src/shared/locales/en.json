@@ -31,6 +31,7 @@
     "bottom": "Bottom",
     "isometric": "Isometric",
     "toggleProjection": "Toggle perspective",
+    "toggleSketchRelations": "Show sketch relations",
     "toggleFrameStats": "Show frame statistics",
     "toggleFullScreen": "Full screen",
     "toggleDevTools": "Developer tools",
@@ -206,6 +207,7 @@
     "sketchLine": "Line · {{length}}",
     "sketchCircle": "Circle · Ø {{diameter}}",
     "sketchArc": "Arc · R {{radius}} · {{angle}}°",
+    "sketchRelation": "Relation · {{name}}",
     "construction": "construction geometry",
     "selected_one": "{{count}} item selected",
     "selected_other": "{{count}} items selected",
@@ -223,6 +225,7 @@
     "zoomToFit": "Zoom to fit (F)",
     "views": "Standard views",
     "projection": "Toggle perspective",
+    "relations": "Show relation symbols",
     "isometric": "Isometric"
   },
   "settings": {
@@ -242,6 +245,7 @@
     "projectionOrthographic": "Orthographic",
     "projectionPerspective": "Perspective",
     "frameStats": "Show frame statistics",
+    "sketchRelations": "Show relation symbols in sketches",
     "close": "Close"
   },
   "about": {
@@ -405,6 +409,9 @@
     "dimensionsSelected_one": "{{count}} dimension selected",
     "dimensionsSelected_other": "{{count}} dimensions selected",
     "dimensionHint": "Double-click a dimension to change its value, drag it to move the value. Delete removes it.",
+    "relationsSelected_one": "{{count}} relation selected",
+    "relationsSelected_other": "{{count}} relations selected",
+    "relationHint": "Hovering a symbol highlights the geometry it relates. Delete removes the selected relations.",
     "definition": "Definition",
     "status": {
       "under": "Under defined",

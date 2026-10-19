@@ -139,6 +139,9 @@ export function Viewport() {
       if (!previous || state.language !== previous.language) engine.setDimensionLanguage(state.language);
       if (!previous || state.settings.projection !== previous.settings.projection) engine.setProjection(state.settings.projection);
       if (!previous || state.settings.navigation !== previous.settings.navigation) engine.setNavigation(state.settings.navigation);
+      if (!previous || state.settings.showSketchRelations !== previous.settings.showSketchRelations) {
+        engine.setShowRelations(state.settings.showSketchRelations);
+      }
       if (!previous || state.settings.showFrameStats !== previous.settings.showFrameStats) {
         engine.setFrameStatsEnabled(state.settings.showFrameStats);
       }

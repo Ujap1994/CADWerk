@@ -104,6 +104,14 @@ export function SettingsDialog() {
         <input type="checkbox" checked={settings.showFrameStats} onChange={(event) => void commands.updateSettings({ showFrameStats: event.target.checked })} />
         <span>{t('settings.frameStats')}</span>
       </label>
+      <label className="setting checkbox-setting">
+        <input
+          type="checkbox"
+          checked={settings.showSketchRelations}
+          onChange={(event) => void commands.updateSettings({ showSketchRelations: event.target.checked })}
+        />
+        <span>{t('settings.sketchRelations')}</span>
+      </label>
     </Modal>
   );
 }

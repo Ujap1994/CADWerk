@@ -6,6 +6,7 @@ import { idle, launchApp, type LaunchedApp } from './harness.ts';
 
 interface SketchState {
   sketchSelection: string[];
+  sketchHover: string | null;
   history: { features: { id: string; type: string; plane?: { kind: string; plane?: string }; sketch?: { entities: unknown[] } }[]; past: unknown[] };
   choosingSketchPlane: boolean;
   sketch: {
@@ -23,7 +24,10 @@ interface Hooks {
   getState(): SketchState;
   setState(state: unknown): void;
   commands: { recordSketchChange(sketch: unknown): void };
-  viewport: { project(x: number, y: number, z: number): { x: number; y: number } };
+  viewport: {
+    project(x: number, y: number, z: number): { x: number; y: number };
+    relationGlyphs(): { relation: string; kind: string; symbol: string; x: number; y: number }[];
+  };
 }
 
 async function state(page: Page): Promise<SketchState> {
@@ -485,6 +489,56 @@ test('adds relations to selected geometry, refuses over-defining ones and delete
   // Relations of the selection can be deleted from the list.
   await page.click('.relation-item[data-constraint] .icon-button');
   expect(await constraints()).toEqual(['horizontal']);
+});
+
+test('shows relation symbols: hovering highlights, clicking selects, Delete removes, the toggle hides them', async () => {
+  launched = await launchApp();
+  const { page } = launched;
+  await page.evaluate(() => {
+    const P = (id: string, x: number, y: number) => ({ id, type: 'point', x, y });
+    const sketch = {
+      entities: [P('a', 0, 0), P('b', 40, 0), { id: 'l1', type: 'line', p1: 'a', p2: 'b' }, P('c', 0, 30), P('d', 40, 30), { id: 'l2', type: 'line', p1: 'c', p2: 'd' }],
+      constraints: [
+        { id: 'h', type: 'horizontal', line: 'l1' },
+        { id: 'par', type: 'parallel', a: 'l1', b: 'l2' },
+      ],
+    };
+    const features = [{ id: 's', type: 'sketch', plane: { kind: 'standard', plane: 'top' }, sketch }];
+    (window as unknown as { __parawerk: Hooks }).__parawerk.setState({ history: { features, past: [], future: [] }, savedFeatures: features, dirty: false });
+  });
+  await page.dblclick('.tree-item[data-feature-id="s"]');
+  await expectNormalView(page, [1, 0, 0], [0, 1, 0]);
+  await frames(page);
+
+  // Parallel shows at both lines, horizontal at its line.
+  const glyphs = () => page.evaluate(() => (window as unknown as { __parawerk: Hooks }).__parawerk.viewport.relationGlyphs());
+  await expect.poll(async () => (await glyphs()).map((glyph) => `${glyph.relation}:${glyph.symbol}`).sort()).toEqual(['h:H', 'par:∥', 'par:∥']);
+  const canvas = await page.locator('.viewport-canvas').boundingBox();
+  if (!canvas) throw new Error('viewport not visible');
+
+  // Pointing at a symbol highlights the relation and names it in the status bar.
+  const symbol = (await glyphs()).find((glyph) => glyph.relation === 'h');
+  if (!symbol) throw new Error('no symbol for the horizontal relation');
+  await page.mouse.move(canvas.x + symbol.x, canvas.y + symbol.y);
+  await expect.poll(async () => (await state(page)).sketchHover).toBe('h');
+  await expect(page.locator('[data-testid="pick-info"]')).toHaveText('Relation · Horizontal');
+
+  // A click selects the relation; Delete removes it.
+  await page.mouse.click(canvas.x + symbol.x, canvas.y + symbol.y);
+  expect((await state(page)).sketchSelection).toEqual(['h']);
+  await expect(page.locator('[data-testid="sketch-selection"] .sketch-count')).toHaveText('1 relation selected');
+  await page.keyboard.press('Delete');
+  await expect.poll(async () => (await state(page)).sketch?.draft.sketch.constraints.map((c) => c.id)).toEqual(['par']);
+  await expect.poll(async () => (await glyphs()).length).toBe(2);
+
+  // The view toolbar hides and shows the symbols.
+  const toggle = page.locator('[data-testid="toggle-relations"]');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await toggle.click();
+  await expect.poll(async () => (await glyphs()).length).toBe(0);
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
+  await expect.poll(async () => (await glyphs()).length).toBe(2);
 });
 
 test('fits the smallest window in sketch mode: nothing overflows, the whole view is reachable', async () => {

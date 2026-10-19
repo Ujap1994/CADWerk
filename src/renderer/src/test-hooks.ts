@@ -23,6 +23,7 @@ export function installTestHooks(): void {
       runOrbitBenchmark: (frames: number) => viewport()?.runOrbitBenchmark(frames),
       debugInfo: () => viewport()?.debugInfo(),
       project: (x: number, y: number, z: number) => viewport()?.project(new Vector3(x, y, z)),
+      relationGlyphs: () => viewport()?.relationGlyphsOnScreen() ?? [],
       zoomToFit: () => viewport()?.zoomToFit(false),
     },
     sketch: {

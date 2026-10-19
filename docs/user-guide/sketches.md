@@ -199,6 +199,25 @@ ParaWerk checks every new relation with the solver first. A relation that alread
 existing relations and dimensions (it would *over-define* the sketch) or contradicts them is refused
 with a message, so a sketch never ends up in a state it cannot solve.
 
+### Relation symbols
+
+Every relation shows a small symbol next to the geometry it belongs to, so you can see at a glance what
+is already fixed: **H** horizontal, **V** vertical, **∥** parallel, **⊥** perpendicular, **=** equal,
+**T** tangent, **◎** concentric, **M** midpoint, **S** symmetric, **F** fix, **•** coincident,
+**◦** on curve, **⋯** collinear. A relation between two entities shows its symbol at both. Symbols of
+lines sit at the middle of the line, outside closed outlines; symbols of circles and arcs sit outside the
+radius. They keep their distance on screen when you zoom.
+
+- **Point at a symbol** to highlight the geometry of the relation; the status bar names the relation.
+- **Click a symbol** to select the relation (**Shift**/**Ctrl**/**⌘**-click for more). The side panel
+  lists the selected relations; **Delete** or the trash button removes them.
+- Pointing at a relation in the side panel's lists highlights its geometry, too.
+- Symbols of conflicting relations are red, like the conflict itself.
+- The **relation symbols** button in the view toolbar (only in sketch mode), **View → Show sketch
+  relations** or **Settings → Show relation symbols in sketches** hides and shows them.
+
+![Pointing at a relation symbol highlights the line it keeps horizontal](../images/screenshots/sketch-relation-symbols.png)
+
 ## Dimensions
 
 Dimensions give the geometry its sizes. There is one **Dimension** tool (key **D**, in the *Define*

@@ -96,6 +96,10 @@ export function buildMenu({ language, settings, developerTools, send }: MenuCont
         type: 'checkbox',
         checked: settings.projection === 'perspective',
       }),
+      command(t('toggleSketchRelations'), 'view.toggleSketchRelations', undefined, {
+        type: 'checkbox',
+        checked: settings.showSketchRelations,
+      }),
       command(t('toggleFrameStats'), 'view.toggleFrameStats', undefined, {
         type: 'checkbox',
         checked: settings.showFrameStats,

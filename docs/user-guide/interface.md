@@ -8,7 +8,7 @@
 | **Feature tree** (left) | The origin, the three standard planes and the history of the part, from top to bottom. Hover over a plane to show it in the 3D view; hover over a feature to edit, suppress or delete it; double-click to edit. Features with a rebuild error are shown in red with a warning icon. |
 | **Property panel** (left, replaces the tree while a feature is created or edited) | Parameters of the feature with live preview. **✓** (Enter) applies, **✕** (Esc) cancels. |
 | **Sketch panel** (left, above the tree in sketch mode) | The open sketch, its plane and contents. **✓** keeps the sketch, **✕** discards the changes. See [Sketches](sketches.md). |
-| **3D view** (center) | The model. The floating toolbar offers *Zoom to fit*, *Standard views* and *Perspective*. The view cube (top right) and the axis indicator (bottom left) show the orientation. |
+| **3D view** (center) | The model. The floating toolbar offers *Zoom to fit*, *Standard views* and *Perspective*, and in sketch mode *Relation symbols*. The view cube (top right) and the axis indicator (bottom left) show the orientation. |
 | **Status bar** (bottom) | Kernel state and rebuild time; the face or edge under the cursor (or the selected one) with its exact geometry, for example *Face 7 · Cylinder Ø 44 mm · 4,838.1 mm²*; volume and surface area of the part; optional frame statistics; the unit (mm). |
 
 ## Keyboard shortcuts

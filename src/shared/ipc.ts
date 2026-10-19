@@ -35,6 +35,7 @@ export type MenuCommand =
   | 'view.isometric'
   | 'view.toggleProjection'
   | 'view.toggleFrameStats'
+  | 'view.toggleSketchRelations'
   | 'app.settings'
   | 'app.about';
 
